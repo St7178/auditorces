@@ -71,16 +71,16 @@ export function AppSidebar({ user }: { user: { name: string; jobTitle?: string |
         <Sidebar collapsible="icon">
             <SidebarHeader className="border-b border-sidebar-border">
                 <div className="flex items-center gap-3 px-2 py-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/90">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
                         <img
-                            src="https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/auditor.png"
-                            alt="CES AUDITOR Logo"
+                            src="https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/logocnet.png"
+                            alt="CES SIG Logo"
                             className="h-10 w-10 object-contain"
                         />
                     </div>
                     <div className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
-                        <span className="truncate text-sm font-bold text-sidebar-foreground">CES AUDITOR</span>
-                        <span className="truncate text-[11px] text-sidebar-foreground/60">Compunet · Auditoría Inteligente</span>
+                        <span className="truncate text-sm font-bold text-sidebar-foreground">CES SIG</span>
+                        <span className="truncate text-[11px] text-sidebar-foreground/60">Compunet · Sistema IG</span>
                     </div>
                 </div>
             </SidebarHeader>

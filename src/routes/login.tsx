@@ -19,16 +19,16 @@ function LoginPage() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-background px-4">
             <div className="w-full max-w-sm text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/90">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
                     <img
-                        src="https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/auditor.png"
-                        alt="CES AUDITOR Logo"
+                        src="https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/logocnet.png"
+                        alt="CES SIG Logo"
                         className="h-14 w-14 object-contain"
                     />
                 </div>
-                <h1 className="mt-6 text-2xl font-bold">CES AUDITOR</h1>
+                <h1 className="mt-6 text-2xl font-bold">CES SIG</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
-                    Sistema inteligente de auditoría · Cloud Enterprise Services · Compunet
+                    Sistema Integrado de Gestión · Cloud Enterprise Services · Compunet
                 </p>
                 <a
                     href="/api/auth/login"
