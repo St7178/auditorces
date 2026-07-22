@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { PROCESOS } from "@/lib/ces-data";
 import { Workflow, User, Calendar, ClipboardCheck, Gauge, ShieldAlert } from "lucide-react";
 
-export const Route = createFileRoute("/procesos")({
+export const Route = createFileRoute("/_authenticated/procesos")({
     component: ProcesosPage,
     head: () => ({ meta: [{ title: "Procesos CES — CES HUB" }] }),
 });

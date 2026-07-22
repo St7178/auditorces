@@ -63,8 +63,9 @@ const nav = [
     },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ user }: { user: { name: string; jobTitle?: string | null } }) {
     const currentPath = useRouterState({ select: (r) => r.location.pathname });
+    const userInitials = user.name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase();
 
     return (
         <Sidebar collapsible="icon">
@@ -112,11 +113,11 @@ export function AppSidebar() {
             <SidebarFooter className="border-t border-sidebar-border">
                 <div className="flex items-center gap-2 px-2 py-2 group-data-[collapsible=icon]:hidden">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-primary/20 text-xs font-semibold text-sidebar-primary">
-                        LJ
+                        {userInitials}
                     </div>
                     <div className="flex min-w-0 flex-col leading-tight">
-                        <span className="truncate text-xs font-medium text-sidebar-foreground">Laura Jaramillo</span>
-                        <span className="truncate text-[10px] text-sidebar-foreground/60">Coord. Calidad CES</span>
+                        <span className="truncate text-xs font-medium text-sidebar-foreground">{user.name}</span>
+                        <span className="truncate text-[10px] text-sidebar-foreground/60">{user.jobTitle ?? ""}</span>
                     </div>
                 </div>
             </SidebarFooter>

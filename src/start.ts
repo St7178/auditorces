@@ -1,4 +1,4 @@
-import { createStart, createMiddleware } from "@tanstack/react-start";
+import { createStart, createMiddleware, createCsrfMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
 
@@ -17,6 +17,12 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
     }
 });
 
+// Los server functions (createServerFn) son RPCs same-origin — se validan contra cross-site requests.
+// Los server routes (/api/*) ya tienen su propia verificación de sesión/CSRF en cada handler.
+const csrfMiddleware = createCsrfMiddleware({
+    filter: (ctx) => ctx.handlerType === "serverFn",
+});
+
 export const startInstance = createStart(() => ({
-    requestMiddleware: [errorMiddleware],
+    requestMiddleware: [errorMiddleware, csrfMiddleware],
 }));

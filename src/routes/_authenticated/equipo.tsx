@@ -3,18 +3,35 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { EQUIPO } from "@/lib/ces-data";
-import { Mail, MessageSquare } from "lucide-react";
+import { Mail, MessageSquare, IdCard } from "lucide-react";
+import { getCesTeamFromEntra } from "@/lib/team.functions";
 
-export const Route = createFileRoute("/equipo")({
+export const Route = createFileRoute("/_authenticated/equipo")({
     component: EquipoPage,
+    loader: async () => {
+        try {
+            return await getCesTeamFromEntra();
+        } catch (err) {
+            console.error("No se pudo cargar el equipo desde Entra ID:", err);
+            return [];
+        }
+    },
     head: () => ({ meta: [{ title: "Equipo CES — CES HUB" }] }),
 });
 
 function initials(name: string) {
-    return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
+    return name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase();
+}
+
+function normalizeName(name: string) {
+    return name.trim().toLowerCase();
 }
 
 function EquipoPage() {
+    const entraUsers = Route.useLoaderData();
+    const knownNames = new Set(EQUIPO.map((m) => normalizeName(m.nombre)));
+    const entraOnly = entraUsers.filter((u) => !knownNames.has(normalizeName(u.displayName)));
+
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader eyebrow="Equipo" title="Equipo CES" description="Personas del área Cloud Enterprise Services de Compunet." />
@@ -39,6 +56,27 @@ function EquipoPage() {
                             <div className="mt-4 flex gap-2">
                                 <button className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent"><Mail className="h-3 w-3" /> Email</button>
                                 <button className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent"><MessageSquare className="h-3 w-3" /> Chat</button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+
+                {entraOnly.map((u) => (
+                    <Card key={u.id} className="group overflow-hidden border-dashed border-border/60 transition hover:shadow-lg">
+                        <div className="h-20 bg-gradient-to-br from-muted to-muted/50" />
+                        <CardContent className="-mt-10 p-5">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-4 border-card bg-card text-lg font-bold text-muted-foreground shadow-lg">
+                                {initials(u.displayName)}
+                            </div>
+                            <div className="mt-3 text-base font-semibold">{u.displayName}</div>
+                            <div className="text-xs text-muted-foreground">{u.jobTitle}</div>
+                            <div className="mt-3">
+                                <Badge variant="secondary" className="gap-1 text-[10px]"><IdCard className="h-3 w-3" /> Directorio Entra ID</Badge>
+                            </div>
+                            <div className="mt-4 flex gap-2">
+                                <a href={`mailto:${u.mail ?? u.userPrincipalName}`} className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent">
+                                    <Mail className="h-3 w-3" /> Email
+                                </a>
                             </div>
                         </CardContent>
                     </Card>

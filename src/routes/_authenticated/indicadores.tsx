@@ -5,7 +5,7 @@ import { INDICADORES } from "@/lib/ces-data";
 import { ResponsiveContainer, LineChart, Line, XAxis, Tooltip, CartesianGrid } from "recharts";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
-export const Route = createFileRoute("/indicadores")({
+export const Route = createFileRoute("/_authenticated/indicadores")({
     component: IndicadoresPage,
     head: () => ({ meta: [{ title: "Indicadores — CES HUB" }] }),
 });

@@ -11,7 +11,7 @@ import {
     RadialBarChart, RadialBar, PolarAngleAxis,
 } from "recharts";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
     component: Dashboard,
     head: () => ({
         meta: [

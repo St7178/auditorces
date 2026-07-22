@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { CRONOGRAMA } from "@/lib/ces-data";
 
-export const Route = createFileRoute("/cronograma")({
+export const Route = createFileRoute("/_authenticated/cronograma")({
     component: CronPage,
     head: () => ({ meta: [{ title: "Cronograma — CES HUB" }] }),
 });

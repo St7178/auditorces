@@ -3,6 +3,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
 import { retrieveRelevantChunks } from "@/lib/knowledge/retrieve";
 import { INVENTARIO_DOCUMENTAL_CES } from "@/lib/ces-data";
+import { getCurrentSession } from "@/lib/auth/session";
 
 const SYSTEM_PROMPT = `Eres CES Guardian, el asistente inteligente de calidad y auditoría del área Cloud Enterprise Services (CES) de Compunet.
 
@@ -52,6 +53,10 @@ export const Route = createFileRoute("/api/chat")({
     server: {
         handlers: {
             POST: async ({ request }) => {
+                // El beforeLoad de /_authenticated protege la UI, no este endpoint — se valida la sesión aquí también.
+                const session = await getCurrentSession();
+                if (!session) return new Response("Unauthorized", { status: 401 });
+
                 const { messages } = (await request.json()) as { messages: UIMessage[] };
                 const key = process.env.OPENAI_API_KEY;
                 if (!key) return new Response("Missing OPENAI_API_KEY", { status: 500 });

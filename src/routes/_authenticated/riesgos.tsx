@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { RIESGOS, METODOLOGIA_RIESGOS } from "@/lib/ces-data";
 import { ShieldAlert, Sparkles, BookOpen } from "lucide-react";
 
-export const Route = createFileRoute("/riesgos")({
+export const Route = createFileRoute("/_authenticated/riesgos")({
     component: RiesgosPage,
     head: () => ({ meta: [{ title: "Riesgos Operacionales — CES HUB" }] }),
 });

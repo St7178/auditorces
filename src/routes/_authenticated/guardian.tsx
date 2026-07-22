@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Sparkles, Send, Loader2, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
-export const Route = createFileRoute("/guardian")({
+export const Route = createFileRoute("/_authenticated/guardian")({
     component: GuardianPage,
     head: () => ({
         meta: [

@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { CONTRATOS } from "@/lib/ces-data";
 import { AlertTriangle } from "lucide-react";
 
-export const Route = createFileRoute("/contratos")({
+export const Route = createFileRoute("/_authenticated/contratos")({
     component: ContratosPage,
     head: () => ({ meta: [{ title: "Contratos — CES HUB" }] }),
 });

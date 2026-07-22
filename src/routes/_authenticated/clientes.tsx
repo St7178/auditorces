@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { CLIENTES } from "@/lib/ces-data";
 import { Building2 } from "lucide-react";
 
-export const Route = createFileRoute("/clientes")({
+export const Route = createFileRoute("/_authenticated/clientes")({
     component: ClientesPage,
     head: () => ({ meta: [{ title: "Clientes — CES HUB" }] }),
 });

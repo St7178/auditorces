@@ -9,145 +9,192 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ChatRouteImport } from './routes/chat'
-import { Route as ClientesRouteImport } from './routes/clientes'
-import { Route as ConfiguracionRouteImport } from './routes/configuracion'
-import { Route as ContratosRouteImport } from './routes/contratos'
-import { Route as CronogramaRouteImport } from './routes/cronograma'
-import { Route as DocumentacionRouteImport } from './routes/documentacion'
-import { Route as EquipoRouteImport } from './routes/equipo'
-import { Route as GuardianRouteImport } from './routes/guardian'
-import { Route as IndicadoresRouteImport } from './routes/indicadores'
-import { Route as ProcesosRouteImport } from './routes/procesos'
-import { Route as ProveedoresRouteImport } from './routes/proveedores'
-import { Route as RiesgosRouteImport } from './routes/riesgos'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
+import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as AuthenticatedConfiguracionRouteImport } from './routes/_authenticated/configuracion'
+import { Route as AuthenticatedContratosRouteImport } from './routes/_authenticated/contratos'
+import { Route as AuthenticatedCronogramaRouteImport } from './routes/_authenticated/cronograma'
+import { Route as AuthenticatedDocumentacionRouteImport } from './routes/_authenticated/documentacion'
+import { Route as AuthenticatedEquipoRouteImport } from './routes/_authenticated/equipo'
+import { Route as AuthenticatedGuardianRouteImport } from './routes/_authenticated/guardian'
+import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
+import { Route as AuthenticatedProcesosRouteImport } from './routes/_authenticated/procesos'
+import { Route as AuthenticatedProveedoresRouteImport } from './routes/_authenticated/proveedores'
+import { Route as AuthenticatedRiesgosRouteImport } from './routes/_authenticated/riesgos'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
+import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
+import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ChatRoute = ChatRouteImport.update({
+const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   id: '/chat',
   path: '/chat',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ClientesRoute = ClientesRouteImport.update({
+const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ConfiguracionRoute = ConfiguracionRouteImport.update({
-  id: '/configuracion',
-  path: '/configuracion',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContratosRoute = ContratosRouteImport.update({
+const AuthenticatedConfiguracionRoute =
+  AuthenticatedConfiguracionRouteImport.update({
+    id: '/configuracion',
+    path: '/configuracion',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContratosRoute = AuthenticatedContratosRouteImport.update({
   id: '/contratos',
   path: '/contratos',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const CronogramaRoute = CronogramaRouteImport.update({
+const AuthenticatedCronogramaRoute = AuthenticatedCronogramaRouteImport.update({
   id: '/cronograma',
   path: '/cronograma',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const DocumentacionRoute = DocumentacionRouteImport.update({
-  id: '/documentacion',
-  path: '/documentacion',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EquipoRoute = EquipoRouteImport.update({
+const AuthenticatedDocumentacionRoute =
+  AuthenticatedDocumentacionRouteImport.update({
+    id: '/documentacion',
+    path: '/documentacion',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedEquipoRoute = AuthenticatedEquipoRouteImport.update({
   id: '/equipo',
   path: '/equipo',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const GuardianRoute = GuardianRouteImport.update({
+const AuthenticatedGuardianRoute = AuthenticatedGuardianRouteImport.update({
   id: '/guardian',
   path: '/guardian',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const IndicadoresRoute = IndicadoresRouteImport.update({
-  id: '/indicadores',
-  path: '/indicadores',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProcesosRoute = ProcesosRouteImport.update({
+const AuthenticatedIndicadoresRoute =
+  AuthenticatedIndicadoresRouteImport.update({
+    id: '/indicadores',
+    path: '/indicadores',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProcesosRoute = AuthenticatedProcesosRouteImport.update({
   id: '/procesos',
   path: '/procesos',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ProveedoresRoute = ProveedoresRouteImport.update({
-  id: '/proveedores',
-  path: '/proveedores',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RiesgosRoute = RiesgosRouteImport.update({
+const AuthenticatedProveedoresRoute =
+  AuthenticatedProveedoresRouteImport.update({
+    id: '/proveedores',
+    path: '/proveedores',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedRiesgosRoute = AuthenticatedRiesgosRouteImport.update({
   id: '/riesgos',
   path: '/riesgos',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
+  id: '/api/auth/callback',
+  path: '/api/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthLoginRoute = ApiAuthLoginRouteImport.update({
+  id: '/api/auth/login',
+  path: '/api/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthLogoutRoute = ApiAuthLogoutRouteImport.update({
+  id: '/api/auth/logout',
+  path: '/api/auth/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/chat': typeof ChatRoute
-  '/clientes': typeof ClientesRoute
-  '/configuracion': typeof ConfiguracionRoute
-  '/contratos': typeof ContratosRoute
-  '/cronograma': typeof CronogramaRoute
-  '/documentacion': typeof DocumentacionRoute
-  '/equipo': typeof EquipoRoute
-  '/guardian': typeof GuardianRoute
-  '/indicadores': typeof IndicadoresRoute
-  '/procesos': typeof ProcesosRoute
-  '/proveedores': typeof ProveedoresRoute
-  '/riesgos': typeof RiesgosRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/login': typeof LoginRoute
+  '/chat': typeof AuthenticatedChatRoute
+  '/clientes': typeof AuthenticatedClientesRoute
+  '/configuracion': typeof AuthenticatedConfiguracionRoute
+  '/contratos': typeof AuthenticatedContratosRoute
+  '/cronograma': typeof AuthenticatedCronogramaRoute
+  '/documentacion': typeof AuthenticatedDocumentacionRoute
+  '/equipo': typeof AuthenticatedEquipoRoute
+  '/guardian': typeof AuthenticatedGuardianRoute
+  '/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/procesos': typeof AuthenticatedProcesosRoute
+  '/proveedores': typeof AuthenticatedProveedoresRoute
+  '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/chat': typeof ChatRoute
-  '/clientes': typeof ClientesRoute
-  '/configuracion': typeof ConfiguracionRoute
-  '/contratos': typeof ContratosRoute
-  '/cronograma': typeof CronogramaRoute
-  '/documentacion': typeof DocumentacionRoute
-  '/equipo': typeof EquipoRoute
-  '/guardian': typeof GuardianRoute
-  '/indicadores': typeof IndicadoresRoute
-  '/procesos': typeof ProcesosRoute
-  '/proveedores': typeof ProveedoresRoute
-  '/riesgos': typeof RiesgosRoute
+  '/login': typeof LoginRoute
+  '/chat': typeof AuthenticatedChatRoute
+  '/clientes': typeof AuthenticatedClientesRoute
+  '/configuracion': typeof AuthenticatedConfiguracionRoute
+  '/contratos': typeof AuthenticatedContratosRoute
+  '/cronograma': typeof AuthenticatedCronogramaRoute
+  '/documentacion': typeof AuthenticatedDocumentacionRoute
+  '/equipo': typeof AuthenticatedEquipoRoute
+  '/guardian': typeof AuthenticatedGuardianRoute
+  '/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/procesos': typeof AuthenticatedProcesosRoute
+  '/proveedores': typeof AuthenticatedProveedoresRoute
+  '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/chat': typeof ChatRoute
-  '/clientes': typeof ClientesRoute
-  '/configuracion': typeof ConfiguracionRoute
-  '/contratos': typeof ContratosRoute
-  '/cronograma': typeof CronogramaRoute
-  '/documentacion': typeof DocumentacionRoute
-  '/equipo': typeof EquipoRoute
-  '/guardian': typeof GuardianRoute
-  '/indicadores': typeof IndicadoresRoute
-  '/procesos': typeof ProcesosRoute
-  '/proveedores': typeof ProveedoresRoute
-  '/riesgos': typeof RiesgosRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_authenticated/chat': typeof AuthenticatedChatRoute
+  '/_authenticated/clientes': typeof AuthenticatedClientesRoute
+  '/_authenticated/configuracion': typeof AuthenticatedConfiguracionRoute
+  '/_authenticated/contratos': typeof AuthenticatedContratosRoute
+  '/_authenticated/cronograma': typeof AuthenticatedCronogramaRoute
+  '/_authenticated/documentacion': typeof AuthenticatedDocumentacionRoute
+  '/_authenticated/equipo': typeof AuthenticatedEquipoRoute
+  '/_authenticated/guardian': typeof AuthenticatedGuardianRoute
+  '/_authenticated/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/_authenticated/procesos': typeof AuthenticatedProcesosRoute
+  '/_authenticated/proveedores': typeof AuthenticatedProveedoresRoute
+  '/_authenticated/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/api/auth/callback': typeof ApiAuthCallbackRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/chat'
     | '/clientes'
     | '/configuracion'
@@ -161,9 +208,12 @@ export interface FileRouteTypes {
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
+    | '/api/auth/callback'
+    | '/api/auth/login'
+    | '/api/auth/logout'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
+    | '/login'
     | '/chat'
     | '/clientes'
     | '/configuracion'
@@ -177,133 +227,148 @@ export interface FileRouteTypes {
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
+    | '/'
+    | '/api/auth/callback'
+    | '/api/auth/login'
+    | '/api/auth/logout'
   id:
     | '__root__'
-    | '/'
-    | '/chat'
-    | '/clientes'
-    | '/configuracion'
-    | '/contratos'
-    | '/cronograma'
-    | '/documentacion'
-    | '/equipo'
-    | '/guardian'
-    | '/indicadores'
-    | '/procesos'
-    | '/proveedores'
-    | '/riesgos'
+    | '/_authenticated'
+    | '/login'
+    | '/_authenticated/chat'
+    | '/_authenticated/clientes'
+    | '/_authenticated/configuracion'
+    | '/_authenticated/contratos'
+    | '/_authenticated/cronograma'
+    | '/_authenticated/documentacion'
+    | '/_authenticated/equipo'
+    | '/_authenticated/guardian'
+    | '/_authenticated/indicadores'
+    | '/_authenticated/procesos'
+    | '/_authenticated/proveedores'
+    | '/_authenticated/riesgos'
     | '/api/chat'
+    | '/_authenticated/'
+    | '/api/auth/callback'
+    | '/api/auth/login'
+    | '/api/auth/logout'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ChatRoute: typeof ChatRoute
-  ClientesRoute: typeof ClientesRoute
-  ConfiguracionRoute: typeof ConfiguracionRoute
-  ContratosRoute: typeof ContratosRoute
-  CronogramaRoute: typeof CronogramaRoute
-  DocumentacionRoute: typeof DocumentacionRoute
-  EquipoRoute: typeof EquipoRoute
-  GuardianRoute: typeof GuardianRoute
-  IndicadoresRoute: typeof IndicadoresRoute
-  ProcesosRoute: typeof ProcesosRoute
-  ProveedoresRoute: typeof ProveedoresRoute
-  RiesgosRoute: typeof RiesgosRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
+  ApiAuthLoginRoute: typeof ApiAuthLoginRoute
+  ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/chat': {
-      id: '/chat'
+    '/_authenticated/chat': {
+      id: '/_authenticated/chat'
       path: '/chat'
       fullPath: '/chat'
-      preLoaderRoute: typeof ChatRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedChatRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/clientes': {
-      id: '/clientes'
+    '/_authenticated/clientes': {
+      id: '/_authenticated/clientes'
       path: '/clientes'
       fullPath: '/clientes'
-      preLoaderRoute: typeof ClientesRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedClientesRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/configuracion': {
-      id: '/configuracion'
+    '/_authenticated/configuracion': {
+      id: '/_authenticated/configuracion'
       path: '/configuracion'
       fullPath: '/configuracion'
-      preLoaderRoute: typeof ConfiguracionRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedConfiguracionRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/contratos': {
-      id: '/contratos'
+    '/_authenticated/contratos': {
+      id: '/_authenticated/contratos'
       path: '/contratos'
       fullPath: '/contratos'
-      preLoaderRoute: typeof ContratosRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedContratosRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/cronograma': {
-      id: '/cronograma'
+    '/_authenticated/cronograma': {
+      id: '/_authenticated/cronograma'
       path: '/cronograma'
       fullPath: '/cronograma'
-      preLoaderRoute: typeof CronogramaRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedCronogramaRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/documentacion': {
-      id: '/documentacion'
+    '/_authenticated/documentacion': {
+      id: '/_authenticated/documentacion'
       path: '/documentacion'
       fullPath: '/documentacion'
-      preLoaderRoute: typeof DocumentacionRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedDocumentacionRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/equipo': {
-      id: '/equipo'
+    '/_authenticated/equipo': {
+      id: '/_authenticated/equipo'
       path: '/equipo'
       fullPath: '/equipo'
-      preLoaderRoute: typeof EquipoRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedEquipoRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/guardian': {
-      id: '/guardian'
+    '/_authenticated/guardian': {
+      id: '/_authenticated/guardian'
       path: '/guardian'
       fullPath: '/guardian'
-      preLoaderRoute: typeof GuardianRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedGuardianRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/indicadores': {
-      id: '/indicadores'
+    '/_authenticated/indicadores': {
+      id: '/_authenticated/indicadores'
       path: '/indicadores'
       fullPath: '/indicadores'
-      preLoaderRoute: typeof IndicadoresRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndicadoresRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/procesos': {
-      id: '/procesos'
+    '/_authenticated/procesos': {
+      id: '/_authenticated/procesos'
       path: '/procesos'
       fullPath: '/procesos'
-      preLoaderRoute: typeof ProcesosRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedProcesosRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/proveedores': {
-      id: '/proveedores'
+    '/_authenticated/proveedores': {
+      id: '/_authenticated/proveedores'
       path: '/proveedores'
       fullPath: '/proveedores'
-      preLoaderRoute: typeof ProveedoresRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedProveedoresRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/riesgos': {
-      id: '/riesgos'
+    '/_authenticated/riesgos': {
+      id: '/_authenticated/riesgos'
       path: '/riesgos'
       fullPath: '/riesgos'
-      preLoaderRoute: typeof RiesgosRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedRiesgosRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/api/chat': {
       id: '/api/chat'
@@ -312,24 +377,73 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/callback': {
+      id: '/api/auth/callback'
+      path: '/api/auth/callback'
+      fullPath: '/api/auth/callback'
+      preLoaderRoute: typeof ApiAuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/login': {
+      id: '/api/auth/login'
+      path: '/api/auth/login'
+      fullPath: '/api/auth/login'
+      preLoaderRoute: typeof ApiAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/logout': {
+      id: '/api/auth/logout'
+      path: '/api/auth/logout'
+      fullPath: '/api/auth/logout'
+      preLoaderRoute: typeof ApiAuthLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedChatRoute: typeof AuthenticatedChatRoute
+  AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
+  AuthenticatedConfiguracionRoute: typeof AuthenticatedConfiguracionRoute
+  AuthenticatedContratosRoute: typeof AuthenticatedContratosRoute
+  AuthenticatedCronogramaRoute: typeof AuthenticatedCronogramaRoute
+  AuthenticatedDocumentacionRoute: typeof AuthenticatedDocumentacionRoute
+  AuthenticatedEquipoRoute: typeof AuthenticatedEquipoRoute
+  AuthenticatedGuardianRoute: typeof AuthenticatedGuardianRoute
+  AuthenticatedIndicadoresRoute: typeof AuthenticatedIndicadoresRoute
+  AuthenticatedProcesosRoute: typeof AuthenticatedProcesosRoute
+  AuthenticatedProveedoresRoute: typeof AuthenticatedProveedoresRoute
+  AuthenticatedRiesgosRoute: typeof AuthenticatedRiesgosRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedChatRoute: AuthenticatedChatRoute,
+  AuthenticatedClientesRoute: AuthenticatedClientesRoute,
+  AuthenticatedConfiguracionRoute: AuthenticatedConfiguracionRoute,
+  AuthenticatedContratosRoute: AuthenticatedContratosRoute,
+  AuthenticatedCronogramaRoute: AuthenticatedCronogramaRoute,
+  AuthenticatedDocumentacionRoute: AuthenticatedDocumentacionRoute,
+  AuthenticatedEquipoRoute: AuthenticatedEquipoRoute,
+  AuthenticatedGuardianRoute: AuthenticatedGuardianRoute,
+  AuthenticatedIndicadoresRoute: AuthenticatedIndicadoresRoute,
+  AuthenticatedProcesosRoute: AuthenticatedProcesosRoute,
+  AuthenticatedProveedoresRoute: AuthenticatedProveedoresRoute,
+  AuthenticatedRiesgosRoute: AuthenticatedRiesgosRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ChatRoute: ChatRoute,
-  ClientesRoute: ClientesRoute,
-  ConfiguracionRoute: ConfiguracionRoute,
-  ContratosRoute: ContratosRoute,
-  CronogramaRoute: CronogramaRoute,
-  DocumentacionRoute: DocumentacionRoute,
-  EquipoRoute: EquipoRoute,
-  GuardianRoute: GuardianRoute,
-  IndicadoresRoute: IndicadoresRoute,
-  ProcesosRoute: ProcesosRoute,
-  ProveedoresRoute: ProveedoresRoute,
-  RiesgosRoute: RiesgosRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiAuthCallbackRoute: ApiAuthCallbackRoute,
+  ApiAuthLoginRoute: ApiAuthLoginRoute,
+  ApiAuthLogoutRoute: ApiAuthLogoutRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
