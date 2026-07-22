@@ -3,6 +3,7 @@ import {
     ClipboardList, ShieldAlert, Users, FileText, Truck, Gauge, ListChecks, AlertTriangle,
     Sparkles, ArrowUpRight, TrendingUp,
 } from "lucide-react";
+import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { KPIS_DASHBOARD, RECOMENDACIONES_IA, INDICADORES, CRONOGRAMA } from "@/lib/ces-data";
@@ -32,6 +33,9 @@ const cumplimientoData = [
 ];
 
 function Dashboard() {
+    const { user } = AuthenticatedRoute.useRouteContext();
+    const firstName = user?.name?.split(" ")[0] ?? "Usuario";
+
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             {/* Hero */}
@@ -42,13 +46,13 @@ function Dashboard() {
                     <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium backdrop-blur">
                         <Sparkles className="h-3.5 w-3.5" /> Portal Inteligente de Gestión CES
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Hola Laura 👋</h1>
+                    <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Hola {firstName} 👋</h1>
                     <p className="mt-2 max-w-2xl text-white/80">
                         Bienvenida al Portal Inteligente de Gestión CES. Centralizamos la operación, el conocimiento y la mejora continua del área.
                     </p>
                     <div className="mt-6 flex flex-wrap gap-3">
                         <Button asChild size="lg" className="rounded-xl bg-white text-slate-900 hover:bg-white/90">
-                            <Link to="/guardian"><Sparkles className="mr-2 h-4 w-4" /> Hablar con CES Guardian</Link>
+                            <Link to="/guardian"><Sparkles className="mr-2 h-4 w-4" /> Hablar con CES AUDITOR</Link>
                         </Button>
                         <Button asChild size="lg" variant="secondary" className="rounded-xl bg-white/10 text-white hover:bg-white/20 border-white/20 border">
                             <Link to="/cronograma">Ver cronograma</Link>
