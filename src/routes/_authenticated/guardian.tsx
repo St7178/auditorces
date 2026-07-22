@@ -71,9 +71,9 @@ function GuardianPage() {
         <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
             {/* Header */}
             <div className="mb-4 flex items-start gap-4">
-                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl gradient-brand text-white shadow-lg shadow-brand/30">
+                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-brand shadow-sm shadow-slate-200 border border-slate-200">
                     <Sparkles className="h-7 w-7" />
-                    <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-brand">
+                    <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-brand shadow-sm shadow-slate-200">
                         <ShieldCheck className="h-3 w-3" />
                     </span>
                 </div>
