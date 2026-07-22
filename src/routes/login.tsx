@@ -1,6 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { ShieldCheck } from "lucide-react";
 import { getCurrentSession } from "@/lib/auth/session";
 
 const checkExistingSession = createServerFn({ method: "GET" }).handler(async () => {
@@ -13,19 +12,23 @@ export const Route = createFileRoute("/login")({
         if (session) throw redirect({ to: "/" });
     },
     component: LoginPage,
-    head: () => ({ meta: [{ title: "Iniciar sesión — CES HUB" }] }),
+    head: () => ({ meta: [{ title: "Iniciar sesión — CES SIG" }] }),
 });
 
 function LoginPage() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-background px-4">
             <div className="w-full max-w-sm text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl gradient-brand text-white shadow-lg shadow-brand/30">
-                    <ShieldCheck className="h-7 w-7" />
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
+                    <img
+                        src="https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/logocnet.png"
+                        alt="CES SIG Logo"
+                        className="h-14 w-14 object-contain"
+                    />
                 </div>
-                <h1 className="mt-6 text-2xl font-bold">CES HUB</h1>
+                <h1 className="mt-6 text-2xl font-bold">CES SIG</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
-                    Portal inteligente de gestión de Cloud Enterprise Services · Compunet
+                    Sistema Integrado de Gestión · Cloud Enterprise Services · Compunet
                 </p>
                 <a
                     href="/api/auth/login"

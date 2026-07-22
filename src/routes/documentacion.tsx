@@ -5,7 +5,7 @@ import { DOCUMENTOS } from "@/lib/ces-data";
 import { BookOpen, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
-export const Route = createFileRoute("/_authenticated/documentacion")({
+export const Route = createFileRoute("/documentacion")({
     component: DocPage,
     head: () => ({ meta: [{ title: "Documentación — CES SIG" }] }),
 });

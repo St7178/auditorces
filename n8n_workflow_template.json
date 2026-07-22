@@ -1,0 +1,131 @@
+{
+  "name": "Sincronizar Matriz Riesgos CES desde SharePoint",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "numberComparisonOperator": "lessThan",
+          "passOnAll": true,
+          "sortOrder": "TOP",
+          "type": "object",
+          "combinator": "and",
+          "value": [],
+          "combinator_value": "and"
+        }
+      },
+      "name": "1. Leer Excel SharePoint",
+      "type": "n8n-nodes-base.sharepointOnline",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "credentials": {
+        "microsoftSharePointOnlineOAuth2Api": "SharePoint Connection"
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mapear columnas del Excel según tu estructura\nreturn items.map(item => ({\n  id: item.json['ID'] || item.json['id'],\n  nombre: item.json['Riesgo'] || item.json['nombre'],\n  nivel: item.json['Nivel'] || item.json['nivel'],\n  estado: item.json['Estado'] || item.json['estado'],\n  responsable: item.json['Responsable'] || item.json['responsable'],\n  ultimaActualizacion: item.json['Última actualización'] || item.json['ultimaActualizacion'],\n  proximaRevision: item.json['Próx. revisión'] || item.json['proximaRevision'],\n  evidencia: item.json['Evidencia'] || item.json['evidencia']\n}));"
+      },
+      "name": "2. Transformar (Excel → JSON)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        550,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "{{ $env.AUDITOR_API_URL }}/api/riesgos",
+        "method": "PATCH",
+        "authentication": "oAuth2",
+        "oauthCredentials": "Entra OAuth",
+        "contentType": "application/json",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "body": "={{ JSON.stringify(items.map(item => ({\n  id: item.json.id,\n  nombre: item.json.nombre,\n  nivel: item.json.nivel,\n  estado: item.json.estado,\n  responsable: item.json.responsable,\n  ultimaActualizacion: item.json.ultimaActualizacion,\n  proximaRevision: item.json.proximaRevision,\n  evidencia: item.json.evidencia\n}))) }}"
+      },
+      "name": "3. HTTP PATCH → Auditor API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "numberComparisonOperator": "lessThan",
+          "passOnAll": true,
+          "sortOrder": "TOP",
+          "type": "object",
+          "combinator": "and",
+          "value": [],
+          "combinator_value": "and"
+        }
+      },
+      "name": "4. Enviar Notificación Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [
+        1050,
+        300
+      ],
+      "credentials": {
+        "slackApi": "Slack Connection"
+      }
+    }
+  ],
+  "connections": {
+    "1. Leer Excel SharePoint": {
+      "main": [
+        [
+          {
+            "node": "2. Transformar (Excel → JSON)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Transformar (Excel → JSON)": {
+      "main": [
+        [
+          {
+            "node": "3. HTTP PATCH → Auditor API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. HTTP PATCH → Auditor API": {
+      "main": [
+        [
+          {
+            "node": "4. Enviar Notificación Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2ac631d4-7c8c-4c8f-8b8c-9c8d8c8d8c8d",
+  "meta": {
+    "instanceId": "auto",
+    "templatesource": "https://auditor.vercel.app"
+  },
+  "tags": ["CES", "Riesgos", "SharePoint", "Sincronización"],
+  "triggerTags": ["schedule"],
+  "docsUrl": "https://github.com/tusuario/auditor/blob/main/N8N_SETUP.md"
+}

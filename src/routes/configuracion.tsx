@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { Switch } from "@/components/ui/switch";
 import { Bell, Palette, Shield, User } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/configuracion")({
+export const Route = createFileRoute("/configuracion")({
     component: ConfigPage,
     head: () => ({ meta: [{ title: "Configuración — CES SIG" }] }),
 });

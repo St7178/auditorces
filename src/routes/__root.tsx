@@ -20,7 +20,7 @@ function NotFoundComponent() {
                 <h1 className="text-7xl font-bold text-foreground">404</h1>
                 <h2 className="mt-4 text-xl font-semibold">Página no encontrada</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                    La ruta solicitada no existe en CES HUB.
+                    La ruta solicitada no existe en CES SIG.
                 </p>
                 <div className="mt-6">
                     <Link to="/" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
@@ -65,10 +65,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         meta: [
             { charSet: "utf-8" },
             { name: "viewport", content: "width=device-width, initial-scale=1" },
-            { title: "CES HUB — Portal Inteligente de Gestión · Compunet" },
-            { name: "description", content: "CES HUB centraliza la operación, el conocimiento y la mejora continua del área Cloud Enterprise Services de Compunet." },
+            { title: "CES SIG — Sistema Integrado de Gestión · Compunet" },
+            { name: "description", content: "CES SIG centraliza la operación, el conocimiento y la mejora continua del área Cloud Enterprise Services de Compunet." },
             { name: "author", content: "Compunet · CES" },
-            { property: "og:title", content: "CES HUB — Portal Inteligente de Gestión" },
+            { property: "og:title", content: "CES SIG — Sistema Integrado de Gestión" },
             { property: "og:description", content: "Plataforma empresarial para gestión, auditoría y mejora continua del área CES." },
             { property: "og:type", content: "website" },
             { name: "twitter:card", content: "summary_large_image" },

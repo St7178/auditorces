@@ -4,7 +4,7 @@ import { Hash, Send } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 
-export const Route = createFileRoute("/_authenticated/chat")({
+export const Route = createFileRoute("/chat")({
     component: ChatPage,
     head: () => ({ meta: [{ title: "Chat del Equipo — CES SIG" }] }),
 });

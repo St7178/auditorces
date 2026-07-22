@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { PROVEEDORES } from "@/lib/ces-data";
 import { Truck } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/proveedores")({
+export const Route = createFileRoute("/proveedores")({
     component: ProveedoresPage,
     head: () => ({ meta: [{ title: "Proveedores — CES SIG" }] }),
 });
