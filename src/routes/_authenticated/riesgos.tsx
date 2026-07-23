@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
-import { RIESGOS, METODOLOGIA_RIESGOS, REGISTRO_RIESGOS_CES } from "@/lib/ces-data";
-import { ShieldAlert, Sparkles, BookOpen, FileSpreadsheet } from "lucide-react";
+import { METODOLOGIA_RIESGOS, REGISTRO_RIESGOS_CES } from "@/lib/ces-data";
+import { BookOpen, FileSpreadsheet } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/riesgos")({
     component: RiesgosPage,
@@ -20,7 +20,6 @@ function nivelTone(n: string) {
 }
 
 function RiesgosPage() {
-    const desactualizados = RIESGOS.filter((r) => new Date(r.ultimaActualizacion) < new Date("2026-01-01")).length;
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader eyebrow="Administración de Riesgos" title="Riesgos Operacionales" description="Solo se registra la ubicación de la evidencia. No se almacenan matrices ni documentos confidenciales." />
@@ -82,57 +81,6 @@ function RiesgosPage() {
                     </div>
                 </CardContent>
             </Card>
-
-            {desactualizados > 0 && (
-                <div className="mt-6 flex gap-3 rounded-xl border border-brand/30 bg-brand-soft/50 p-4">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand text-white">
-                        <Sparkles className="h-4 w-4" />
-                    </div>
-                    <div className="text-sm">
-                        <div className="font-semibold text-brand">Recomendación de CES Guardian</div>
-                        <div className="text-muted-foreground">{desactualizados} riesgo(s) tienen más de 12 meses sin actualización. Programa una revisión.</div>
-                    </div>
-                </div>
-            )}
-
-            <div className="mt-6 overflow-hidden rounded-2xl border bg-card">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                            <tr>
-                                <th className="px-4 py-3 text-left">Riesgo</th>
-                                <th className="px-4 py-3 text-left">Nivel</th>
-                                <th className="px-4 py-3 text-left">Estado</th>
-                                <th className="px-4 py-3 text-left">Responsable</th>
-                                <th className="px-4 py-3 text-left">Última actualización</th>
-                                <th className="px-4 py-3 text-left">Próx. revisión</th>
-                                <th className="px-4 py-3 text-left">Evidencia</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                            {RIESGOS.map((r) => (
-                                <tr key={r.id} className="hover:bg-muted/30">
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2">
-                                            <ShieldAlert className="h-4 w-4 text-muted-foreground" />
-                                            <div>
-                                                <div className="font-medium">{r.nombre}</div>
-                                                <div className="text-xs text-muted-foreground">{r.id}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3"><Badge className={nivelTone(r.nivel)}>{r.nivel}</Badge></td>
-                                    <td className="px-4 py-3 text-muted-foreground">{r.estado}</td>
-                                    <td className="px-4 py-3">{r.responsable}</td>
-                                    <td className="px-4 py-3 text-muted-foreground">{r.ultimaActualizacion}</td>
-                                    <td className="px-4 py-3 text-muted-foreground">{r.proximaRevision}</td>
-                                    <td className="px-4 py-3 text-xs text-muted-foreground">{r.evidencia}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
             <div className="mt-10">
                 <div className="flex items-start gap-3">

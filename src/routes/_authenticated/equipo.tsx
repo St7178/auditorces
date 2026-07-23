@@ -4,17 +4,18 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/page-header";
 import { EQUIPO } from "@/lib/ces-data";
-import { Mail, MessageSquare, IdCard } from "lucide-react";
+import { Mail, MessageSquare, IdCard, AlertTriangle } from "lucide-react";
 import { getCesTeamFromEntra } from "@/lib/team.functions";
 
 export const Route = createFileRoute("/_authenticated/equipo")({
     component: EquipoPage,
-    loader: async () => {
+    loader: async (): Promise<{ entraUsers: Awaited<ReturnType<typeof getCesTeamFromEntra>>; error: string | null }> => {
         try {
-            return await getCesTeamFromEntra();
+            return { entraUsers: await getCesTeamFromEntra(), error: null };
         } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
             console.error("No se pudo cargar el equipo desde Entra ID:", err);
-            return [];
+            return { entraUsers: [], error: message };
         }
     },
     head: () => ({ meta: [{ title: "Equipo CES — CES SIG" }] }),
@@ -29,7 +30,7 @@ function normalizeName(name: string) {
 }
 
 function EquipoPage() {
-    const entraUsers = Route.useLoaderData();
+    const { entraUsers, error } = Route.useLoaderData();
     const entraByName = new Map(entraUsers.map((u) => [normalizeName(u.displayName), u]));
 
     // El directorio Entra ID es la fuente de verdad para nombre, cargo y foto real;
@@ -52,6 +53,19 @@ function EquipoPage() {
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader eyebrow="Equipo" title="Equipo CES" description="Personas del área Cloud Enterprise Services de Compunet." />
+
+            {error && (
+                <div className="mt-6 flex gap-3 rounded-xl border border-amber-300/60 bg-amber-50 p-4 text-amber-900">
+                    <AlertTriangle className="h-5 w-5 shrink-0" />
+                    <div className="text-sm">
+                        <div className="font-semibold">No se pudo conectar con el directorio de Microsoft Entra ID</div>
+                        <div className="mt-0.5 text-amber-800/80">
+                            Se está mostrando información local de respaldo (sin foto ni cargo actualizado). Detalle: <span className="font-mono text-xs">{error}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {equipo.map((m) => (
                     <Card key={m.id} className="group overflow-hidden border-border/60 transition hover:shadow-lg">

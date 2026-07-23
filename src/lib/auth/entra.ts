@@ -131,3 +131,26 @@ export async function fetchUsersWithJobTitleContaining(term: string): Promise<Gr
     );
     return users;
 }
+
+// Busca cada nombre por coincidencia exacta de displayName. A diferencia del filtro por jobTitle,
+// no depende de que el cargo real en Entra ID contenga la palabra "CES" (la mayoría no la contiene),
+// así que es la forma confiable de traer nombre, cargo y foto reales del roster conocido de CES.
+export async function fetchUsersByDisplayNames(names: string[]): Promise<GraphProfile[]> {
+    const token = await getGraphAppToken();
+
+    const results = await Promise.all(
+        names.map(async (name) => {
+            const filter = `displayName eq '${escapeODataStringLiteral(name)}'`;
+            const url =
+                `https://graph.microsoft.com/v1.0/users?$filter=${encodeURIComponent(filter)}` +
+                `&$select=id,displayName,mail,userPrincipalName,jobTitle&$top=1`;
+            const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+            if (!res.ok) return null;
+            const json = (await res.json()) as { value: GraphProfile[] };
+            return json.value[0] ?? null;
+        }),
+    );
+
+    const found = results.filter((u): u is GraphProfile => u !== null);
+    return Promise.all(found.map(async (u) => ({ ...u, photoUrl: await fetchUserPhoto(u.id, token).catch(() => null) })));
+}
