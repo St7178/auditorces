@@ -15,7 +15,7 @@ function DocPage() {
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader eyebrow="Conocimiento" title="Documentación" description="Registro de documentos del SIG. CES SIG no almacena archivos — solo su ubicación de referencia." />
             <div>
-                <img src="./src/711px-MAPA_DE_PROCESOS.jpg" alt="CES SIG Logo" className="flex items-center h-85 w-auto justify-center"/>
+                <img src="https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/711px-MAPA_DE_PROCESOS.jpg" alt="CES SIG Logo" className="flex items-center h-85 w-auto justify-center"/>
                 </div>
             <div className="mt-8 grid gap-4 lg:grid-cols-2">
                 {DOCUMENTOS.map((d) => (
