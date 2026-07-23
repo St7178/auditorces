@@ -4,6 +4,7 @@ import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, Send, Loader2, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 
 export const Route = createFileRoute("/_authenticated/guardian")({
     component: GuardianPage,
@@ -47,6 +48,11 @@ function renderMarkdown(text: string) {
 }
 
 function GuardianPage() {
+    const { user } = AuthenticatedRoute.useRouteContext();
+    const firstName = user?.name?.split(" ")[0] ?? "Usuario";
+    const userInitials = user?.name
+        ? user.name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase()
+        : "US";
     const [input, setInput] = useState("");
     const { messages, sendMessage, status } = useChat({
         transport: new DefaultChatTransport({ api: "/api/chat" }),
@@ -96,7 +102,7 @@ function GuardianPage() {
                             <div className="rounded-2xl border bg-gradient-to-br from-brand-soft to-secondary p-6">
                                 <div className="text-sm font-semibold text-brand">CES AUDITOR</div>
                                 <p className="mt-2 text-sm leading-relaxed">
-                                    Hola <strong>Laura</strong> 👋<br />
+                                    Hola <strong>{firstName}</strong> 👋<br />
                                     Estoy aquí para ayudarte a mantener CES preparado para auditorías internas y externas.<br /><br />
                                     Puedo ayudarte con:
                                 </p>
@@ -144,7 +150,7 @@ function GuardianPage() {
                                 return (
                                     <div key={m.id} className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
                                         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${isUser ? "bg-secondary text-secondary-foreground" : "gradient-brand text-white"}`}>
-                                            {isUser ? "LJ" : <Sparkles className="h-4 w-4" />}
+                                            {isUser ? userInitials : <Sparkles className="h-4 w-4" />}
                                         </div>
                                         <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-brand text-white" : "bg-muted/60"}`}>
                                             {isUser ? text : <div dangerouslySetInnerHTML={renderMarkdown(text)} />}
