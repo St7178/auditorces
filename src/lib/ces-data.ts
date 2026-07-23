@@ -152,6 +152,68 @@ export const METODOLOGIA_RIESGOS = {
     },
 };
 
+// Registro oficial de la Matriz de Riesgos Operacionales (F.RI.001) del área CES.
+// Fuente: "Matriz_de_Riesgos_Operacionales _CES 2.xlsx", hoja F.RI.001.
+// Solo se transcriben los riesgos con datos diligenciados (las demás filas de la matriz son plantilla vacía).
+export const REGISTRO_RIESGOS_CES = [
+    {
+        id: "R-CES-001",
+        fechaIdentificacion: "2024-12-12",
+        fechaActualizacion: "2025-04-23",
+        procesoNivel1: "Procesos Misionales",
+        procesoNivel2: "N/A",
+        infoDocumentada: "M.OS.402.005 Manual de Gestión de Servicios TI",
+        duenoProceso: "Gerente de Operaciones CES",
+        duenoRiesgo: "Coordinador de Servicios CES",
+        descripcion: "Fallos en la plataforma o servicios crítico que soportan la operación 24/7, afectando servicios internos y externos.",
+        contexto: "Interno / Externo",
+        parteInteresada: "Trabajadores / Clientes",
+        causaQue: "Fallos técnicos, configuraciones incorrectas, falta de mantenimiento preventivo, obsolescencia de hardware y software.",
+        causaPorQue: "Actualizaciones de sistema operativo, actualizaciones de aplicación, fallos de potencia eléctrica y fallas de comunicación.",
+        causaQuien: "Gerente de Operaciones CES, Coordinador de Servicios CES, especialistas CES y analistas CES.",
+        consecuencia: "Indisponibilidad del servicio a los clientes.",
+        impacto: { tipo: "Operativo", calificacion: "Mayor", valor: 4 },
+        probabilidad: { calificacion: "Muy baja", valor: 1 },
+        nivelInherente: { valor: 4, severidad: "Moderado" },
+        controles: [
+            { descripcion: "Entrega de los informes de gestión del periodo inmediatamente anterior durante los primeros días de cada mes.", responsable: "Coordinador Control Interno Servicios TI", tipo: "Preventivo", ejecucion: "Manual", origen: "Obligatorio", documentado: true, nombreDocumento: "Informes de Gestión (ruta compartida)", frecuencia: "Mensual", efectividad: 0.76 },
+            { descripcion: "Envío automatizado de correo electrónico al cliente, programado para los primeros días de cada mes, adjuntando los informes correspondientes.", responsable: "Coordinador de proyectos CES", tipo: "Preventivo", ejecucion: "Semi Automática", origen: "Voluntario", documentado: false, nombreDocumento: "N/A", frecuencia: "Mensual", efectividad: 0.62 },
+            { descripcion: "Reuniones mensuales con los clientes para revisar y concluir las actividades del mes, adjuntando el acta de la reunión como evidencia.", responsable: "Coordinador CES", tipo: "Preventivo", ejecucion: "Manual", origen: "Voluntario", documentado: true, nombreDocumento: "Acta de reunión", frecuencia: "Mensual", efectividad: 0.66 },
+        ],
+        porcentajeMitigacion: 0.684,
+        nivelResidual: { severidad: "Alto", valor: 4 },
+        evidencia: "SharePoint / ProyectosCES / General CES / 4. Administración de riesgos Operacionales",
+    },
+    {
+        id: "R-CES-002",
+        fechaIdentificacion: "2024-12-12",
+        fechaActualizacion: "2025-04-23",
+        procesoNivel1: "Procesos Misionales",
+        procesoNivel2: "N/A",
+        infoDocumentada: "M.OS.401.007 Manual de Operación del Servicio · M.AM.400.003 Manual de Disponibilidad",
+        duenoProceso: "Gerente de Operaciones CES",
+        duenoRiesgo: "Coordinador de Servicios CES",
+        descripcion: "Fallas en los procesos de cumplimiento de los Acuerdos de Niveles de Servicio (ANS) en el área CES, manifestadas en demoras o incumplimientos en los tiempos de respuesta, resolución o calidad del servicio acordados contractualmente con los clientes.",
+        contexto: "Interno / Externo",
+        parteInteresada: "Clientes",
+        causaQue: "Registro incompleto o incorrecto de tickets en la herramienta de gestión (SAP Solution Manager). Demoras en el escalamiento de solicitudes a los niveles adecuados de soporte. Configuración inadecuada o desactualización de los ANS en los sistemas de gestión.",
+        causaPorQue: "Procesos manuales o falta de controles automatizados para validar la información ingresada. Descoordinación entre los equipos responsables de la configuración y la operación del servicio.",
+        causaQuien: "Gerente de Operaciones CES, Coordinador de Servicios CES, especialistas CES y analistas CES.",
+        consecuencia: "Incumplimiento de los tiempos establecidos en los contratos, penalizaciones contractuales, pérdida de confianza por parte de los clientes y deterioro de la reputación empresarial.",
+        impacto: { tipo: "Operativo", calificacion: "Mayor", valor: 4 },
+        probabilidad: { calificacion: "Baja", valor: 2 },
+        nivelInherente: { valor: 8, severidad: "Alto" },
+        controles: [
+            { descripcion: "Medición del indicador de Disponibilidad del Servicio CES.", responsable: "Coordinador Control Interno Servicios TI", tipo: "Correctivo", ejecucion: "Manual", origen: "Obligatorio", documentado: true, nombreDocumento: "M.AM.400.003 Manual de Disponibilidad", frecuencia: "Mensual", efectividad: 0.64 },
+            { descripcion: "Envío automatizado al cliente durante los primeros días del mes, informando el cumplimiento del indicador de disponibilidad.", responsable: "Coordinador CES", tipo: "Preventivo", ejecucion: "Semi Automática", origen: "Voluntario", documentado: false, nombreDocumento: "N/A", frecuencia: "Mensual", efectividad: 0.62 },
+            { descripcion: "Reuniones mensuales con los clientes para revisar el indicador de disponibilidad y garantizar su cumplimiento.", responsable: "Coordinador CES", tipo: "Preventivo", ejecucion: "Manual", origen: "Voluntario", documentado: true, nombreDocumento: "Acta de reunión", frecuencia: "Mensual", efectividad: 0.66 },
+        ],
+        porcentajeMitigacion: 0.64,
+        nivelResidual: { severidad: "Alto", valor: 2.88 },
+        evidencia: "SharePoint / ProyectosCES / General CES / 4. Administración de riesgos Operacionales",
+    },
+];
+
 // Conocimiento interno: inventario de información documentada del SIG que SÍ aplica al alcance de CES.
 // Fuente: "Información documentada a revisar" (registro de control documental por proceso del SIG).
 // Solo se listan los documentos marcados como aplicables a CES; el resto (NA) se omite por brevedad.

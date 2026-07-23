@@ -58,6 +58,7 @@ export type GraphProfile = {
     mail: string | null;
     userPrincipalName: string;
     jobTitle: string | null;
+    photoUrl?: string | null;
 };
 
 export async function fetchGraphMe(accessToken: string): Promise<GraphProfile> {
@@ -99,6 +100,18 @@ function escapeODataStringLiteral(value: string): string {
     return value.replace(/'/g, "''");
 }
 
+// Devuelve la foto de perfil como data URI, o null si el usuario no tiene una (Graph responde 404).
+async function fetchUserPhoto(userId: string, token: string): Promise<string | null> {
+    const res = await fetch(`https://graph.microsoft.com/v1.0/users/${userId}/photo/$value`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const contentType = res.headers.get("content-type") ?? "image/jpeg";
+    const buffer = await res.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString("base64");
+    return `data:${contentType};base64,${base64}`;
+}
+
 // $filter=contains(...) es una "advanced query" en Graph: exige el header ConsistencyLevel: eventual
 // y el parámetro $count=true, aunque no se use el conteo directamente.
 export async function fetchUsersWithJobTitleContaining(term: string): Promise<GraphProfile[]> {
@@ -112,5 +125,9 @@ export async function fetchUsersWithJobTitleContaining(term: string): Promise<Gr
     });
     if (!res.ok) throw new Error(`Graph /users failed (${res.status}): ${await res.text()}`);
     const json = (await res.json()) as { value: GraphProfile[] };
-    return json.value;
+
+    const users = await Promise.all(
+        json.value.map(async (u) => ({ ...u, photoUrl: await fetchUserPhoto(u.id, token).catch(() => null) })),
+    );
+    return users;
 }
