@@ -1,6 +1,3 @@
-// Integración con Microsoft Entra ID (Azure AD) vía llamadas fetch directas a los endpoints
-// v2.0 del identity platform — sin SDK, para mantener compatibilidad con runtimes edge (Workers).
-
 const LOGIN_SCOPES = "openid profile email User.Read";
 
 function entraConfig() {

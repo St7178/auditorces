@@ -46,7 +46,6 @@ const nav = [
         section: "Relacionamiento", items: [
             { title: "Clientes CES", url: "/clientes", icon: Building2 },
             { title: "Proveedores CES", url: "/proveedores", icon: Truck },
-            { title: "Contratos CES", url: "/contratos", icon: FileText },
         ]
     },
     {

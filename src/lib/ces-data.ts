@@ -45,14 +45,14 @@ export const INDICADORES = [
 ];
 
 export const CLIENTES = [
-    { id: "c1", nombre: "Bancolombia", responsable: "Andrés Cano", servicios: ["Cloud AWS", "Monitoreo 24/7"], estado: "Activo" },
-    { id: "c2", nombre: "Ecopetrol", responsable: "Andrés Cano", servicios: ["Arquitectura Cloud", "Migración"], estado: "Activo" },
-    { id: "c3", nombre: "Grupo Éxito", responsable: "Cristian Rua", servicios: ["Diseño Cloud"], estado: "Activo" },
-    { id: "c4", nombre: "ISA", responsable: "David Oliveros", servicios: ["Soporte L2/L3"], estado: "Activo" },
-    { id: "c5", nombre: "EPM", responsable: "Robinson", servicios: ["Soporte L2"], estado: "Activo" },
-    { id: "c6", nombre: "Suramericana", responsable: "Natalia Gallego", servicios: ["Proyectos TIC"], estado: "En renovación" },
-    { id: "c7", nombre: "Nutresa", responsable: "Johann Steven Toro", servicios: ["Consultoría Riesgos"], estado: "Activo" },
-    { id: "c8", nombre: "Argos", responsable: "Jonny Marín", servicios: ["Servicios TIC"], estado: "Activo" },
+    { id: "c1", nombre: "Bancolombia", responsable: "Andrés Cano", servicios: ["Cloud AWS", "Monitoreo 24/7"], estado: "Activo", contratos: [{ id: "CT-001", inicio: "2024-01-01", fin: "2026-08-15", estado: "Próximo a vencer" }] },
+    { id: "c2", nombre: "Ecopetrol", responsable: "Andrés Cano", servicios: ["Arquitectura Cloud", "Migración"], estado: "Activo", contratos: [{ id: "CT-002", inicio: "2025-03-01", fin: "2027-03-01", estado: "Vigente" }] },
+    { id: "c3", nombre: "Grupo Éxito", responsable: "Cristian Rua", servicios: ["Diseño Cloud"], estado: "Activo", contratos: [] },
+    { id: "c4", nombre: "ISA", responsable: "David Oliveros", servicios: ["Soporte L2/L3"], estado: "Activo", contratos: [] },
+    { id: "c5", nombre: "EPM", responsable: "Robinson", servicios: ["Soporte L2"], estado: "Activo", contratos: [] },
+    { id: "c6", nombre: "Suramericana", responsable: "Natalia Gallego", servicios: ["Proyectos TIC"], estado: "En renovación", contratos: [{ id: "CT-005", inicio: "2023-09-01", fin: "2026-09-01", estado: "En renovación" }] },
+    { id: "c7", nombre: "Nutresa", responsable: "Johann Steven Toro", servicios: ["Consultoría Riesgos"], estado: "Activo", contratos: [] },
+    { id: "c8", nombre: "Argos", responsable: "Jonny Marín", servicios: ["Servicios TIC"], estado: "Activo", contratos: [] },
 ];
 
 export const PROVEEDORES = [
@@ -64,13 +64,7 @@ export const PROVEEDORES = [
     { id: "p6", nombre: "Fortinet", tipo: "Seguridad", estado: "Activo", ultimaEvaluacion: "2026-05-05" },
 ];
 
-export const CONTRATOS = [
-    { id: "CT-001", cliente: "Bancolombia", proveedor: "-", inicio: "2024-01-01", vencimiento: "2026-08-15", responsable: "Elkin Borja", estado: "Próximo a vencer", ubicacion: "SharePoint / Contratos" },
-    { id: "CT-002", cliente: "Ecopetrol", proveedor: "-", inicio: "2025-03-01", vencimiento: "2027-03-01", responsable: "Elkin Borja", estado: "Vigente", ubicacion: "SharePoint / Contratos" },
-    { id: "CT-003", cliente: "-", proveedor: "VMware", inicio: "2024-06-01", vencimiento: "2026-07-25", responsable: "Lina Castañeda", estado: "Próximo a vencer", ubicacion: "SAP" },
-    { id: "CT-004", cliente: "-", proveedor: "AWS", inicio: "2025-01-01", vencimiento: "2028-01-01", responsable: "Cristian Rua", estado: "Vigente", ubicacion: "Portal AWS" },
-    { id: "CT-005", cliente: "Suramericana", proveedor: "-", inicio: "2023-09-01", vencimiento: "2026-09-01", responsable: "Natalia Gallego", estado: "En renovación", ubicacion: "SharePoint / Contratos" },
-];
+
 
 export const DOCUMENTOS = [
     { id: "D-01", nombre: "Manual de Calidad CES", version: "3.2", responsable: "Laura Jaramillo", actualizacion: "2026-04-10", proximaRevision: "2027-04-10", ubicacion: "SharePoint / SIG", estado: "Vigente" },
