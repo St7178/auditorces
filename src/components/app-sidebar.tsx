@@ -49,7 +49,7 @@ const nav = [
     {
         section: "Conocimiento", items: [
             { title: "Cronograma", url: "/cronograma", icon: Calendar },
-            { title: "Chat del Equipo", url: "/chat", icon: MessagesSquare },
+            { title: "Chat Wiki", url: "/chat", icon: MessagesSquare },
         ]
     },
     {

@@ -1,95 +1,161 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Hash, Send } from "lucide-react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { useEffect, useRef, useState } from "react";
+import { BookOpen, Send, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { PageHeader } from "@/components/page-header";
+import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 
 export const Route = createFileRoute("/_authenticated/chat")({
-    component: ChatPage,
-    head: () => ({ meta: [{ title: "Chat del Equipo — CES SIG" }] }),
+    component: ChatWikiPage,
+    head: () => ({
+        meta: [
+            { title: "Chat Wiki — CES SIG" },
+            { name: "description", content: "Asistente que consulta la wiki interna de Compunet." },
+        ],
+    }),
 });
 
-const CANALES = ["General", "Auditorías", "Riesgos", "Clientes", "Indicadores", "Proveedores"];
+const SUGERENCIAS = [
+    "¿Quiénes son nuestros clientes?",
+    "¿Cómo está organizado el equipo de Operación?",
+    "Dame el formato de acta de reunión",
+    "¿Qué indicadores de gestión manejamos?",
+];
 
-const MENSAJES_MOCK: Record<string, { autor: string; texto: string; hora: string }[]> = {
-    General: [
-        { autor: "Elkin Borja", texto: "Buenos días equipo, recuerden la reunión mensual el viernes.", hora: "08:12" },
-        { autor: "Laura Jaramillo", texto: "Perfecto, ya tengo la agenda lista.", hora: "08:15" },
-        { autor: "Natalia Gallego", texto: "¿Incluimos el estado de los proyectos activos?", hora: "08:20" },
-    ],
-    Auditorías: [
-        { autor: "Laura Jaramillo", texto: "La auditoría interna del SIG está programada para el 29 de julio.", hora: "09:00" },
-        { autor: "Johann Steven Toro", texto: "Voy actualizando la matriz de riesgos esta semana.", hora: "09:05" },
-    ],
-    Riesgos: [{ autor: "Johann Steven Toro", texto: "Nuevo riesgo identificado en la infraestructura Cloud AWS.", hora: "10:30" }],
-    Clientes: [{ autor: "Andrés Cano", texto: "Bancolombia solicita reunión de seguimiento la próxima semana.", hora: "11:15" }],
-    Indicadores: [{ autor: "Yuliana", texto: "Ya cargué los indicadores de junio en Power BI.", hora: "14:00" }],
-    Proveedores: [{ autor: "Lina Castañeda", texto: "VMware confirmó fecha para la nueva evaluación.", hora: "15:22" }],
-};
+function renderMarkdown(text: string) {
+    const html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/`([^`]+)`/g, "<code class='rounded bg-muted px-1 py-0.5 text-xs'>$1</code>")
+        .replace(/^\s*[-*]\s+(.+)$/gm, "<li>$1</li>")
+        .replace(/(<li>[\s\S]+?<\/li>)/g, "<ul class='ml-4 list-disc space-y-1'>$1</ul>")
+        .replace(/\n\n/g, "<br/><br/>")
+        .replace(/\n/g, "<br/>");
+    return { __html: html };
+}
 
-function ChatPage() {
-    const [canal, setCanal] = useState("General");
-    const [texto, setTexto] = useState("");
-    const [mensajes, setMensajes] = useState(MENSAJES_MOCK);
+function ChatWikiPage() {
+    const { user } = AuthenticatedRoute.useRouteContext();
+    const firstName = user?.name?.split(" ")[0] ?? "Usuario";
+    const userInitials = user?.name
+        ? user.name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase()
+        : "US";
+    const [input, setInput] = useState("");
+    const { messages, sendMessage, status } = useChat({
+        transport: new DefaultChatTransport({ api: "/api/wiki-chat" }),
+    });
+    const endRef = useRef<HTMLDivElement>(null);
+    const loading = status === "submitted" || status === "streaming";
 
-    const enviar = () => {
-        if (!texto.trim()) return;
-        setMensajes((m) => ({
-            ...m,
-            [canal]: [...(m[canal] || []), { autor: "Laura Jaramillo", texto, hora: new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }) }],
-        }));
-        setTexto("");
+    useEffect(() => {
+        endRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, status]);
+
+    const submit = (text?: string) => {
+        const t = (text ?? input).trim();
+        if (!t || loading) return;
+        void sendMessage({ text: t });
+        setInput("");
     };
 
+    const empty = messages.length === 0;
+
     return (
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <PageHeader eyebrow="Colaboración" title="Chat del Equipo CES" description="Canales internos para comunicación del área." />
-            <Card className="mt-6 grid h-[600px] grid-cols-[220px_1fr] overflow-hidden border-border/60">
-                <div className="border-r bg-muted/30 p-3">
-                    <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Canales</div>
-                    {CANALES.map((c) => (
-                        <button
-                            key={c}
-                            onClick={() => setCanal(c)}
-                            className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition ${canal === c ? "bg-brand text-white" : "hover:bg-muted"}`}
-                        >
-                            <Hash className="h-3.5 w-3.5" /> {c}
-                        </button>
-                    ))}
+        <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
+            <div className="mb-4 flex items-start gap-4">
+                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-brand shadow-sm shadow-slate-200 border border-slate-200">
+                    <BookOpen className="h-7 w-7" />
                 </div>
-                <div className="flex flex-col">
-                    <div className="border-b px-4 py-3">
-                        <div className="flex items-center gap-2 text-sm font-semibold"><Hash className="h-4 w-4 text-brand" /> {canal}</div>
+                <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                        <h1 className="truncate text-2xl font-bold">Chat Wiki</h1>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-semibold text-brand">
+                            <span className="h-1.5 w-1.5 rounded-full bg-brand" /> En línea
+                        </span>
                     </div>
-                    <div className="flex-1 space-y-4 overflow-y-auto p-4">
-                        {(mensajes[canal] || []).map((m, idx) => (
-                            <div key={idx} className="flex gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/15 text-xs font-bold text-brand">
-                                    {m.autor.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-sm font-semibold">{m.autor}</span>
-                                        <span className="text-[10px] text-muted-foreground">{m.hora}</span>
-                                    </div>
-                                    <div className="text-sm text-foreground/90">{m.texto}</div>
+                    <p className="text-sm text-muted-foreground">Consulta la wiki interna de Compunet (grupocnet) en lenguaje natural</p>
+                </div>
+            </div>
+
+            <Card className="flex flex-1 flex-col overflow-hidden border-border/60">
+                <div className="flex-1 overflow-y-auto px-6 py-6">
+                    {empty ? (
+                        <div className="mx-auto max-w-2xl">
+                            <div className="rounded-2xl border bg-gradient-to-br from-brand-soft to-secondary p-6">
+                                <div className="text-sm font-semibold text-brand">Chat Wiki</div>
+                                <p className="mt-2 text-sm leading-relaxed">
+                                    Hola <strong>{firstName}</strong> 👋<br />
+                                    Pregúntame sobre clientes, equipos, procesos, formatos o cualquier página de la wiki interna.
+                                </p>
+                            </div>
+
+                            <div className="mt-6">
+                                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sugerencias</div>
+                                <div className="flex flex-wrap gap-2">
+                                    {SUGERENCIAS.map((s) => (
+                                        <button key={s} onClick={() => submit(s)} className="rounded-full border bg-card px-3 py-1.5 text-xs hover:border-brand hover:text-brand">
+                                            {s}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                    <div className="border-t p-3">
-                        <div className="flex gap-2">
-                            <input
-                                value={texto}
-                                onChange={(e) => setTexto(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && enviar()}
-                                placeholder={`Mensaje en #${canal}`}
-                                className="h-10 flex-1 rounded-lg border bg-background px-3 text-sm outline-none focus:border-brand"
-                            />
-                            <button onClick={enviar} className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand text-white hover:bg-brand/90">
-                                <Send className="h-4 w-4" />
-                            </button>
                         </div>
+                    ) : (
+                        <div className="mx-auto max-w-3xl space-y-5">
+                            {messages.map((m) => {
+                                const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+                                const isUser = m.role === "user";
+                                return (
+                                    <div key={m.id} className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
+                                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${isUser ? "bg-secondary text-secondary-foreground" : "gradient-brand text-white"}`}>
+                                            {isUser ? userInitials : <BookOpen className="h-4 w-4" />}
+                                        </div>
+                                        <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-brand text-white" : "bg-muted/60"}`}>
+                                            {isUser ? text : <div dangerouslySetInnerHTML={renderMarkdown(text)} />}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {loading && (
+                                <div className="flex gap-3">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-brand text-white">
+                                        <BookOpen className="h-4 w-4" />
+                                    </div>
+                                    <div className="rounded-2xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
+                                        <Loader2 className="inline h-3 w-3 animate-spin" /> Buscando en la wiki…
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={endRef} />
+                        </div>
+                    )}
+                </div>
+
+                <div className="border-t bg-card/70 p-4 backdrop-blur">
+                    <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border bg-background p-2 shadow-sm focus-within:border-brand">
+                        <textarea
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
+                            }}
+                            placeholder="Escribe tu pregunta sobre la wiki…"
+                            rows={1}
+                            className="max-h-40 min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none"
+                        />
+                        <button
+                            onClick={() => submit()}
+                            disabled={loading || !input.trim()}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl gradient-brand text-white transition disabled:opacity-40"
+                        >
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </button>
+                    </div>
+                    <div className="mx-auto mt-2 max-w-3xl text-center text-[10px] text-muted-foreground">
+                        Chat Wiki responde solo con base en el contenido indexado de la wiki interna.
                     </div>
                 </div>
             </Card>

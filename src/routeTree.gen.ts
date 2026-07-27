@@ -15,9 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedConfiguracionRouteImport } from './routes/_authenticated/configuracion'
-import { Route as AuthenticatedContratosRouteImport } from './routes/_authenticated/contratos'
 import { Route as AuthenticatedCronogramaRouteImport } from './routes/_authenticated/cronograma'
-import { Route as AuthenticatedDocumentacionRouteImport } from './routes/_authenticated/documentacion'
 import { Route as AuthenticatedEquipoRouteImport } from './routes/_authenticated/equipo'
 import { Route as AuthenticatedGuardianRouteImport } from './routes/_authenticated/guardian'
 import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
@@ -25,10 +23,13 @@ import { Route as AuthenticatedProcesosRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProveedoresRouteImport } from './routes/_authenticated/proveedores'
 import { Route as AuthenticatedRiesgosRouteImport } from './routes/_authenticated/riesgos'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
-import { Route as ApiRiesgosRouteImport } from './routes/api/riesgos'
+import { Route as ApiWikiChatRouteImport } from './routes/api/wiki-chat'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
+import { Route as ApiSyncClientesRouteImport } from './routes/api/sync/clientes'
+import { Route as ApiSyncDocumentacionRouteImport } from './routes/api/sync/documentacion'
+import { Route as ApiSyncRiesgosRouteImport } from './routes/api/sync/riesgos'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -60,22 +61,11 @@ const AuthenticatedConfiguracionRoute =
     path: '/configuracion',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedContratosRoute = AuthenticatedContratosRouteImport.update({
-  id: '/contratos',
-  path: '/contratos',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedCronogramaRoute = AuthenticatedCronogramaRouteImport.update({
   id: '/cronograma',
   path: '/cronograma',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedDocumentacionRoute =
-  AuthenticatedDocumentacionRouteImport.update({
-    id: '/documentacion',
-    path: '/documentacion',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedEquipoRoute = AuthenticatedEquipoRouteImport.update({
   id: '/equipo',
   path: '/equipo',
@@ -113,9 +103,9 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRiesgosRoute = ApiRiesgosRouteImport.update({
-  id: '/api/riesgos',
-  path: '/api/riesgos',
+const ApiWikiChatRoute = ApiWikiChatRouteImport.update({
+  id: '/api/wiki-chat',
+  path: '/api/wiki-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
@@ -133,6 +123,21 @@ const ApiAuthLogoutRoute = ApiAuthLogoutRouteImport.update({
   path: '/api/auth/logout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSyncClientesRoute = ApiSyncClientesRouteImport.update({
+  id: '/api/sync/clientes',
+  path: '/api/sync/clientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSyncDocumentacionRoute = ApiSyncDocumentacionRouteImport.update({
+  id: '/api/sync/documentacion',
+  path: '/api/sync/documentacion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSyncRiesgosRoute = ApiSyncRiesgosRouteImport.update({
+  id: '/api/sync/riesgos',
+  path: '/api/sync/riesgos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -140,9 +145,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AuthenticatedChatRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
-  '/contratos': typeof AuthenticatedContratosRoute
   '/cronograma': typeof AuthenticatedCronogramaRoute
-  '/documentacion': typeof AuthenticatedDocumentacionRoute
   '/equipo': typeof AuthenticatedEquipoRoute
   '/guardian': typeof AuthenticatedGuardianRoute
   '/indicadores': typeof AuthenticatedIndicadoresRoute
@@ -150,19 +153,20 @@ export interface FileRoutesByFullPath {
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
-  '/api/riesgos': typeof ApiRiesgosRoute
+  '/api/wiki-chat': typeof ApiWikiChatRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/sync/clientes': typeof ApiSyncClientesRoute
+  '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
+  '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/chat': typeof AuthenticatedChatRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
-  '/contratos': typeof AuthenticatedContratosRoute
   '/cronograma': typeof AuthenticatedCronogramaRoute
-  '/documentacion': typeof AuthenticatedDocumentacionRoute
   '/equipo': typeof AuthenticatedEquipoRoute
   '/guardian': typeof AuthenticatedGuardianRoute
   '/indicadores': typeof AuthenticatedIndicadoresRoute
@@ -170,11 +174,14 @@ export interface FileRoutesByTo {
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
-  '/api/riesgos': typeof ApiRiesgosRoute
+  '/api/wiki-chat': typeof ApiWikiChatRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/sync/clientes': typeof ApiSyncClientesRoute
+  '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
+  '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -183,9 +190,7 @@ export interface FileRoutesById {
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/configuracion': typeof AuthenticatedConfiguracionRoute
-  '/_authenticated/contratos': typeof AuthenticatedContratosRoute
   '/_authenticated/cronograma': typeof AuthenticatedCronogramaRoute
-  '/_authenticated/documentacion': typeof AuthenticatedDocumentacionRoute
   '/_authenticated/equipo': typeof AuthenticatedEquipoRoute
   '/_authenticated/guardian': typeof AuthenticatedGuardianRoute
   '/_authenticated/indicadores': typeof AuthenticatedIndicadoresRoute
@@ -193,11 +198,14 @@ export interface FileRoutesById {
   '/_authenticated/proveedores': typeof AuthenticatedProveedoresRoute
   '/_authenticated/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
-  '/api/riesgos': typeof ApiRiesgosRoute
+  '/api/wiki-chat': typeof ApiWikiChatRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/sync/clientes': typeof ApiSyncClientesRoute
+  '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
+  '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -207,9 +215,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/clientes'
     | '/configuracion'
-    | '/contratos'
     | '/cronograma'
-    | '/documentacion'
     | '/equipo'
     | '/guardian'
     | '/indicadores'
@@ -217,19 +223,20 @@ export interface FileRouteTypes {
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
-    | '/api/riesgos'
+    | '/api/wiki-chat'
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
+    | '/api/sync/clientes'
+    | '/api/sync/documentacion'
+    | '/api/sync/riesgos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
     | '/chat'
     | '/clientes'
     | '/configuracion'
-    | '/contratos'
     | '/cronograma'
-    | '/documentacion'
     | '/equipo'
     | '/guardian'
     | '/indicadores'
@@ -237,11 +244,14 @@ export interface FileRouteTypes {
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
-    | '/api/riesgos'
+    | '/api/wiki-chat'
     | '/'
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
+    | '/api/sync/clientes'
+    | '/api/sync/documentacion'
+    | '/api/sync/riesgos'
   id:
     | '__root__'
     | '/_authenticated'
@@ -249,9 +259,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat'
     | '/_authenticated/clientes'
     | '/_authenticated/configuracion'
-    | '/_authenticated/contratos'
     | '/_authenticated/cronograma'
-    | '/_authenticated/documentacion'
     | '/_authenticated/equipo'
     | '/_authenticated/guardian'
     | '/_authenticated/indicadores'
@@ -259,21 +267,27 @@ export interface FileRouteTypes {
     | '/_authenticated/proveedores'
     | '/_authenticated/riesgos'
     | '/api/chat'
-    | '/api/riesgos'
+    | '/api/wiki-chat'
     | '/_authenticated/'
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
+    | '/api/sync/clientes'
+    | '/api/sync/documentacion'
+    | '/api/sync/riesgos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiChatRoute: typeof ApiChatRoute
-  ApiRiesgosRoute: typeof ApiRiesgosRoute
+  ApiWikiChatRoute: typeof ApiWikiChatRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
+  ApiSyncClientesRoute: typeof ApiSyncClientesRoute
+  ApiSyncDocumentacionRoute: typeof ApiSyncDocumentacionRoute
+  ApiSyncRiesgosRoute: typeof ApiSyncRiesgosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -320,25 +334,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfiguracionRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/contratos': {
-      id: '/_authenticated/contratos'
-      path: '/contratos'
-      fullPath: '/contratos'
-      preLoaderRoute: typeof AuthenticatedContratosRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/cronograma': {
       id: '/_authenticated/cronograma'
       path: '/cronograma'
       fullPath: '/cronograma'
       preLoaderRoute: typeof AuthenticatedCronogramaRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/documentacion': {
-      id: '/_authenticated/documentacion'
-      path: '/documentacion'
-      fullPath: '/documentacion'
-      preLoaderRoute: typeof AuthenticatedDocumentacionRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/equipo': {
@@ -390,11 +390,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/riesgos': {
-      id: '/api/riesgos'
-      path: '/api/riesgos'
-      fullPath: '/api/riesgos'
-      preLoaderRoute: typeof ApiRiesgosRouteImport
+    '/api/wiki-chat': {
+      id: '/api/wiki-chat'
+      path: '/api/wiki-chat'
+      fullPath: '/api/wiki-chat'
+      preLoaderRoute: typeof ApiWikiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/callback': {
@@ -418,6 +418,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthLogoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/sync/clientes': {
+      id: '/api/sync/clientes'
+      path: '/api/sync/clientes'
+      fullPath: '/api/sync/clientes'
+      preLoaderRoute: typeof ApiSyncClientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sync/documentacion': {
+      id: '/api/sync/documentacion'
+      path: '/api/sync/documentacion'
+      fullPath: '/api/sync/documentacion'
+      preLoaderRoute: typeof ApiSyncDocumentacionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sync/riesgos': {
+      id: '/api/sync/riesgos'
+      path: '/api/sync/riesgos'
+      fullPath: '/api/sync/riesgos'
+      preLoaderRoute: typeof ApiSyncRiesgosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -425,9 +446,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedConfiguracionRoute: typeof AuthenticatedConfiguracionRoute
-  AuthenticatedContratosRoute: typeof AuthenticatedContratosRoute
   AuthenticatedCronogramaRoute: typeof AuthenticatedCronogramaRoute
-  AuthenticatedDocumentacionRoute: typeof AuthenticatedDocumentacionRoute
   AuthenticatedEquipoRoute: typeof AuthenticatedEquipoRoute
   AuthenticatedGuardianRoute: typeof AuthenticatedGuardianRoute
   AuthenticatedIndicadoresRoute: typeof AuthenticatedIndicadoresRoute
@@ -441,9 +460,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedConfiguracionRoute: AuthenticatedConfiguracionRoute,
-  AuthenticatedContratosRoute: AuthenticatedContratosRoute,
   AuthenticatedCronogramaRoute: AuthenticatedCronogramaRoute,
-  AuthenticatedDocumentacionRoute: AuthenticatedDocumentacionRoute,
   AuthenticatedEquipoRoute: AuthenticatedEquipoRoute,
   AuthenticatedGuardianRoute: AuthenticatedGuardianRoute,
   AuthenticatedIndicadoresRoute: AuthenticatedIndicadoresRoute,
@@ -461,10 +478,13 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiChatRoute: ApiChatRoute,
-  ApiRiesgosRoute: ApiRiesgosRoute,
+  ApiWikiChatRoute: ApiWikiChatRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
+  ApiSyncClientesRoute: ApiSyncClientesRoute,
+  ApiSyncDocumentacionRoute: ApiSyncDocumentacionRoute,
+  ApiSyncRiesgosRoute: ApiSyncRiesgosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
