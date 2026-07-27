@@ -3,8 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
-import { MAPA_PROCESOS_CES, DOCUMENTOS, REGISTRO_RIESGOS_CES } from "@/lib/ces-data";
-import { Workflow, ShieldAlert, FileText } from "lucide-react";
+import { MAPA_PROCESOS_CES, DOCUMENTOS } from "@/lib/ces-data";
+import { FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/procesos")({
@@ -12,8 +12,17 @@ export const Route = createFileRoute("/_authenticated/procesos")({
     head: () => ({ meta: [{ title: "Procesos CES — CES SIG" }] }),
 });
 
-function docEstadoTone(e: string) {
-    return e === "Vigente" ? "bg-brand-soft text-brand" : "bg-amber-100 text-amber-700";
+const CATEGORIA_ICONO: Record<string, string> = {
+    "Procesos Estratégicos": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Proceso%20Estrategico.png",
+    "Procesos Misionales": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Proceso%20Misional.png",
+    "Procesos de Apoyo": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Proceso%20de%20apoyo.png",
+};
+
+// Ubicacion llega como "Sección Excel / subproceso" — solo se muestra la parte de después del "/"
+// (la sección ya está implícita en el acordeón que agrupa por proceso).
+function tipoDocumento(ubicacion: string) {
+    const idx = ubicacion.indexOf("/");
+    return idx === -1 ? ubicacion : ubicacion.slice(idx + 1).trim();
 }
 
 // El nombre de sección tal como llega desde el Excel (ubicacion = "Sección Excel / subproceso").
@@ -41,19 +50,12 @@ const SECCION_A_PROCESO: Record<string, string> = {
 
 function ProcesosPage() {
     const [documentos, setDocumentos] = useState(DOCUMENTOS);
-    const [riesgos, setRiesgos] = useState(REGISTRO_RIESGOS_CES);
 
     useEffect(() => {
         let mounted = true;
         fetch("/api/sync/documentacion")
             .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
             .then((data) => mounted && setDocumentos(data))
-            .catch(() => {
-                /* fallback kept */
-            });
-        fetch("/api/sync/riesgos")
-            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
-            .then((data) => mounted && setRiesgos(data))
             .catch(() => {
                 /* fallback kept */
             });
@@ -75,20 +77,9 @@ function ProcesosPage() {
         }
     }
 
-    // procesoNivel2 casi siempre viene "N/A" en la matriz real -- solo procesoNivel1 (la categoría
-    // macro) es un campo confiablemente diligenciado, así que el conteo de riesgos es por categoría,
-    // no por sub-proceso (evita inventar una granularidad que los datos no sustentan).
-    const riesgosPorCategoria = new Map<string, number>();
-    for (const r of riesgos as any[]) {
-        const categoria = String(r.procesoNivel1 || "").trim();
-        if (!categoria) continue;
-        const key = normalizeKey(categoria);
-        riesgosPorCategoria.set(key, (riesgosPorCategoria.get(key) || 0) + 1);
-    }
-
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <PageHeader eyebrow="Sistema Integrado de Gestión" title="Procesos CES" description="Procesos del SIG que impactan directamente al área Cloud Enterprise Services." />
+            <PageHeader eyebrow="Sistema Integrado de Gestión" title="Procesos CES" description="Cloud Enterprise Services." />
 
             <div className="mt-6 overflow-hidden rounded-2xl border bg-card">
                 <img
@@ -101,13 +92,12 @@ function ProcesosPage() {
             <div className="mt-8 grid gap-4 lg:grid-cols-3">
                 {MAPA_PROCESOS_CES.map((cat) => {
                     const docsCategoria = cat.procesos.flatMap((p) => documentosPorProceso.get(p) || []);
-                    const riesgosCategoria = riesgosPorCategoria.get(normalizeKey(cat.categoria)) || 0;
                     return (
                         <Card key={cat.categoria} className="border-border/60 transition hover:shadow-lg">
                             <CardContent className="p-6">
                                 <div className="flex items-start gap-4">
-                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                                        <Workflow className="h-6 w-6" />
+                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft p-2">
+                                        <img src={CATEGORIA_ICONO[cat.categoria]} alt={cat.categoria} className="h-full w-full object-contain" />
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <h3 className="text-base font-semibold">{cat.categoria}</h3>
@@ -120,7 +110,6 @@ function ProcesosPage() {
                                             ))}
                                         </ul>
                                         <div className="mt-4 flex flex-wrap gap-2">
-                                            <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px]"><ShieldAlert className="h-3 w-3" /> {riesgosCategoria} riesgos</span>
                                             <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px]"><FileText className="h-3 w-3" /> {docsCategoria.length} documentos</span>
                                         </div>
                                     </div>
@@ -133,7 +122,7 @@ function ProcesosPage() {
 
             <div className="mt-10">
                 <h2 className="text-lg font-semibold">Documentación por proceso</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Registro de documentos del SIG. CES SIG no almacena archivos — solo su ubicación de referencia.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Registro de documentos del SIG. CES SIG no almacena archivos — solo nombres de los documentos.</p>
 
                 <Card className="mt-4 border-border/60">
                     <CardContent className="p-0">
@@ -164,12 +153,10 @@ function ProcesosPage() {
                                                                             <thead className="bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground">
                                                                                 <tr>
                                                                                     <th className="px-3 py-2 text-left">Documento</th>
-                                                                                    <th className="px-3 py-2 text-left">Versión</th>
-                                                                                    <th className="px-3 py-2 text-left">Responsable</th>
-                                                                                    <th className="px-3 py-2 text-left">Actualización</th>
-                                                                                    <th className="px-3 py-2 text-left">Próx. revisión</th>
-                                                                                    <th className="px-3 py-2 text-left">Ubicación</th>
-                                                                                    <th className="px-3 py-2 text-left">Estado</th>
+                                                                                    <th className="px-3 py-2 text-left">Código</th>
+                                                                                    <th className="px-3 py-2 text-left">Elaborado por</th>
+                                                                                    <th className="px-3 py-2 text-left">Fecha de publicación</th>
+                                                                                    <th className="px-3 py-2 text-left">Tipo de documento</th>
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody className="divide-y">
@@ -181,14 +168,10 @@ function ProcesosPage() {
                                                                                                 {d.nombre}
                                                                                             </div>
                                                                                         </td>
-                                                                                        <td className="px-3 py-2 text-muted-foreground">v{d.version}</td>
+                                                                                        <td className="px-3 py-2 font-mono text-muted-foreground">{d.codigo || "-"}</td>
                                                                                         <td className="px-3 py-2 text-muted-foreground">{d.responsable}</td>
                                                                                         <td className="px-3 py-2 text-muted-foreground">{d.actualizacion}</td>
-                                                                                        <td className="px-3 py-2 text-muted-foreground">{d.proximaRevision}</td>
-                                                                                        <td className="px-3 py-2 text-muted-foreground">{d.ubicacion}</td>
-                                                                                        <td className="px-3 py-2">
-                                                                                            <Badge className={docEstadoTone(d.estado)} style={{ fontSize: "10px", padding: "2px 6px" }}>{d.estado}</Badge>
-                                                                                        </td>
+                                                                                        <td className="px-3 py-2 text-muted-foreground">{tipoDocumento(d.ubicacion)}</td>
                                                                                     </tr>
                                                                                 ))}
                                                                             </tbody>
@@ -220,12 +203,10 @@ function ProcesosPage() {
                                                     <thead className="bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground">
                                                         <tr>
                                                             <th className="px-3 py-2 text-left">Documento</th>
-                                                            <th className="px-3 py-2 text-left">Versión</th>
-                                                            <th className="px-3 py-2 text-left">Responsable</th>
-                                                            <th className="px-3 py-2 text-left">Actualización</th>
-                                                            <th className="px-3 py-2 text-left">Próx. revisión</th>
-                                                            <th className="px-3 py-2 text-left">Ubicación</th>
-                                                            <th className="px-3 py-2 text-left">Estado</th>
+                                                            <th className="px-3 py-2 text-left">Código</th>
+                                                            <th className="px-3 py-2 text-left">Elaborado por</th>
+                                                            <th className="px-3 py-2 text-left">Fecha de publicación</th>
+                                                            <th className="px-3 py-2 text-left">Tipo de documento</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y">
@@ -237,14 +218,10 @@ function ProcesosPage() {
                                                                         {d.nombre}
                                                                     </div>
                                                                 </td>
-                                                                <td className="px-3 py-2 text-muted-foreground">v{d.version}</td>
+                                                                <td className="px-3 py-2 font-mono text-muted-foreground">{d.codigo || "-"}</td>
                                                                 <td className="px-3 py-2 text-muted-foreground">{d.responsable}</td>
                                                                 <td className="px-3 py-2 text-muted-foreground">{d.actualizacion}</td>
-                                                                <td className="px-3 py-2 text-muted-foreground">{d.proximaRevision}</td>
-                                                                <td className="px-3 py-2 text-muted-foreground">{d.ubicacion}</td>
-                                                                <td className="px-3 py-2">
-                                                                    <Badge className={docEstadoTone(d.estado)} style={{ fontSize: "10px", padding: "2px 6px" }}>{d.estado}</Badge>
-                                                                </td>
+                                                                <td className="px-3 py-2 text-muted-foreground">{tipoDocumento(d.ubicacion)}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>

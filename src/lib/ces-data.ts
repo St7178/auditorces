@@ -65,11 +65,11 @@ export const PROVEEDORES = [
 
 
 export const DOCUMENTOS = [
-    { id: "D-01", nombre: "Manual de Calidad CES", version: "3.2", responsable: "Laura Jaramillo", actualizacion: "2026-04-10", proximaRevision: "2027-04-10", ubicacion: "SharePoint / SIG", estado: "Vigente" },
-    { id: "D-02", nombre: "Matriz de Riesgos CES", version: "2.5", responsable: "Johann Steven Toro", actualizacion: "2025-06-01", proximaRevision: "2026-06-01", ubicacion: "SharePoint / Riesgos", estado: "Requiere revisión" },
-    { id: "D-03", nombre: "Procedimiento Gestión de Incidentes", version: "1.8", responsable: "Andrés Cano", actualizacion: "2026-05-01", proximaRevision: "2027-05-01", ubicacion: "SharePoint / Procesos", estado: "Vigente" },
-    { id: "D-04", nombre: "Política de Seguridad de la Información", version: "4.0", responsable: "Elkin Borja", actualizacion: "2026-01-15", proximaRevision: "2027-01-15", ubicacion: "SharePoint / SIG", estado: "Vigente" },
-    { id: "D-05", nombre: "Plan de Continuidad del Servicio", version: "2.1", responsable: "Andrés Cano", actualizacion: "2025-10-20", proximaRevision: "2026-10-20", ubicacion: "SharePoint / SIG", estado: "Vigente" },
+    { id: "D-01", codigo: "M.CA.001", nombre: "Manual de Calidad CES", version: "3.2", responsable: "Laura Jaramillo", actualizacion: "2026-04-10", proximaRevision: "2027-04-10", ubicacion: "SharePoint / SIG", estado: "Vigente" },
+    { id: "D-02", codigo: "F.RI.001", nombre: "Matriz de Riesgos CES", version: "2.5", responsable: "Johann Steven Toro", actualizacion: "2025-06-01", proximaRevision: "2026-06-01", ubicacion: "SharePoint / Riesgos", estado: "Requiere revisión" },
+    { id: "D-03", codigo: "P.OS.483", nombre: "Procedimiento Gestión de Incidentes", version: "1.8", responsable: "Andrés Cano", actualizacion: "2026-05-01", proximaRevision: "2027-05-01", ubicacion: "SharePoint / Procesos", estado: "Vigente" },
+    { id: "D-04", codigo: "M.SI.001", nombre: "Política de Seguridad de la Información", version: "4.0", responsable: "Elkin Borja", actualizacion: "2026-01-15", proximaRevision: "2027-01-15", ubicacion: "SharePoint / SIG", estado: "Vigente" },
+    { id: "D-05", codigo: "M.CS.400", nombre: "Plan de Continuidad del Servicio", version: "2.1", responsable: "Andrés Cano", actualizacion: "2025-10-20", proximaRevision: "2026-10-20", ubicacion: "SharePoint / SIG", estado: "Vigente" },
 ];
 
 export const CRONOGRAMA = [

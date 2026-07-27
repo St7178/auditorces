@@ -73,6 +73,7 @@ for (const row of rows) {
 
   documentos.push({
     id: slug(codigo !== '-' ? codigo : nombreDoc),
+    codigo,
     nombre: nombreDoc,
     version: String(row['__EMPTY_2'] ?? 'NA').trim() || 'NA',
     responsable: String(row['__EMPTY_3'] ?? 'NA').trim() || 'NA',
