@@ -6,6 +6,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { PageHeader } from "@/components/page-header";
 import { METODOLOGIA_RIESGOS, REGISTRO_RIESGOS_CES } from "@/lib/ces-data";
 import { BookOpen, FileSpreadsheet } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/riesgos")({
     component: RiesgosPage,
@@ -20,6 +21,21 @@ function nivelTone(n: string) {
 }
 
 function RiesgosPage() {
+    const [registro, setRegistro] = useState(REGISTRO_RIESGOS_CES);
+
+    useEffect(() => {
+        let mounted = true;
+        fetch("/api/sync/riesgos")
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+            .then((data) => mounted && setRegistro(data))
+            .catch(() => {
+                /* fallback kept */
+            });
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader eyebrow="Administración de Riesgos" title="Riesgos Operacionales" description="Solo se registra la ubicación de la evidencia. No se almacenan matrices ni documentos confidenciales." />
@@ -98,7 +114,7 @@ function RiesgosPage() {
                 <Card className="mt-4 border-border/60">
                     <CardContent className="p-0">
                         <Accordion type="multiple" className="px-5">
-                            {REGISTRO_RIESGOS_CES.map((r) => (
+                            {registro.map((r) => (
                                 <AccordionItem key={r.id} value={r.id}>
                                     <AccordionTrigger>
                                         <div className="flex flex-1 flex-wrap items-center gap-3 pr-3 text-left">

@@ -1,0 +1,113 @@
+{
+  "name": "Sync Riesgos CES (Matriz F.RI.001)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Antes de activar\n1. Nodo 2 (SharePoint): selecciona tu credencial + Site + Drive + File Path exacto de la Matriz de Riesgos.\n2. Nodo 5 (HTTP Request): reemplaza `https://TU_APP` por tu dominio real.\n3. Usa la MISMA variable de entorno SYNC_SECRET que ya configuraste para el flujo de Clientes.\n\n## Estructura real detectada en tu Excel (matriz oficial F.RI.001)\nEsta matriz tiene 3 filas de encabezado FUSIONADAS (categoría / campo / sub-campo), así que\nSpreadsheet File no puede darle nombre a la mayoría de columnas — llegan como __EMPTY_1, __EMPTY_2...\nPor eso el Code node mapea POR POSICIÓN de columna (no por nombre), y ASUME:\n- El ID de riesgo (ej. \"R-CES-001\") va SOLO en la primera fila de cada riesgo (columna __EMPTY_1).\n  Las filas de continuación (controles 2, 3...) van SIN id — el Code node arrastra el último visto.\n- Solo se abre un riesgo nuevo si el ID matchea el patrón `R-...` (filtra filas de ejemplo/plantilla\n  que vimos en tu archivo real, ej. \"CES-001\" sin el prefijo R-).\n- Solo se agrega un control si la fila trae texto en la columna de \"Descripción del Control\"\n  (esto filtra automáticamente las decenas de filas de plantilla vacías al final del archivo,\n  que traen valores de fórmula por defecto tipo 1,1,1,\"ALTO\").\n\n## Verificar tras importar\n- Si tu Excel cambia el orden de columnas respecto al que ya viste, hay que reajustar los índices\n  __EMPTY_N en el Code node (columna por columna, ver comentarios en el propio código del nodo).\n- El campo \"Evidencia\" no se encontró de forma consistente en las filas de riesgo reales que\n  compartiste — revisa si tu Excel real trae esa columna en otra posición.",
+        "height": 560,
+        "width": 480
+      },
+      "name": "Notas de configuración",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 0]
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 8,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "name": "1. Cron diario 8AM",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [200, 500]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "download",
+        "site": "REEMPLAZA_CON_TU_SITE_CES",
+        "path": "/Matriz_de_Riesgos.xlsx"
+      },
+      "name": "2. SharePoint: Leer Excel",
+      "type": "n8n-nodes-base.sharepointOnline",
+      "typeVersion": 1,
+      "position": [460, 500],
+      "credentials": {
+        "microsoftSharePointOnlineOAuth2Api": "SharePoint Connection"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "fromFile",
+        "binaryPropertyName": "data",
+        "options": {
+          "fileFormat": "xlsx"
+        }
+      },
+      "name": "3. Spreadsheet File: Parsear filas",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 1,
+      "position": [720, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// La Matriz de Riesgos real tiene 3 filas de encabezado fusionadas (categoria / campo / sub-campo),\n// por lo que la fila 1 (usada por Spreadsheet File como header) queda casi vacia y las columnas llegan\n// aqui como __EMPTY_1, __EMPTY_2, ... en vez de nombres legibles. Por eso el mapeo es POR POSICION de\n// columna, no por nombre. Ademas el ID de riesgo NO se repite en las filas de continuacion de controles\n// (a diferencia de Clientes/Contratos) -- hay que arrastrar el ultimo ID visto.\n\nfunction col(row, key, altKey) {\n  const v = row[key];\n  if (v !== undefined && v !== null && v !== '') return v;\n  if (altKey) return row[altKey];\n  return undefined;\n}\n\nfunction parseDate(v) {\n  if (v === null || v === undefined || v === '') return null;\n  if (typeof v === 'number') {\n    const base = new Date(Date.UTC(1899, 11, 30));\n    base.setUTCDate(base.getUTCDate() + v);\n    return base.toISOString().slice(0, 10);\n  }\n  if (typeof v === 'string') {\n    const trimmed = v.trim();\n    if (/^\\d+$/.test(trimmed)) {\n      const base = new Date(Date.UTC(1899, 11, 30));\n      base.setUTCDate(base.getUTCDate() + Number(trimmed));\n      return base.toISOString().slice(0, 10);\n    }\n    const d = new Date(trimmed);\n    if (!isNaN(d.getTime())) {\n      const yyyy = d.getFullYear();\n      const mm = String(d.getMonth() + 1).padStart(2, '0');\n      const dd = String(d.getDate()).padStart(2, '0');\n      return `${yyyy}-${mm}-${dd}`;\n    }\n  }\n  return null;\n}\n\nfunction toNumber(v, fallback) {\n  if (v === null || v === undefined || v === '') return fallback;\n  const n = Number(String(v).replace(',', '.'));\n  if (isNaN(n)) return fallback;\n  return Math.round(n * 1000) / 1000;\n}\n\nfunction toText(v, fallback) {\n  const s = String(v ?? '').trim();\n  return s ? s : fallback;\n}\n\nfunction toBool(v) {\n  const s = String(v || '').trim().toLowerCase();\n  return s === 'si' || s === 'sí' || s === 'true' || s === '1' || s === 'x';\n}\n\nconst rows = items.map((item) => item.json || {}).filter((row) => Object.keys(row).length > 0);\nif (!rows.length) {\n  throw new Error('No se encontraron filas en el Excel');\n}\n\nconst riesgosMap = new Map();\nlet currentId = null;\n\nfor (const row of rows) {\n  const rawId = String(row['__EMPTY_1'] || '').trim();\n  const isNewRiskRow = /^R-/i.test(rawId);\n\n  if (isNewRiskRow) {\n    currentId = rawId;\n    riesgosMap.set(currentId, {\n      id: currentId,\n      fechaIdentificacion: parseDate(row['__EMPTY_2']) || '-',\n      fechaActualizacion: parseDate(row['__EMPTY_3']) || '-',\n      procesoNivel1: toText(row['__EMPTY_4'], '-'),\n      procesoNivel2: toText(row['__EMPTY_5'], 'N/A'),\n      infoDocumentada: toText(row['__EMPTY_6'], '-'),\n      duenoProceso: toText(row['__EMPTY_7'], '-'),\n      duenoRiesgo: toText(col(row, 'MATRIZ DE RIESGOS OPERACIONALES', '__EMPTY_8b'), '-'),\n      descripcion: toText(row['__EMPTY_8'], '-'),\n      contexto: toText(row['__EMPTY_9'], '-'),\n      parteInteresada: toText(row['__EMPTY_12'], '-'),\n      causaQue: toText(row['__EMPTY_13'], '-'),\n      causaPorQue: toText(row['__EMPTY_14'], '-'),\n      causaQuien: toText(row['__EMPTY_15'], '-'),\n      consecuencia: toText(row['__EMPTY_16'], '-'),\n      impacto: {\n        tipo: toText(row['__EMPTY_17'], '-'),\n        calificacion: toText(row['__EMPTY_18'], '-'),\n        valor: toNumber(row['__EMPTY_19'], 0)\n      },\n      probabilidad: {\n        calificacion: toText(row['__EMPTY_20'], '-'),\n        valor: toNumber(row['__EMPTY_21'], 0)\n      },\n      nivelInherente: {\n        valor: toNumber(row['__EMPTY_22'], 0),\n        severidad: toText(row['__EMPTY_23'], '-')\n      },\n      porcentajeMitigacion: toNumber(row['__EMPTY_42'], 0),\n      nivelResidual: {\n        severidad: toText(row['__EMPTY_43'], '-'),\n        valor: toNumber(row['__EMPTY_44'], 0)\n      },\n      evidencia: toText(row['__EMPTY_41'], '-'),\n      controles: []\n    });\n  }\n\n  if (!currentId) continue; // filas antes del primer ID real (encabezados, ejemplos) -- se ignoran\n\n  const controlDescripcion = toText(row['__EMPTY_24'], '');\n  if (controlDescripcion) {\n    riesgosMap.get(currentId).controles.push({\n      descripcion: controlDescripcion,\n      responsable: toText(row['__EMPTY_25'], '-'),\n      tipo: toText(row['__EMPTY_26'], '-'),\n      ejecucion: toText(row['__EMPTY_28'], '-'),\n      origen: toText(row['__EMPTY_30'], '-'),\n      documentado: toBool(row['__EMPTY_32']),\n      nombreDocumento: toText(row['__EMPTY_34'], 'N/A'),\n      frecuencia: toText(row['__EMPTY_35'], '-'),\n      efectividad: toNumber(row['__EMPTY_37'], 0)\n    });\n  }\n\n  // Si el riesgo aun no tiene evidencia y esta fila trae una, la tomamos (columna 41 es por-control).\n  const riesgo = riesgosMap.get(currentId);\n  if (riesgo.evidencia === '-') {\n    const ev = toText(row['__EMPTY_41'], '');\n    if (ev) riesgo.evidencia = ev;\n  }\n}\n\nconst riesgos = Array.from(riesgosMap.values());\nreturn [{ json: { riesgos } }];"
+      },
+      "name": "4. Code: Excel -> riesgos + controles",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [980, 500]
+    },
+    {
+      "parameters": {
+        "url": "https://TU_APP/api/sync/riesgos",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-sync-secret", "value": "={{ $env.SYNC_SECRET }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.riesgos) }}"
+      },
+      "name": "5. HTTP POST -> /api/sync/riesgos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1240, 500]
+    }
+  ],
+  "connections": {
+    "1. Cron diario 8AM": {
+      "main": [[{ "node": "2. SharePoint: Leer Excel", "type": "main", "index": 0 }]]
+    },
+    "2. SharePoint: Leer Excel": {
+      "main": [[{ "node": "3. Spreadsheet File: Parsear filas", "type": "main", "index": 0 }]]
+    },
+    "3. Spreadsheet File: Parsear filas": {
+      "main": [[{ "node": "4. Code: Excel -> riesgos + controles", "type": "main", "index": 0 }]]
+    },
+    "4. Code: Excel -> riesgos + controles": {
+      "main": [[{ "node": "5. HTTP POST -> /api/sync/riesgos", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["CES", "Riesgos", "SharePoint", "Sincronización"],
+  "meta": {
+    "instanceId": "auto",
+    "templatesource": "n8n_workflow_riesgos.json"
+  }
+}
