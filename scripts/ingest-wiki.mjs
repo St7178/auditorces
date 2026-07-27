@@ -19,11 +19,17 @@ import * as cheerio from "cheerio";
 import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import XLSX from "xlsx";
+import { Agent, fetch as undiciFetch } from "undici";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_FILE = path.join(__dirname, "..", "src", "lib", "wiki-knowledge", "index.json");
 const EMBEDDING_MODEL = "text-embedding-3-small";
 const DEFAULT_PAGES = ["Nuestros_Clientes", "Página_principal", "Equipos_de_Operación"];
+
+// Las wikis internas de grupocnet usan un certificado que Node no puede verificar (cadena
+// incompleta / CA interna) — el backend Python original usaba verify=False por lo mismo.
+// Se limita el bypass de verificación TLS SOLO a las peticiones a la wiki (nunca a OpenAI).
+const insecureAgent = new Agent({ connect: { rejectUnauthorized: false } });
 
 function loadDotEnvIfPresent() {
     const envPath = path.join(__dirname, "..", ".env");
@@ -59,7 +65,7 @@ class WikiSession {
     async apiGet(params) {
         const url = new URL("/api.php", this.base);
         for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-        const res = await fetch(url, { headers: { Cookie: this._cookieHeader(), "User-Agent": "WikiChatBot-TS/1.0" } });
+        const res = await undiciFetch(url, { headers: { Cookie: this._cookieHeader(), "User-Agent": "WikiChatBot-TS/1.0" }, dispatcher: insecureAgent });
         this._captureCookies(res);
         return res.json();
     }
@@ -67,10 +73,11 @@ class WikiSession {
     async apiPost(params) {
         const url = new URL("/api.php", this.base);
         const body = new URLSearchParams(params);
-        const res = await fetch(url, {
+        const res = await undiciFetch(url, {
             method: "POST",
             headers: { Cookie: this._cookieHeader(), "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "WikiChatBot-TS/1.0" },
             body,
+            dispatcher: insecureAgent,
         });
         this._captureCookies(res);
         return res.json();
@@ -198,7 +205,7 @@ class WikiSession {
 
     async resolveFileUrl(pageUrl) {
         try {
-            const res = await fetch(pageUrl, { headers: { Cookie: this._cookieHeader() } });
+            const res = await undiciFetch(pageUrl, { headers: { Cookie: this._cookieHeader() }, dispatcher: insecureAgent });
             const html = await res.text();
             const $ = cheerio.load(html);
             const href = $("a.internal").first().attr("href");
@@ -212,7 +219,7 @@ class WikiSession {
 
     async downloadFile(url) {
         try {
-            const res = await fetch(url, { headers: { Cookie: this._cookieHeader() } });
+            const res = await undiciFetch(url, { headers: { Cookie: this._cookieHeader() }, dispatcher: insecureAgent });
             if (!res.ok) return null;
             return Buffer.from(await res.arrayBuffer());
         } catch {
