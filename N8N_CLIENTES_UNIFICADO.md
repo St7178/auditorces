@@ -218,6 +218,8 @@ Si el nodo HTTP responde `ok = true`, el flujo ya está bien conectado.
 
 ## Paso 3: Variables de Entorno en n8n (Opcional)
 
+
+.
 Si quieres proteger con `SYNC_SECRET`:
 
 1. En n8n: **Settings** (⚙️) → **Environment variables**
