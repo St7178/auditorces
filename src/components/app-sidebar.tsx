@@ -8,8 +8,6 @@ import {
     Gauge,
     Building2,
     Truck,
-    FileText,
-    BookOpen,
     Calendar,
     MessagesSquare,
     Settings,
@@ -50,7 +48,6 @@ const nav = [
     },
     {
         section: "Conocimiento", items: [
-            { title: "Documentación", url: "/documentacion", icon: BookOpen },
             { title: "Cronograma", url: "/cronograma", icon: Calendar },
             { title: "Chat del Equipo", url: "/chat", icon: MessagesSquare },
         ]

@@ -70,4 +70,12 @@ export async function getRiesgos<T>(): Promise<T | null> {
     return readBlob<T>("riesgos");
 }
 
-export default { saveClientes, getClientes, saveContratos, getContratos, saveRiesgos, getRiesgos };
+export async function saveDocumentacion(data: unknown) {
+    return writeBlob("documentacion", data);
+}
+
+export async function getDocumentacion<T>(): Promise<T | null> {
+    return readBlob<T>("documentacion");
+}
+
+export default { saveClientes, getClientes, saveContratos, getContratos, saveRiesgos, getRiesgos, saveDocumentacion, getDocumentacion };

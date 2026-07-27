@@ -26,6 +26,14 @@ export const PROCESOS = [
     { id: "juridica", nombre: "Gestión Jurídica", responsable: "Lina Castañeda", estado: "Al día", ultimaRevision: "2026-06-10", proximaRevision: "2026-12-10", auditorias: 1, indicadores: 1, riesgos: 2, descripcion: "Contratos, cumplimiento normativo y gestión legal del área CES." },
 ];
 
+// Mapa oficial de procesos del SIG (independiente del subconjunto que audita CES en PROCESOS).
+// Se usa para agrupar la documentación sincronizada desde SharePoint en /procesos.
+export const MAPA_PROCESOS_CES = [
+    { categoria: "Procesos Estratégicos", procesos: ["Planeación Estratégica", "Administración de Riesgos"] },
+    { categoria: "Procesos Misionales", procesos: ["Arquitectura de Soluciones", "Gestión de Proyectos", "Gestión de Servicios de TIC", "Gestión de Servicio al Cliente"] },
+    { categoria: "Procesos de Apoyo", procesos: ["Gestión de la Información", "Gestión Sistema Integrado", "Gestión Humana", "Gestión de Logística y Compras", "Gestión Jurídica", "Gestión Financiera", "Ventas", "Comunicaciones y Mercadeo"] },
+];
+
 export const RIESGOS = [
     { id: "R-01", nombre: "Indisponibilidad de servicio crítico", nivel: "Alto", estado: "En seguimiento", responsable: "Andrés Cano", ultimaActualizacion: "2026-06-20", proximaRevision: "2026-08-20", evidencia: "SharePoint / CES / Riesgos" },
     { id: "R-02", nombre: "Fuga de información cliente", nivel: "Crítico", estado: "En seguimiento", responsable: "Johann Steven Toro", ultimaActualizacion: "2026-06-15", proximaRevision: "2026-07-30", evidencia: "SharePoint / Seguridad" },
