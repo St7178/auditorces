@@ -1,42 +1,65 @@
-import fs from "fs";
-import path from "path";
+import { neon } from "@neondatabase/serverless";
 
-const DATA_DIR = path.join(process.cwd(), "data", "sync");
+let ready: Promise<void> | null = null;
 
-async function ensureDir() {
-    await fs.promises.mkdir(DATA_DIR, { recursive: true });
+function sql() {
+    // La integración Vercel↔Neon inyecta POSTGRES_URL (pooled), no DATABASE_URL.
+    const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    if (!url) throw new Error("DATABASE_URL / POSTGRES_URL no está configurada");
+    return neon(url);
 }
 
-async function writeFile(name: string, data: unknown) {
-    await ensureDir();
-    const file = path.join(DATA_DIR, name);
-    await fs.promises.writeFile(file, JSON.stringify(data, null, 2), "utf8");
-}
-
-async function readFile<T>(name: string): Promise<T | null> {
-    try {
-        const file = path.join(DATA_DIR, name);
-        const txt = await fs.promises.readFile(file, "utf8");
-        return JSON.parse(txt) as T;
-    } catch (err) {
-        return null;
+// Perezoso: DATABASE_URL solo existe en tiempo de request en runtimes edge, no a nivel de módulo.
+async function ensureTable() {
+    if (!ready) {
+        const db = sql();
+        ready = db`
+            CREATE TABLE IF NOT EXISTS sync_blobs (
+                key TEXT PRIMARY KEY,
+                data JSONB NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+        `.then(() => undefined)
+            .catch((err) => {
+                ready = null;
+                throw err;
+            });
     }
+    return ready;
+}
+
+async function writeBlob(key: string, data: unknown) {
+    await ensureTable();
+    const db = sql();
+    await db`
+        INSERT INTO sync_blobs (key, data, updated_at)
+        VALUES (${key}, ${JSON.stringify(data)}, now())
+        ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, updated_at = now()
+    `;
+}
+
+async function readBlob<T>(key: string): Promise<T | null> {
+    await ensureTable();
+    const db = sql();
+    const rows = await db`SELECT data FROM sync_blobs WHERE key = ${key}`;
+    if (!rows.length) return null;
+    return rows[0].data as T;
 }
 
 export async function saveClientes(data: unknown) {
-    return writeFile("clientes.json", data);
+    return writeBlob("clientes", data);
 }
 
 export async function getClientes<T>(): Promise<T | null> {
-    return readFile<T>("clientes.json");
+    return readBlob<T>("clientes");
 }
 
 export async function saveContratos(data: unknown) {
-    return writeFile("contratos.json", data);
+    return writeBlob("contratos", data);
 }
 
 export async function getContratos<T>(): Promise<T | null> {
-    return readFile<T>("contratos.json");
+    return readBlob<T>("contratos");
 }
 
 export default { saveClientes, getClientes, saveContratos, getContratos };

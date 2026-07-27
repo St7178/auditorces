@@ -1,0 +1,113 @@
+{
+  "name": "Sync Clientes + Contratos CES (Unificado)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Antes de activar\n1. Nodo 2 (SharePoint): selecciona tu credencial + Site + Drive + File Path exacto del Excel.\n2. Nodo 3 (Spreadsheet File): revisa que \"File Format\" quede en Excel/Auto Detect (puede resetearse al importar).\n3. Nodo 5 (HTTP Request): reemplaza `https://TU_APP` por tu dominio real (Vercel o localhost).\n4. Si usas SYNC_SECRET, créala como variable de entorno en n8n (Settings → Environment variables) con el mismo valor que en tu app.\n\nLas credenciales NUNCA se exportan en el JSON por seguridad — siempre hay que volver a seleccionarlas tras importar.",
+        "height": 320,
+        "width": 380
+      },
+      "name": "Notas de configuración",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 0]
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 8,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "name": "1. Cron diario 8AM",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [200, 360]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "download",
+        "site": "REEMPLAZA_CON_TU_SITE_CES",
+        "path": "/Clientes_Contratos.xlsx"
+      },
+      "name": "2. SharePoint: Leer Excel",
+      "type": "n8n-nodes-base.sharepointOnline",
+      "typeVersion": 1,
+      "position": [460, 360],
+      "credentials": {
+        "microsoftSharePointOnlineOAuth2Api": "SharePoint Connection"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "fromFile",
+        "binaryPropertyName": "data",
+        "options": {
+          "fileFormat": "xlsx"
+        }
+      },
+      "name": "3. Spreadsheet File: Parsear filas",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 1,
+      "position": [720, 360]
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseDate(v) {\n  if (v === null || v === undefined || v === '') return null;\n\n  if (typeof v === 'number') {\n    const base = new Date(Date.UTC(1899, 11, 30));\n    base.setUTCDate(base.getUTCDate() + v);\n    return base.toISOString().slice(0, 10);\n  }\n\n  if (typeof v === 'string') {\n    const trimmed = v.trim();\n    if (/^\\d+$/.test(trimmed)) {\n      const base = new Date(Date.UTC(1899, 11, 30));\n      base.setUTCDate(base.getUTCDate() + Number(trimmed));\n      return base.toISOString().slice(0, 10);\n    }\n\n    const d = new Date(trimmed);\n    if (!isNaN(d.getTime())) {\n      const yyyy = d.getFullYear();\n      const mm = String(d.getMonth() + 1).padStart(2, '0');\n      const dd = String(d.getDate()).padStart(2, '0');\n      return `${yyyy}-${mm}-${dd}`;\n    }\n  }\n\n  return null;\n}\n\nfunction addMonthsIso(startIso, months) {\n  if (!startIso || !months) return null;\n  const d = new Date(startIso);\n  d.setMonth(d.getMonth() + Number(months));\n  return d.toISOString().slice(0, 10);\n}\n\nfunction slug(s) {\n  return String(s || '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/(^-|-$)/g, '');\n}\n\nfunction getValue(row, keys) {\n  const normalizedKeys = keys.map((k) => k.toLowerCase().trim());\n  const matchKey = Object.keys(row).find((key) => normalizedKeys.includes(key.toLowerCase().trim()));\n  return matchKey !== undefined ? row[matchKey] : '';\n}\n\nconst rows = items\n  .map((item) => item.json || {})\n  .filter((row) => Object.keys(row).length > 0);\n\nif (!rows.length) {\n  throw new Error('No se encontraron filas en el Excel');\n}\n\nconst clientesMap = new Map();\n\nfor (const row of rows) {\n  const clienteName = String(getValue(row, ['Ciente', 'Cliente', 'cliente', 'Cliente Nombre'])).trim();\n  const cuenta = String(getValue(row, ['Cuenta', 'Cuenta ', 'cuenta'])).trim();\n  const tiempo = String(getValue(row, ['Tiempo (M)', 'Tiempo', 'tiempo'])).trim();\n  const inicioRaw = getValue(row, ['Fecha Inicio', 'Fecha\\nInicio', 'Fecha Inicio ', 'Inicio']);\n  const finRaw = getValue(row, ['Fecha Fin', 'Fecha\\nFin', 'Fecha Fin ', 'Fin']);\n  const responsable = String(getValue(row, ['Responsable', 'responsable'])).trim() || '-';\n\n  if (!clienteName) continue;\n\n  const inicio = parseDate(inicioRaw) || null;\n  let fin = parseDate(finRaw) || null;\n  if (!fin && inicio && tiempo) {\n    fin = addMonthsIso(inicio, Number(tiempo));\n  }\n\n  let estado = 'Vigente';\n  if (fin) {\n    const now = new Date();\n    const endDate = new Date(fin);\n    const diffDays = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));\n    if (diffDays < 0) estado = 'Vencido';\n    else if (diffDays <= 60) estado = 'Próximo a vencer';\n  }\n\n  if (!clientesMap.has(clienteName)) {\n    clientesMap.set(clienteName, {\n      id: slug(clienteName),\n      nombre: clienteName,\n      responsable,\n      servicios: cuenta ? [cuenta] : [],\n      estado: 'Activo',\n      contratos: cuenta ? [{ id: cuenta, inicio: inicio || '-', fin: fin || '-', estado }] : []\n    });\n  } else {\n    const existing = clientesMap.get(clienteName);\n    if (cuenta) {\n      if (!existing.servicios.includes(cuenta)) existing.servicios.push(cuenta);\n      existing.contratos.push({ id: cuenta, inicio: inicio || '-', fin: fin || '-', estado });\n    }\n  }\n}\n\nconst clientes = Array.from(clientesMap.values());\nreturn [{ json: { clientes } }];"
+      },
+      "name": "4. Code: Excel -> clientes + contratos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [980, 360]
+    },
+    {
+      "parameters": {
+        "url": "https://TU_APP/api/sync/clientes",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-sync-secret", "value": "={{ $env.SYNC_SECRET }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.clientes) }}"
+      },
+      "name": "5. HTTP POST -> /api/sync/clientes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1240, 360]
+    }
+  ],
+  "connections": {
+    "1. Cron diario 8AM": {
+      "main": [[{ "node": "2. SharePoint: Leer Excel", "type": "main", "index": 0 }]]
+    },
+    "2. SharePoint: Leer Excel": {
+      "main": [[{ "node": "3. Spreadsheet File: Parsear filas", "type": "main", "index": 0 }]]
+    },
+    "3. Spreadsheet File: Parsear filas": {
+      "main": [[{ "node": "4. Code: Excel -> clientes + contratos", "type": "main", "index": 0 }]]
+    },
+    "4. Code: Excel -> clientes + contratos": {
+      "main": [[{ "node": "5. HTTP POST -> /api/sync/clientes", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": ["CES", "Clientes", "Contratos", "SharePoint", "Sincronización"],
+  "meta": {
+    "instanceId": "auto",
+    "templatesource": "N8N_CLIENTES_UNIFICADO.md"
+  }
+}
