@@ -361,9 +361,11 @@ async function processPage(session, title, chunkSize, overlap, wikiKey) {
 // Dos instalaciones MediaWiki separadas de grupocnet (cada una con su propio login/sesión).
 // "operacion" trae por defecto las 3 páginas de ejemplo del proyecto original; "general" queda
 // sin páginas por defecto (agrega WIKI_GENERAL_PAGES cuando quieras indexarla también).
+// Por ahora restringido a la wiki General únicamente (el login a "operación" está fallando y
+// se pausó esa fuente). Para reactivarla, descomenta la entrada "operacion" de abajo.
 function resolveWikiSources() {
     return [
-        { key: "operacion", url: process.env.WIKI_OPERACION_URL, pages: process.env.WIKI_OPERACION_PAGES ? process.env.WIKI_OPERACION_PAGES.split(",").map((t) => t.trim()).filter(Boolean) : DEFAULT_PAGES },
+        // { key: "operacion", url: process.env.WIKI_OPERACION_URL, pages: process.env.WIKI_OPERACION_PAGES ? process.env.WIKI_OPERACION_PAGES.split(",").map((t) => t.trim()).filter(Boolean) : DEFAULT_PAGES },
         { key: "general", url: process.env.WIKI_GENERAL_URL, pages: process.env.WIKI_GENERAL_PAGES ? process.env.WIKI_GENERAL_PAGES.split(",").map((t) => t.trim()).filter(Boolean) : [] },
     ].filter((s) => s.url);
 }

@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
 import { MAPA_PROCESOS_CES, DOCUMENTOS, REGISTRO_RIESGOS_CES } from "@/lib/ces-data";
-import { Workflow, ShieldAlert, FileText, ExternalLink } from "lucide-react";
+import { Workflow, ShieldAlert, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/procesos")({
@@ -111,7 +111,14 @@ function ProcesosPage() {
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <h3 className="text-base font-semibold">{cat.categoria}</h3>
-                                        <p className="mt-1 text-xs text-muted-foreground">{cat.procesos.join(" · ")}</p>
+                                        <ul className="mt-2 space-y-1">
+                                            {cat.procesos.map((p) => (
+                                                <li key={p} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                                                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand/50" />
+                                                    <span>{p}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
                                         <div className="mt-4 flex flex-wrap gap-2">
                                             <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px]"><ShieldAlert className="h-3 w-3" /> {riesgosCategoria} riesgos</span>
                                             <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px]"><FileText className="h-3 w-3" /> {docsCategoria.length} documentos</span>
@@ -151,20 +158,42 @@ function ProcesosPage() {
                                                             {docs.length === 0 ? (
                                                                 <div className="mt-1.5 text-xs text-muted-foreground">Sin documentos sincronizados.</div>
                                                             ) : (
-                                                                <div className="mt-2 space-y-1.5">
-                                                                    {docs.map((d: any) => (
-                                                                        <div key={d.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-xs">
-                                                                            <div className="flex min-w-0 items-center gap-2">
-                                                                                <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                                                                <span className="truncate font-medium">{d.nombre}</span>
-                                                                                <Badge variant="secondary" className="text-[10px]">v{d.version}</Badge>
-                                                                            </div>
-                                                                            <div className="flex items-center gap-3 text-muted-foreground">
-                                                                                <span>{d.responsable}</span>
-                                                                                <Badge className={docEstadoTone(d.estado)} style={{ fontSize: "10px", padding: "2px 6px" }}>{d.estado}</Badge>
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
+                                                                <div className="mt-2 overflow-hidden rounded-xl border">
+                                                                    <div className="overflow-x-auto">
+                                                                        <table className="w-full text-xs">
+                                                                            <thead className="bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground">
+                                                                                <tr>
+                                                                                    <th className="px-3 py-2 text-left">Documento</th>
+                                                                                    <th className="px-3 py-2 text-left">Versión</th>
+                                                                                    <th className="px-3 py-2 text-left">Responsable</th>
+                                                                                    <th className="px-3 py-2 text-left">Actualización</th>
+                                                                                    <th className="px-3 py-2 text-left">Próx. revisión</th>
+                                                                                    <th className="px-3 py-2 text-left">Ubicación</th>
+                                                                                    <th className="px-3 py-2 text-left">Estado</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody className="divide-y">
+                                                                                {docs.map((d: any) => (
+                                                                                    <tr key={d.id} className="hover:bg-muted/20">
+                                                                                        <td className="px-3 py-2">
+                                                                                            <div className="flex items-center gap-1.5 font-medium">
+                                                                                                <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                                                                                {d.nombre}
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td className="px-3 py-2 text-muted-foreground">v{d.version}</td>
+                                                                                        <td className="px-3 py-2 text-muted-foreground">{d.responsable}</td>
+                                                                                        <td className="px-3 py-2 text-muted-foreground">{d.actualizacion}</td>
+                                                                                        <td className="px-3 py-2 text-muted-foreground">{d.proximaRevision}</td>
+                                                                                        <td className="px-3 py-2 text-muted-foreground">{d.ubicacion}</td>
+                                                                                        <td className="px-3 py-2">
+                                                                                            <Badge className={docEstadoTone(d.estado)} style={{ fontSize: "10px", padding: "2px 6px" }}>{d.estado}</Badge>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                ))}
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -185,20 +214,42 @@ function ProcesosPage() {
                                         </div>
                                     </AccordionTrigger>
                                     <AccordionContent>
-                                        <div className="space-y-1.5">
-                                            {otros.map((d: any) => (
-                                                <div key={d.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-xs">
-                                                    <div className="flex min-w-0 items-center gap-2">
-                                                        <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                                        <span className="truncate font-medium">{d.nombre}</span>
-                                                        <Badge variant="secondary" className="text-[10px]">v{d.version}</Badge>
-                                                    </div>
-                                                    <div className="flex items-center gap-3 text-muted-foreground">
-                                                        <span className="truncate">{d.ubicacion}</span>
-                                                        <ExternalLink className="h-3 w-3 shrink-0" />
-                                                    </div>
-                                                </div>
-                                            ))}
+                                        <div className="overflow-hidden rounded-xl border">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-xs">
+                                                    <thead className="bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground">
+                                                        <tr>
+                                                            <th className="px-3 py-2 text-left">Documento</th>
+                                                            <th className="px-3 py-2 text-left">Versión</th>
+                                                            <th className="px-3 py-2 text-left">Responsable</th>
+                                                            <th className="px-3 py-2 text-left">Actualización</th>
+                                                            <th className="px-3 py-2 text-left">Próx. revisión</th>
+                                                            <th className="px-3 py-2 text-left">Ubicación</th>
+                                                            <th className="px-3 py-2 text-left">Estado</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y">
+                                                        {otros.map((d: any) => (
+                                                            <tr key={d.id} className="hover:bg-muted/20">
+                                                                <td className="px-3 py-2">
+                                                                    <div className="flex items-center gap-1.5 font-medium">
+                                                                        <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                                                        {d.nombre}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-3 py-2 text-muted-foreground">v{d.version}</td>
+                                                                <td className="px-3 py-2 text-muted-foreground">{d.responsable}</td>
+                                                                <td className="px-3 py-2 text-muted-foreground">{d.actualizacion}</td>
+                                                                <td className="px-3 py-2 text-muted-foreground">{d.proximaRevision}</td>
+                                                                <td className="px-3 py-2 text-muted-foreground">{d.ubicacion}</td>
+                                                                <td className="px-3 py-2">
+                                                                    <Badge className={docEstadoTone(d.estado)} style={{ fontSize: "10px", padding: "2px 6px" }}>{d.estado}</Badge>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>
