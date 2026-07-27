@@ -3,20 +3,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
-import { PROCESOS, MAPA_PROCESOS_CES, DOCUMENTOS } from "@/lib/ces-data";
-import { Workflow, User, Calendar, ClipboardCheck, Gauge, ShieldAlert, FileText, ExternalLink } from "lucide-react";
+import { MAPA_PROCESOS_CES, DOCUMENTOS, REGISTRO_RIESGOS_CES } from "@/lib/ces-data";
+import { Workflow, ShieldAlert, FileText, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/procesos")({
     component: ProcesosPage,
     head: () => ({ meta: [{ title: "Procesos CES — CES SIG" }] }),
 });
-
-function estadoTone(e: string) {
-    if (e === "Al día") return "bg-brand-soft text-brand";
-    if (e === "Requiere atención") return "bg-amber-50 text-amber-700";
-    return "bg-red-50 text-red-700";
-}
 
 function docEstadoTone(e: string) {
     return e === "Vigente" ? "bg-brand-soft text-brand" : "bg-amber-100 text-amber-700";
@@ -47,12 +41,19 @@ const SECCION_A_PROCESO: Record<string, string> = {
 
 function ProcesosPage() {
     const [documentos, setDocumentos] = useState(DOCUMENTOS);
+    const [riesgos, setRiesgos] = useState(REGISTRO_RIESGOS_CES);
 
     useEffect(() => {
         let mounted = true;
         fetch("/api/sync/documentacion")
             .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
             .then((data) => mounted && setDocumentos(data))
+            .catch(() => {
+                /* fallback kept */
+            });
+        fetch("/api/sync/riesgos")
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+            .then((data) => mounted && setRiesgos(data))
             .catch(() => {
                 /* fallback kept */
             });
@@ -74,6 +75,17 @@ function ProcesosPage() {
         }
     }
 
+    // procesoNivel2 casi siempre viene "N/A" en la matriz real -- solo procesoNivel1 (la categoría
+    // macro) es un campo confiablemente diligenciado, así que el conteo de riesgos es por categoría,
+    // no por sub-proceso (evita inventar una granularidad que los datos no sustentan).
+    const riesgosPorCategoria = new Map<string, number>();
+    for (const r of riesgos as any[]) {
+        const categoria = String(r.procesoNivel1 || "").trim();
+        if (!categoria) continue;
+        const key = normalizeKey(categoria);
+        riesgosPorCategoria.set(key, (riesgosPorCategoria.get(key) || 0) + 1);
+    }
+
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader eyebrow="Sistema Integrado de Gestión" title="Procesos CES" description="Procesos del SIG que impactan directamente al área Cloud Enterprise Services." />
@@ -86,34 +98,30 @@ function ProcesosPage() {
                 />
             </div>
 
-            <div className="mt-8 grid gap-4 lg:grid-cols-2">
-                {PROCESOS.map((p) => (
-                    <Card key={p.id} className="border-border/60 transition hover:shadow-lg">
-                        <CardContent className="p-6">
-                            <div className="flex items-start gap-4">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                                    <Workflow className="h-6 w-6" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <h3 className="text-base font-semibold">{p.nombre}</h3>
-                                        <Badge className={estadoTone(p.estado)}>{p.estado}</Badge>
+            <div className="mt-8 grid gap-4 lg:grid-cols-3">
+                {MAPA_PROCESOS_CES.map((cat) => {
+                    const docsCategoria = cat.procesos.flatMap((p) => documentosPorProceso.get(p) || []);
+                    const riesgosCategoria = riesgosPorCategoria.get(normalizeKey(cat.categoria)) || 0;
+                    return (
+                        <Card key={cat.categoria} className="border-border/60 transition hover:shadow-lg">
+                            <CardContent className="p-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                                        <Workflow className="h-6 w-6" />
                                     </div>
-                                    <p className="mt-1 text-sm text-muted-foreground">{p.descripcion}</p>
-                                    <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                                        <div className="flex items-center gap-1.5 text-muted-foreground"><User className="h-3 w-3" /> {p.responsable}</div>
-                                        <div className="flex items-center gap-1.5 text-muted-foreground"><Calendar className="h-3 w-3" /> Próx: {p.proximaRevision}</div>
-                                    </div>
-                                    <div className="mt-4 flex flex-wrap gap-2">
-                                        <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px]"><ClipboardCheck className="h-3 w-3" /> {p.auditorias} auditorías</span>
-                                        <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px]"><Gauge className="h-3 w-3" /> {p.indicadores} indicadores</span>
-                                        <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px]"><ShieldAlert className="h-3 w-3" /> {p.riesgos} riesgos</span>
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="text-base font-semibold">{cat.categoria}</h3>
+                                        <p className="mt-1 text-xs text-muted-foreground">{cat.procesos.join(" · ")}</p>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px]"><ShieldAlert className="h-3 w-3" /> {riesgosCategoria} riesgos</span>
+                                            <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2 py-1 text-[11px]"><FileText className="h-3 w-3" /> {docsCategoria.length} documentos</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+                            </CardContent>
+                        </Card>
+                    );
+                })}
             </div>
 
             <div className="mt-10">

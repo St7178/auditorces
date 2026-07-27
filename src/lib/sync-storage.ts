@@ -54,14 +54,6 @@ export async function getClientes<T>(): Promise<T | null> {
     return readBlob<T>("clientes");
 }
 
-export async function saveContratos(data: unknown) {
-    return writeBlob("contratos", data);
-}
-
-export async function getContratos<T>(): Promise<T | null> {
-    return readBlob<T>("contratos");
-}
-
 export async function saveRiesgos(data: unknown) {
     return writeBlob("riesgos", data);
 }
@@ -78,4 +70,4 @@ export async function getDocumentacion<T>(): Promise<T | null> {
     return readBlob<T>("documentacion");
 }
 
-export default { saveClientes, getClientes, saveContratos, getContratos, saveRiesgos, getRiesgos, saveDocumentacion, getDocumentacion };
+export default { saveClientes, getClientes, saveRiesgos, getRiesgos, saveDocumentacion, getDocumentacion };

@@ -16,18 +16,8 @@ export const EQUIPO = [
     { id: "yuliana", nombre: "Yuliana", cargo: "Analista de Indicadores", clientes: ["Reportería"], procesos: ["Gestión de Servicios TIC"], color: "280" },
 ];
 
-export const PROCESOS = [
-    { id: "riesgos", nombre: "Administración de Riesgos", responsable: "Johann Steven Toro", estado: "Al día", ultimaRevision: "2026-04-12", proximaRevision: "2026-10-12", auditorias: 2, indicadores: 3, riesgos: 8, descripcion: "Identificación, evaluación y tratamiento de riesgos operacionales del área CES." },
-    { id: "servicios", nombre: "Gestión de Servicios TIC", responsable: "Andrés Cano", estado: "Al día", ultimaRevision: "2026-05-20", proximaRevision: "2026-11-20", auditorias: 4, indicadores: 6, riesgos: 12, descripcion: "Operación, monitoreo y mejora continua de los servicios TIC gestionados por CES." },
-    { id: "proyectos", nombre: "Gestión de Proyectos", responsable: "Natalia Gallego", estado: "Requiere atención", ultimaRevision: "2025-11-08", proximaRevision: "2026-08-01", auditorias: 3, indicadores: 4, riesgos: 5, descripcion: "Planeación, ejecución y control de proyectos Cloud Enterprise." },
-    { id: "arquitectura", nombre: "Arquitectura de Soluciones", responsable: "Cristian Rua", estado: "Al día", ultimaRevision: "2026-06-01", proximaRevision: "2026-12-01", auditorias: 1, indicadores: 2, riesgos: 4, descripcion: "Diseño de arquitecturas Cloud, híbridas y on-prem para clientes CES." },
-    { id: "cliente", nombre: "Gestión del Servicio al Cliente", responsable: "Julio César Calle", estado: "Al día", ultimaRevision: "2026-05-30", proximaRevision: "2026-11-30", auditorias: 2, indicadores: 5, riesgos: 3, descripcion: "Relacionamiento, satisfacción y experiencia del cliente." },
-    { id: "logistica", nombre: "Gestión de Logística y Compras", responsable: "Lina Castañeda", estado: "Atrasado", ultimaRevision: "2025-09-15", proximaRevision: "2026-07-15", auditorias: 1, indicadores: 2, riesgos: 6, descripcion: "Adquisición de bienes y servicios necesarios para la operación CES." },
-    { id: "juridica", nombre: "Gestión Jurídica", responsable: "Lina Castañeda", estado: "Al día", ultimaRevision: "2026-06-10", proximaRevision: "2026-12-10", auditorias: 1, indicadores: 1, riesgos: 2, descripcion: "Contratos, cumplimiento normativo y gestión legal del área CES." },
-];
-
-// Mapa oficial de procesos del SIG (independiente del subconjunto que audita CES en PROCESOS).
-// Se usa para agrupar la documentación sincronizada desde SharePoint en /procesos.
+// Mapa oficial de procesos del SIG. Se usa para agrupar la documentación sincronizada
+// desde SharePoint y los riesgos sincronizados, en /procesos.
 export const MAPA_PROCESOS_CES = [
     { categoria: "Procesos Estratégicos", procesos: ["Planeación Estratégica", "Administración de Riesgos"] },
     { categoria: "Procesos Misionales", procesos: ["Arquitectura de Soluciones", "Gestión de Proyectos", "Gestión de Servicios de TIC", "Gestión de Servicio al Cliente"] },
