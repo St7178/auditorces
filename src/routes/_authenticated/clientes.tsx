@@ -11,6 +11,23 @@ export const Route = createFileRoute("/_authenticated/clientes")({
     head: () => ({ meta: [{ title: "Clientes — CES SIG" }] }),
 });
 
+const CLIENTE_LOGO: Record<string, string> = {
+    "CONCONCRETO": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Concocreto.png",
+    "GRUPO RECORDAR": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Grupo%20Recordar.png",
+    "INCOLMOTOS": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Incolmotos.png",
+    "INDUPALMA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/LOGO_INDUPALMA.png",
+    "INGENIO CARMELITA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/carmelita.png",
+    "INGENIO RISARALDA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/INGENIORISARALDALOGO.png",
+    "LEVAPAN": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/LevapanLogo.png",
+    "NUTRESA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/NUTRESALOGO.png",
+    "PROTELA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/PROTELA.png",
+    "SURTIALIMENTOS": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/SURTIALIAMENTOSLOGO.png",
+};
+
+function clienteLogo(nombre: string) {
+    return CLIENTE_LOGO[String(nombre || "").trim().toUpperCase()];
+}
+
 function estadoTone(e: string) {
     if (e === "Próximo a vencer") return "bg-amber-100 text-amber-700";
     if (e === "En renovación") return "bg-amber-100 text-amber-700";
@@ -51,13 +68,21 @@ function ClientesPage() {
             )}
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {clientes.map((c) => (
+                {clientes.map((c) => {
+                    const logo = clienteLogo(c.nombre);
+                    return (
                     <Card key={c.id} className="border-border/60 transition hover:shadow-lg">
                         <CardContent className="p-5">
                             <div className="flex items-start justify-between">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-[oklch(0.5_0.14_240)] text-white">
-                                    <Building2 className="h-5 w-5" />
-                                </div>
+                                {logo ? (
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border bg-white p-1.5">
+                                        <img src={logo} alt={c.nombre} className="h-full w-full object-contain" />
+                                    </div>
+                                ) : (
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-[oklch(0.5_0.14_240)] text-white">
+                                        <Building2 className="h-5 w-5" />
+                                    </div>
+                                )}
                                 <Badge className={c.estado === "Activo" ? "bg-brand-soft text-brand" : "bg-amber-50 text-amber-700"}>{c.estado}</Badge>
                             </div>
                             
@@ -97,7 +122,8 @@ function ClientesPage() {
                             )}
                         </CardContent>
                     </Card>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

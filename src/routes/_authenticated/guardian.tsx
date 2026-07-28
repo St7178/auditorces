@@ -1,10 +1,91 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, Loader2, ShieldCheck } from "lucide-react";
+import { Sparkles, Send, Loader2, ShieldCheck, Search, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { ChatMarkdown } from "@/components/chat-markdown";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
+
+const TOOL_LABELS: Record<string, string> = {
+    consultarRiesgos: "Riesgos CES",
+    consultarIndicadores: "Indicadores CES",
+    consultarClientes: "Clientes CES",
+    consultarProcesos: "Procesos CES",
+    consultarDocumentacion: "Documentación",
+};
+
+function ToolPart({ part, onApprove }: { part: any; onApprove: (id: string, approved: boolean) => void }) {
+    const toolName = String(part.type).replace(/^tool-/, "");
+
+    if (toolName === "proponerHallazgo") {
+        const input = part.input || {};
+        if (part.state === "approval-requested") {
+            return (
+                <div className="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs text-amber-900">
+                    <div className="flex items-center gap-1.5 font-semibold">
+                        <AlertTriangle className="h-3.5 w-3.5" /> Hallazgo propuesto — requiere tu confirmación
+                    </div>
+                    <div className="mt-1.5 space-y-1">
+                        {input.proceso && <div><strong>Proceso:</strong> {input.proceso}</div>}
+                        {input.titulo && <div className="font-semibold">{input.titulo}</div>}
+                        {input.descripcion && <div>{input.descripcion}</div>}
+                        {input.nivelRiesgo && <div><strong>Nivel de riesgo:</strong> {input.nivelRiesgo}</div>}
+                        {input.recomendacion && <div><strong>Recomendación:</strong> {input.recomendacion}</div>}
+                        {input.evidenciaUbicacion && <div><strong>Evidencia:</strong> {input.evidenciaUbicacion}</div>}
+                    </div>
+                    <div className="mt-2 flex gap-2">
+                        <button
+                            onClick={() => onApprove(part.approval.id, true)}
+                            className="rounded-lg bg-brand px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-brand/90"
+                        >
+                            Aprobar y guardar
+                        </button>
+                        <button
+                            onClick={() => onApprove(part.approval.id, false)}
+                            className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-semibold text-amber-900 hover:bg-amber-100"
+                        >
+                            Descartar
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        if (part.state === "output-available") {
+            return (
+                <div className="flex items-center gap-1.5 rounded-lg bg-brand-soft px-3 py-1.5 text-xs text-brand">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> Hallazgo guardado en el dashboard{input.titulo ? `: ${input.titulo}` : ""}
+                </div>
+            );
+        }
+        if (part.state === "output-denied") {
+            return (
+                <div className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground">
+                    <XCircle className="h-3.5 w-3.5 shrink-0" /> Hallazgo descartado{input.titulo ? `: ${input.titulo}` : ""}
+                </div>
+            );
+        }
+        return null;
+    }
+
+    // Herramientas de solo lectura: un indicador mínimo, sin volcar el JSON crudo al chat.
+    const label = TOOL_LABELS[toolName] || toolName;
+    if (part.state === "output-available") {
+        return (
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <Search className="h-3 w-3" /> {label} consultado
+            </div>
+        );
+    }
+    if (part.state === "input-streaming" || part.state === "input-available") {
+        return (
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> Consultando {label}…
+            </div>
+        );
+    }
+    return null;
+}
 
 export const Route = createFileRoute("/_authenticated/guardian")({
     component: GuardianPage,
@@ -33,20 +114,6 @@ const PROCESOS_AUDITABLES = [
     "Gestión del Servicio al Cliente",
 ];
 
-function renderMarkdown(text: string) {
-    const html = text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-        .replace(/`([^`]+)`/g, "<code class='rounded bg-muted px-1 py-0.5 text-xs'>$1</code>")
-        .replace(/^\s*[-*]\s+(.+)$/gm, "<li>$1</li>")
-        .replace(/(<li>[\s\S]+?<\/li>)/g, "<ul class='ml-4 list-disc space-y-1'>$1</ul>")
-        .replace(/\n\n/g, "<br/><br/>")
-        .replace(/\n/g, "<br/>");
-    return { __html: html };
-}
-
 function GuardianPage() {
     const { user } = AuthenticatedRoute.useRouteContext();
     const firstName = user?.name?.split(" ")[0] ?? "Usuario";
@@ -54,11 +121,16 @@ function GuardianPage() {
         ? user.name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase()
         : "US";
     const [input, setInput] = useState("");
-    const { messages, sendMessage, status } = useChat({
+    const { messages, sendMessage, addToolApprovalResponse, status } = useChat({
         transport: new DefaultChatTransport({ api: "/api/chat" }),
+        sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     });
     const endRef = useRef<HTMLDivElement>(null);
     const loading = status === "submitted" || status === "streaming";
+
+    const handleApprove = (approvalId: string, approved: boolean) => {
+        void addToolApprovalResponse({ id: approvalId, approved });
+    };
 
     useEffect(() => {
         endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -152,8 +224,16 @@ function GuardianPage() {
                                         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${isUser ? "bg-secondary text-secondary-foreground" : "gradient-brand text-white"}`}>
                                             {isUser ? userInitials : <Sparkles className="h-4 w-4" />}
                                         </div>
-                                        <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-brand text-white" : "bg-muted/60"}`}>
-                                            {isUser ? text : <div dangerouslySetInnerHTML={renderMarkdown(text)} />}
+                                        <div className={`max-w-[80%] space-y-2 rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-brand text-white" : "bg-muted/60"}`}>
+                                            {isUser ? (
+                                                text
+                                            ) : (
+                                                m.parts.map((p, idx) => {
+                                                    if (p.type === "text") return p.text ? <ChatMarkdown key={idx} text={p.text} /> : null;
+                                                    if (String(p.type).startsWith("tool-")) return <ToolPart key={idx} part={p} onApprove={handleApprove} />;
+                                                    return null;
+                                                })
+                                            )}
                                         </div>
                                     </div>
                                 );

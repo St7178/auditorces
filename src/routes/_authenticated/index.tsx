@@ -3,14 +3,35 @@ import {
     ClipboardList, ShieldAlert, Users, FileText, Truck, Gauge, ListChecks, AlertTriangle,
     Sparkles, ArrowUpRight, TrendingUp,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { KPIS_DASHBOARD, RECOMENDACIONES_IA, INDICADORES, CRONOGRAMA } from "@/lib/ces-data";
 import {
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
     RadialBarChart, RadialBar, PolarAngleAxis,
 } from "recharts";
+
+type Hallazgo = {
+    id: string;
+    proceso: string;
+    titulo: string;
+    descripcion: string;
+    nivelRiesgo: string | null;
+    recomendacion: string;
+    evidenciaUbicacion: string | null;
+    estado: string;
+    creadoEn: string;
+};
+
+function nivelTone(n: string | null) {
+    if (n === "Crítico") return "bg-red-100 text-red-700";
+    if (n === "Alto") return "bg-orange-100 text-orange-700";
+    if (n === "Medio") return "bg-amber-100 text-amber-700";
+    return "bg-brand-soft text-brand";
+}
 
 export const Route = createFileRoute("/_authenticated/")({
     component: Dashboard,
@@ -35,6 +56,25 @@ const cumplimientoData = [
 function Dashboard() {
     const { user } = AuthenticatedRoute.useRouteContext();
     const firstName = user?.name?.split(" ")[0] ?? "Usuario";
+    const [hallazgos, setHallazgos] = useState<Hallazgo[] | null>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        fetch("/api/hallazgos")
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+            .then((data) => mounted && setHallazgos(data))
+            .catch(() => {
+                /* fallback: KPI estático se mantiene */
+            });
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const hallazgosAbiertos = hallazgos?.filter((h) => h.estado === "Abierto").length;
+    const kpis = KPIS_DASHBOARD.map((k) =>
+        k.icon === "alert" && hallazgosAbiertos !== undefined ? { ...k, value: hallazgosAbiertos, delta: "vivo" } : k
+    );
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -63,7 +103,7 @@ function Dashboard() {
 
             {/* KPI grid */}
             <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {KPIS_DASHBOARD.map((k) => {
+                {kpis.map((k) => {
                     const Icon = iconMap[k.icon];
                     const toneBg = k.tone === "warning" ? "bg-amber-50 text-amber-700" : k.tone === "brand" ? "bg-brand-soft text-brand" : "bg-muted text-muted-foreground";
                     return (
@@ -187,6 +227,37 @@ function Dashboard() {
                     </CardContent>
                 </Card>
             </section>
+
+            {/* Hallazgos de auditoría (CES AUDITOR) */}
+            {hallazgos && hallazgos.length > 0 && (
+                <section className="mt-8">
+                    <div className="mb-4 flex items-end justify-between">
+                        <div>
+                            <h2 className="text-lg font-semibold">Hallazgos de auditoría</h2>
+                            <p className="text-xs text-muted-foreground">Encontrados por CES AUDITOR durante las auditorías conversacionales</p>
+                        </div>
+                        <Button asChild variant="ghost" size="sm"><Link to="/guardian">Ir a CES AUDITOR <ArrowUpRight className="ml-1 h-3 w-3" /></Link></Button>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {hallazgos.slice(0, 6).map((h) => (
+                            <Card key={h.id} className="border-border/60">
+                                <CardContent className="p-5">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h.proceso}</div>
+                                        {h.nivelRiesgo && <Badge className={nivelTone(h.nivelRiesgo)}>{h.nivelRiesgo}</Badge>}
+                                    </div>
+                                    <div className="mt-1.5 text-sm font-semibold">{h.titulo}</div>
+                                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{h.descripcion}</p>
+                                    <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
+                                        <span>{h.estado}</span>
+                                        <span>{new Date(h.creadoEn).toLocaleDateString("es")}</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Indicadores mini */}
             <section className="mt-8">

@@ -23,6 +23,7 @@ import { Route as AuthenticatedProcesosRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProveedoresRouteImport } from './routes/_authenticated/proveedores'
 import { Route as AuthenticatedRiesgosRouteImport } from './routes/_authenticated/riesgos'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiHallazgosRouteImport } from './routes/api/hallazgos'
 import { Route as ApiWikiChatRouteImport } from './routes/api/wiki-chat'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
@@ -103,6 +104,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHallazgosRoute = ApiHallazgosRouteImport.update({
+  id: '/api/hallazgos',
+  path: '/api/hallazgos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWikiChatRoute = ApiWikiChatRouteImport.update({
   id: '/api/wiki-chat',
   path: '/api/wiki-chat',
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/_authenticated/proveedores': typeof AuthenticatedProveedoresRoute
   '/_authenticated/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
+    | '/api/hallazgos'
     | '/api/wiki-chat'
     | '/api/auth/callback'
     | '/api/auth/login'
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
+    | '/api/hallazgos'
     | '/api/wiki-chat'
     | '/'
     | '/api/auth/callback'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/_authenticated/proveedores'
     | '/_authenticated/riesgos'
     | '/api/chat'
+    | '/api/hallazgos'
     | '/api/wiki-chat'
     | '/_authenticated/'
     | '/api/auth/callback'
@@ -281,6 +293,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiHallazgosRoute: typeof ApiHallazgosRoute
   ApiWikiChatRoute: typeof ApiWikiChatRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
@@ -390,6 +403,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/hallazgos': {
+      id: '/api/hallazgos'
+      path: '/api/hallazgos'
+      fullPath: '/api/hallazgos'
+      preLoaderRoute: typeof ApiHallazgosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/wiki-chat': {
       id: '/api/wiki-chat'
       path: '/api/wiki-chat'
@@ -478,6 +498,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiHallazgosRoute: ApiHallazgosRoute,
   ApiWikiChatRoute: ApiWikiChatRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,

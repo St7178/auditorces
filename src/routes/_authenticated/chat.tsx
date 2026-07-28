@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Send, Loader2 } from "lucide-react";
+import { BookOpen, Send, Loader2, Lightbulb, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { ChatMarkdown } from "@/components/chat-markdown";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 
 export const Route = createFileRoute("/_authenticated/chat")({
@@ -20,22 +21,8 @@ const SUGERENCIAS = [
     "¿Quiénes son nuestros clientes?",
     "¿Cómo está organizado el equipo de Operación?",
     "Dame el formato de acta de reunión",
-    "¿Qué indicadores de gestión manejamos?",
+    "Procedimiento para restaurar una base SAP ASE",
 ];
-
-function renderMarkdown(text: string) {
-    const html = text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-        .replace(/`([^`]+)`/g, "<code class='rounded bg-muted px-1 py-0.5 text-xs'>$1</code>")
-        .replace(/^\s*[-*]\s+(.+)$/gm, "<li>$1</li>")
-        .replace(/(<li>[\s\S]+?<\/li>)/g, "<ul class='ml-4 list-disc space-y-1'>$1</ul>")
-        .replace(/\n\n/g, "<br/><br/>")
-        .replace(/\n/g, "<br/>");
-    return { __html: html };
-}
 
 function ChatWikiPage() {
     const { user } = AuthenticatedRoute.useRouteContext();
@@ -44,6 +31,7 @@ function ChatWikiPage() {
         ? user.name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase()
         : "US";
     const [input, setInput] = useState("");
+    const [showTips, setShowTips] = useState(true);
     const { messages, sendMessage, status } = useChat({
         transport: new DefaultChatTransport({ api: "/api/wiki-chat" }),
     });
@@ -80,6 +68,43 @@ function ChatWikiPage() {
                 </div>
             </div>
 
+            <Card className="mb-4 border-amber-300/50 bg-amber-50/60">
+                <button
+                    onClick={() => setShowTips((v) => !v)}
+                    className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left"
+                >
+                    <div className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+                        <Lightbulb className="h-4 w-4" /> Cómo preguntarle a Chat Wiki
+                    </div>
+                    <ChevronDown className={`h-4 w-4 text-amber-700 transition-transform ${showTips ? "rotate-180" : ""}`} />
+                </button>
+                {showTips && (
+                    <div className="px-4 pb-4 text-xs leading-relaxed text-amber-900">
+                        <ul className="space-y-1.5">
+                            <li>
+                                <strong>Sé específico:</strong> menciona el nombre del cliente, servicio, tecnología o documento que buscas.
+                                El chat busca por significado, no por palabras exactas — entre más concreta la pregunta, mejor encuentra el contenido.
+                            </li>
+                            <li>
+                                <strong>Pide documentos explícitamente:</strong> "dame el procedimiento de...", "qué dice el manual de...", "adjúntame el formato de...".
+                            </li>
+                            <li>
+                                <strong>Evita preguntas muy genéricas</strong> como "qué información tienes" o "dame información" — no tienen un tema
+                                concreto para buscar. Pregunta por algo puntual.
+                            </li>
+                        </ul>
+                        <div className="mt-3">
+                            <div className="mb-1 font-semibold uppercase tracking-wide text-[10px] text-amber-700">Ejemplos</div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {["¿Qué servicios de Active Directory tiene Nutresa?", "Procedimiento para restaurar una base SAP ASE", "¿Cómo configuro VMware DC BT?"].map((ej) => (
+                                    <span key={ej} className="rounded-full border border-amber-300 bg-white px-2 py-1 text-[11px]">{ej}</span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </Card>
+
             <Card className="flex flex-1 flex-col overflow-hidden border-border/60">
                 <div className="flex-1 overflow-y-auto px-6 py-6">
                     {empty ? (
@@ -114,7 +139,7 @@ function ChatWikiPage() {
                                             {isUser ? userInitials : <BookOpen className="h-4 w-4" />}
                                         </div>
                                         <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-brand text-white" : "bg-muted/60"}`}>
-                                            {isUser ? text : <div dangerouslySetInnerHTML={renderMarkdown(text)} />}
+                                            {isUser ? text : <ChatMarkdown text={text} />}
                                         </div>
                                     </div>
                                 );

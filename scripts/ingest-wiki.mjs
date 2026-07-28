@@ -1,9 +1,15 @@
-// Genera src/lib/wiki-knowledge/index.json a partir de páginas de una wiki MediaWiki interna.
-// Puerto a Node del backend Python de ChatWikiAI2 (wiki_scraper.py + document_processor.py + vector_store.py),
-// pero sin FAISS: usa el mismo patrón de índice estático + cosine similarity que scripts/ingest-knowledge.mjs.
+// Indexa páginas de una wiki MediaWiki interna en Postgres (pgvector), reutilizando la misma
+// Neon DB del resto de la app. Puerto a Node del backend Python de ChatWikiAI2 (wiki_scraper.py +
+// document_processor.py + vector_store.py) — pero sin FAISS ni archivo JSON estático: un wiki con
+// decenas de miles de páginas genera demasiados chunks para caber en un solo archivo (superaría el
+// límite de string de Node/V8 y los límites de tamaño de función serverless de Vercel). En vez de
+// eso, cada página se guarda en la tabla `wiki_chunks` INMEDIATAMENTE después de embeberla, así que
+// si el proceso se interrumpe a mitad de camino no se pierde el trabajo (ni el gasto de OpenAI) de
+// las páginas ya procesadas.
 //
 // Uso: npm run ingest:wiki
-// Requiere en .env: WIKI_USERNAME, WIKI_PASSWORD, OPENAI_API_KEY, y al menos una de:
+// Requiere en .env: WIKI_USERNAME, WIKI_PASSWORD, OPENAI_API_KEY, DATABASE_URL (o POSTGRES_URL), y
+// al menos una de:
 //   WIKI_OPERACION_URL (por defecto indexa 3 páginas de ejemplo — ver DEFAULT_PAGES)
 //   WIKI_GENERAL_URL   (sin páginas por defecto — define WIKI_GENERAL_PAGES para activarla)
 // Opcionales por wiki: WIKI_OPERACION_PAGES / WIKI_GENERAL_PAGES (coma-separado, sobreescribe el default).
@@ -11,7 +17,7 @@
 //             configurada, ignorando las listas de páginas), WIKI_LIMIT, WIKI_PREFIX, WIKI_NAMESPACE (default 0).
 //
 // Volver a correr cada vez que cambie contenido relevante en la wiki (no hay reindexado automático).
-import { writeFile } from "node:fs/promises";
+// Re-correr es seguro: cada página borra sus chunks viejos antes de insertar los nuevos.
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,9 +26,9 @@ import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import XLSX from "xlsx";
 import { Agent, fetch as undiciFetch } from "undici";
+import { neon } from "@neondatabase/serverless";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const OUTPUT_FILE = path.join(__dirname, "..", "src", "lib", "wiki-knowledge", "index.json");
 const EMBEDDING_MODEL = "text-embedding-3-small";
 const DEFAULT_PAGES = ["Nuestros_Clientes", "Página_principal", "Equipos_de_Operación"];
 
@@ -271,7 +277,12 @@ async function extractDocumentText(fileName, buffer) {
             }
             return text;
         }
-        return ""; // imágenes y otros formatos: sin texto útil para RAG, se omiten
+        if (["png", "jpg", "jpeg", "gif", "bmp", "webp"].includes(ext)) {
+            // Sin OCR: se guarda solo el nombre como texto mínimo, para que el chunk exista y el
+            // chat pueda encontrar y enlazar/mostrar la imagen (no para buscar por su contenido visual).
+            return `Imagen adjunta: ${fileName.replace(/[_-]+/g, " ").replace(/\.[a-z0-9]+$/i, "")}`;
+        }
+        return ""; // otros formatos: sin texto útil para RAG, se omiten
     } catch (err) {
         console.error(`  [FILE] Error procesando ${fileName}: ${err.message}`);
         return "";
@@ -358,6 +369,41 @@ async function processPage(session, title, chunkSize, overlap, wikiKey) {
     return pageChunks;
 }
 
+// ---------- Postgres (pgvector) ----------
+
+async function ensureSchema(sql) {
+    await sql`CREATE EXTENSION IF NOT EXISTS vector`;
+    await sql`
+        CREATE TABLE IF NOT EXISTS wiki_chunks (
+            id TEXT PRIMARY KEY,
+            wiki TEXT NOT NULL,
+            page TEXT NOT NULL,
+            section TEXT,
+            chunk_index INT NOT NULL,
+            text TEXT NOT NULL,
+            file_name TEXT,
+            file_url TEXT,
+            embedding vector(1536) NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS wiki_chunks_page_idx ON wiki_chunks (wiki, page)`;
+    // HNSW: se actualiza incrementalmente con cada INSERT, no requiere reconstruir todo el índice
+    // cada vez (a diferencia de ivfflat, que sí necesita re-entrenarse con los datos ya cargados).
+    await sql`CREATE INDEX IF NOT EXISTS wiki_chunks_embedding_idx ON wiki_chunks USING hnsw (embedding vector_cosine_ops)`;
+}
+
+async function saveChunksForPage(sql, wiki, page, chunks) {
+    await sql`DELETE FROM wiki_chunks WHERE wiki = ${wiki} AND page = ${page}`;
+    for (const c of chunks) {
+        const embeddingLiteral = JSON.stringify(c.embedding);
+        await sql`
+            INSERT INTO wiki_chunks (id, wiki, page, section, chunk_index, text, file_name, file_url, embedding)
+            VALUES (${c.id}, ${c.wiki}, ${c.page}, ${c.section}, ${c.chunkIndex}, ${c.text}, ${c.fileName}, ${c.fileUrl}, ${embeddingLiteral}::vector)
+        `;
+    }
+}
+
 // Dos instalaciones MediaWiki separadas de grupocnet (cada una con su propio login/sesión).
 // "operacion" trae por defecto las 3 páginas de ejemplo del proyecto original; "general" queda
 // sin páginas por defecto (agrega WIKI_GENERAL_PAGES cuando quieras indexarla también).
@@ -370,13 +416,36 @@ function resolveWikiSources() {
     ].filter((s) => s.url);
 }
 
+const EMBED_BATCH = 64;
+
+async function embedPageChunks(rawChunks, apiKey) {
+    const chunks = rawChunks.map((c) => ({
+        id: `${c.wiki}:${c.page}#${c.chunkIndex}`,
+        wiki: c.wiki,
+        page: c.page,
+        section: c.section,
+        chunkIndex: c.chunkIndex,
+        text: c.text,
+        fileName: c.fileName,
+        fileUrl: c.fileUrl,
+    }));
+    for (let i = 0; i < chunks.length; i += EMBED_BATCH) {
+        const batch = chunks.slice(i, i + EMBED_BATCH);
+        const embeddings = await embed(batch.map((c) => c.text), apiKey);
+        batch.forEach((c, j) => (c.embedding = embeddings[j]));
+    }
+    return chunks;
+}
+
 async function main() {
     loadDotEnvIfPresent();
     const apiKey = process.env.OPENAI_API_KEY;
     const username = process.env.WIKI_USERNAME;
     const password = process.env.WIKI_PASSWORD;
+    const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
     if (!apiKey) return fail("Falta OPENAI_API_KEY");
     if (!username || !password) return fail("Falta WIKI_USERNAME / WIKI_PASSWORD");
+    if (!dbUrl) return fail("Falta DATABASE_URL / POSTGRES_URL");
 
     const chunkSize = Number(process.env.CHUNK_SIZE || 1000);
     const overlap = Number(process.env.CHUNK_OVERLAP || 200);
@@ -388,8 +457,13 @@ async function main() {
     const sources = resolveWikiSources();
     if (!sources.length) return fail("No hay ninguna wiki configurada (define WIKI_OPERACION_URL y/o WIKI_GENERAL_URL).");
 
-    let allRawChunks = [];
-    const generatedFrom = [];
+    const sql = neon(dbUrl);
+    console.log("Preparando esquema en Postgres (wiki_chunks)...");
+    await ensureSchema(sql);
+
+    let totalChunks = 0;
+    let totalPages = 0;
+    let totalErrors = 0;
 
     for (const source of sources) {
         console.log(`\n=== Wiki "${source.key}": ${source.url} ===`);
@@ -414,43 +488,24 @@ async function main() {
             continue;
         }
 
-        for (const title of titles) {
-            console.log(`  Procesando página: ${title}`);
+        for (let i = 0; i < titles.length; i++) {
+            const title = titles[i];
             try {
-                const pageChunks = await processPage(session, title, chunkSize, overlap, source.key);
-                allRawChunks.push(...pageChunks);
-                console.log(`    -> ${pageChunks.length} chunk(s)`);
+                const rawChunks = await processPage(session, title, chunkSize, overlap, source.key);
+                const chunks = rawChunks.length ? await embedPageChunks(rawChunks, apiKey) : [];
+                await saveChunksForPage(sql, source.key, title, chunks);
+                totalChunks += chunks.length;
+                totalPages += 1;
+                console.log(`  [${i + 1}/${titles.length}] ${title} -> ${chunks.length} chunk(s) guardado(s) (acumulado: ${totalChunks} chunks / ${totalPages} páginas)`);
             } catch (err) {
-                console.error(`    Error procesando ${title}: ${err.message}`);
+                totalErrors += 1;
+                console.error(`  [${i + 1}/${titles.length}] Error procesando ${title}: ${err.message}`);
             }
         }
-        generatedFrom.push(...titles.map((t) => `${source.key}:${t}`));
     }
 
-    if (!allRawChunks.length) return fail("No se generó ningún chunk. Revisa credenciales y la configuración de páginas por wiki.");
-
-    const chunks = allRawChunks.map((c) => ({
-        id: `${c.wiki}:${c.page}#${c.chunkIndex}`,
-        wiki: c.wiki,
-        page: c.page,
-        section: c.section,
-        chunkIndex: c.chunkIndex,
-        text: c.text,
-        fileName: c.fileName,
-        fileUrl: c.fileUrl,
-    }));
-
-    console.log(`\nGenerando embeddings para ${chunks.length} chunk(s)...`);
-    const BATCH = 64;
-    for (let i = 0; i < chunks.length; i += BATCH) {
-        const batch = chunks.slice(i, i + BATCH);
-        const embeddings = await embed(batch.map((c) => c.text), apiKey);
-        batch.forEach((c, j) => (c.embedding = embeddings[j]));
-    }
-
-    const output = { model: EMBEDDING_MODEL, generatedFrom, chunks };
-    await writeFile(OUTPUT_FILE, JSON.stringify(output));
-    console.log(`Listo: ${OUTPUT_FILE} (${chunks.length} chunks de ${generatedFrom.length} página(s) en ${sources.length} wiki(s)).`);
+    if (!totalPages) return fail("No se procesó ninguna página. Revisa credenciales y la configuración de páginas por wiki.");
+    console.log(`\nListo: ${totalChunks} chunks guardados en Postgres de ${totalPages} página(s) (${totalErrors} error(es)).`);
 }
 
 function fail(msg) {
