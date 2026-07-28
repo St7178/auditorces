@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, Loader2, ShieldCheck, Search, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { Sparkles, Send, Loader2, ShieldCheck, Search, AlertTriangle, CheckCircle2, XCircle, CalendarPlus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ChatMarkdown } from "@/components/chat-markdown";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
@@ -62,6 +62,62 @@ function ToolPart({ part, onApprove }: { part: any; onApprove: (id: string, appr
             return (
                 <div className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground">
                     <XCircle className="h-3.5 w-3.5 shrink-0" /> Hallazgo descartado{input.titulo ? `: ${input.titulo}` : ""}
+                </div>
+            );
+        }
+        return null;
+    }
+
+    if (toolName === "agendarReunion") {
+        const input = part.input || {};
+        const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" }) : "");
+        if (part.state === "approval-requested") {
+            return (
+                <div className="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs text-amber-900">
+                    <div className="flex items-center gap-1.5 font-semibold">
+                        <CalendarPlus className="h-3.5 w-3.5" /> Reunión a agendar — requiere tu confirmación
+                    </div>
+                    <div className="mt-1.5 space-y-1">
+                        {input.titulo && <div className="font-semibold">{input.titulo}</div>}
+                        {input.startIso && <div><strong>Cuándo:</strong> {fmt(input.startIso)} — {fmt(input.endIso)}</div>}
+                        {input.descripcion && <div>{input.descripcion}</div>}
+                        {input.invitados?.length > 0 && <div><strong>Invitados:</strong> {input.invitados.join(", ")}</div>}
+                        <div><strong>Teams:</strong> {input.reunionTeams === false ? "No" : "Sí"}</div>
+                    </div>
+                    <div className="mt-2 flex gap-2">
+                        <button
+                            onClick={() => onApprove(part.approval.id, true)}
+                            className="rounded-lg bg-brand px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-brand/90"
+                        >
+                            Aprobar y agendar
+                        </button>
+                        <button
+                            onClick={() => onApprove(part.approval.id, false)}
+                            className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-semibold text-amber-900 hover:bg-amber-100"
+                        >
+                            Descartar
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        if (part.state === "output-available") {
+            const webLink = part.output?.evento?.webLink;
+            return (
+                <div className="flex items-center gap-1.5 rounded-lg bg-brand-soft px-3 py-1.5 text-xs text-brand">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> Reunión agendada{input.titulo ? `: ${input.titulo}` : ""}
+                    {webLink && (
+                        <a href={webLink} target="_blank" rel="noopener noreferrer" className="ml-1 underline">
+                            Ver en Outlook
+                        </a>
+                    )}
+                </div>
+            );
+        }
+        if (part.state === "output-denied") {
+            return (
+                <div className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground">
+                    <XCircle className="h-3.5 w-3.5 shrink-0" /> Reunión descartada{input.titulo ? `: ${input.titulo}` : ""}
                 </div>
             );
         }

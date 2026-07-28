@@ -29,6 +29,28 @@ function normalizeName(name: string) {
     return name.trim().toLowerCase();
 }
 
+const PRESENCE_LABEL: Record<string, { label: string; dot: string }> = {
+    Available: { label: "Disponible", dot: "bg-emerald-500" },
+    AvailableIdle: { label: "Disponible", dot: "bg-emerald-500" },
+    Busy: { label: "Ocupado", dot: "bg-amber-500" },
+    BusyIdle: { label: "Ocupado", dot: "bg-amber-500" },
+    DoNotDisturb: { label: "No molestar", dot: "bg-red-500" },
+    BeRightBack: { label: "Vuelvo enseguida", dot: "bg-amber-500" },
+    Away: { label: "Ausente", dot: "bg-amber-400" },
+    Offline: { label: "Sin conexión", dot: "bg-muted-foreground/40" },
+};
+
+function PresenceBadge({ availability }: { availability?: string | null }) {
+    if (!availability) return null;
+    const info = PRESENCE_LABEL[availability];
+    if (!info) return null;
+    return (
+        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+            <span className={`h-1.5 w-1.5 rounded-full ${info.dot}`} /> {info.label}
+        </span>
+    );
+}
+
 function EquipoPage() {
     const { entraUsers, error } = Route.useLoaderData();
     const entraByName = new Map(entraUsers.map((u) => [normalizeName(u.displayName), u]));
@@ -43,6 +65,7 @@ function EquipoPage() {
             cargo: match?.jobTitle ?? m.cargo,
             mail: match?.mail ?? match?.userPrincipalName ?? null,
             photoUrl: match?.photoUrl ?? null,
+            availability: match?.availability ?? null,
             enDirectorio: Boolean(match),
         };
     });
@@ -77,9 +100,12 @@ function EquipoPage() {
                             </Avatar>
                             <div className="mt-3 text-base font-semibold">{m.nombre}</div>
                             <div className="text-xs text-muted-foreground">{m.cargo}</div>
-                            {m.enDirectorio && (
-                                <Badge variant="secondary" className="mt-2 gap-1 text-[10px]"><IdCard className="h-3 w-3" /> Directorio Entra ID</Badge>
-                            )}
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                {m.enDirectorio && (
+                                    <Badge variant="secondary" className="gap-1 text-[10px]"><IdCard className="h-3 w-3" /> Directorio Entra ID</Badge>
+                                )}
+                                <PresenceBadge availability={m.availability} />
+                            </div>
                             <div className="mt-3 flex flex-wrap gap-1">
                                 {m.procesos.slice(0, 2).map((p) => (
                                     <Badge key={p} variant="secondary" className="text-[10px]">{p}</Badge>
@@ -108,8 +134,9 @@ function EquipoPage() {
                             </Avatar>
                             <div className="mt-3 text-base font-semibold">{u.displayName}</div>
                             <div className="text-xs text-muted-foreground">{u.jobTitle}</div>
-                            <div className="mt-3">
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
                                 <Badge variant="secondary" className="gap-1 text-[10px]"><IdCard className="h-3 w-3" /> Directorio Entra ID</Badge>
+                                <PresenceBadge availability={u.availability} />
                             </div>
                             <div className="mt-4 flex gap-2">
                                 <a href={`mailto:${u.mail ?? u.userPrincipalName}`} className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent">

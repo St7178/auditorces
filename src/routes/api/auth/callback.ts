@@ -20,14 +20,17 @@ export const Route = createFileRoute("/api/auth/callback")({
                     return new Response("Solicitud de login inválida o expirada. Intenta iniciar sesión de nuevo.", { status: 400 });
                 }
 
-                const accessToken = await exchangeCodeForAccessToken(code);
-                const profile = await fetchGraphMe(accessToken);
+                const tokens = await exchangeCodeForAccessToken(code);
+                const profile = await fetchGraphMe(tokens.accessToken);
 
                 await setCurrentSession({
                     oid: profile.id,
                     name: profile.displayName,
                     email: profile.mail ?? profile.userPrincipalName,
                     jobTitle: profile.jobTitle,
+                    msAccessToken: tokens.accessToken,
+                    msRefreshToken: tokens.refreshToken,
+                    msExpiresAt: tokens.expiresAt,
                 });
 
                 return new Response(null, { status: 302, headers: { Location: "/" } });

@@ -7,6 +7,7 @@ import { INVENTARIO_DOCUMENTAL_CES, REGISTRO_RIESGOS_CES, INDICADORES, CLIENTES,
 import { getRiesgos, getClientes, getDocumentacion } from "@/lib/sync-storage";
 import { saveHallazgo } from "@/lib/hallazgos-storage";
 import { getCurrentSession } from "@/lib/auth/session";
+import { getValidUserAccessToken, createCalendarEvent } from "@/lib/auth/entra";
 
 const SYSTEM_PROMPT = `Eres CES Guardian (CES AUDITOR), el asistente inteligente de calidad y auditoría del área Cloud Enterprise Services (CES) de Compunet.
 
@@ -30,6 +31,7 @@ CÓMO HACER UNA AUDITORÍA:
 4. Solicita la ubicación de la evidencia (nunca el archivo).
 5. Cuando identifiques un hallazgo concreto (una no conformidad, riesgo no gestionado, oportunidad de mejora), usa la herramienta proponerHallazgo para registrarlo. Esta herramienta SIEMPRE pide confirmación explícita del usuario antes de guardarse — nunca digas que "ya quedó guardado" hasta que la herramienta confirme que el usuario aprobó.
 6. Al final de la auditoría, entrega un resumen con los hallazgos propuestos, oportunidades y recomendaciones.
+7. Si el usuario pide agendar una reunión (ej. "agéndame la auditoría de Riesgos el viernes a las 10am"), usa la herramienta agendarReunion. También pide confirmación explícita antes de crearse en el calendario real del usuario. Calcula la fecha/hora exacta en ISO 8601 con zona horaria de Bogotá (UTC-5) a partir de la fecha de hoy que se indica abajo — nunca inventes una fecha sin ancla.
 
 Sé conciso, usa listas y estructura visual (títulos con **negrita**). Responde en markdown.`;
 
@@ -63,7 +65,8 @@ export const Route = createFileRoute("/api/chat")({
                     ? `Contexto recuperado de la base de conocimiento (usa esto para responder con precisión; si no es relevante, ignóralo):\n${relevantChunks.map((c) => `--- ${c.source} ---\n${c.text}`).join("\n\n")}`
                     : "";
 
-                const system = [SYSTEM_PROMPT, INVENTARIO_BLOCK, retrievedBlock].filter(Boolean).join("\n\n");
+                const fechaHoyBlock = `Fecha y hora actuales (America/Bogota, UTC-5): ${new Date().toLocaleString("es-CO", { timeZone: "America/Bogota", dateStyle: "full", timeStyle: "short" })}.`;
+                const system = [SYSTEM_PROMPT, fechaHoyBlock, INVENTARIO_BLOCK, retrievedBlock].filter(Boolean).join("\n\n");
 
                 const tools = {
                     consultarRiesgos: tool({
@@ -115,6 +118,31 @@ export const Route = createFileRoute("/api/chat")({
                         execute: async (input) => {
                             const saved = await saveHallazgo(input);
                             return { guardado: true, hallazgo: saved };
+                        },
+                    }),
+                    agendarReunion: tool({
+                        description:
+                            "Agenda una reunión real en el calendario de Outlook del usuario logueado (con link de Teams si aplica). SIEMPRE requiere confirmación explícita del usuario antes de crearse.",
+                        inputSchema: z.object({
+                            titulo: z.string().describe("Título de la reunión"),
+                            startIso: z.string().describe("Fecha y hora de inicio en ISO 8601 (ej. 2026-08-01T10:00:00-05:00), calculada a partir de la fecha de hoy"),
+                            endIso: z.string().describe("Fecha y hora de fin en ISO 8601"),
+                            descripcion: z.string().optional().describe("Agenda o descripción de la reunión"),
+                            invitados: z.array(z.string()).optional().describe("Correos de los invitados, si el usuario los menciona"),
+                            reunionTeams: z.boolean().optional().describe("Si debe generarse un link de Teams (por defecto sí)"),
+                        }),
+                        needsApproval: true,
+                        execute: async (input) => {
+                            const accessToken = await getValidUserAccessToken();
+                            const evento = await createCalendarEvent(accessToken, {
+                                subject: input.titulo,
+                                startIso: input.startIso,
+                                endIso: input.endIso,
+                                description: input.descripcion,
+                                attendeeEmails: input.invitados,
+                                isOnlineMeeting: input.reunionTeams,
+                            });
+                            return { creado: true, evento };
                         },
                     }),
                 };

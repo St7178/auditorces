@@ -24,6 +24,7 @@ import { Route as AuthenticatedProveedoresRouteImport } from './routes/_authenti
 import { Route as AuthenticatedRiesgosRouteImport } from './routes/_authenticated/riesgos'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiHallazgosRouteImport } from './routes/api/hallazgos'
+import { Route as ApiNotificacionesRouteImport } from './routes/api/notificaciones'
 import { Route as ApiWikiChatRouteImport } from './routes/api/wiki-chat'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
@@ -109,6 +110,11 @@ const ApiHallazgosRoute = ApiHallazgosRouteImport.update({
   path: '/api/hallazgos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiNotificacionesRoute = ApiNotificacionesRouteImport.update({
+  id: '/api/notificaciones',
+  path: '/api/notificaciones',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWikiChatRoute = ApiWikiChatRouteImport.update({
   id: '/api/wiki-chat',
   path: '/api/wiki-chat',
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
   '/api/hallazgos': typeof ApiHallazgosRoute
+  '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
   '/api/hallazgos': typeof ApiHallazgosRoute
+  '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/_authenticated/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
   '/api/hallazgos': typeof ApiHallazgosRoute
+  '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/riesgos'
     | '/api/chat'
     | '/api/hallazgos'
+    | '/api/notificaciones'
     | '/api/wiki-chat'
     | '/api/auth/callback'
     | '/api/auth/login'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/riesgos'
     | '/api/chat'
     | '/api/hallazgos'
+    | '/api/notificaciones'
     | '/api/wiki-chat'
     | '/'
     | '/api/auth/callback'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/_authenticated/riesgos'
     | '/api/chat'
     | '/api/hallazgos'
+    | '/api/notificaciones'
     | '/api/wiki-chat'
     | '/_authenticated/'
     | '/api/auth/callback'
@@ -294,6 +306,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiHallazgosRoute: typeof ApiHallazgosRoute
+  ApiNotificacionesRoute: typeof ApiNotificacionesRoute
   ApiWikiChatRoute: typeof ApiWikiChatRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
@@ -410,6 +423,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHallazgosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/notificaciones': {
+      id: '/api/notificaciones'
+      path: '/api/notificaciones'
+      fullPath: '/api/notificaciones'
+      preLoaderRoute: typeof ApiNotificacionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/wiki-chat': {
       id: '/api/wiki-chat'
       path: '/api/wiki-chat'
@@ -499,6 +519,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ApiChatRoute: ApiChatRoute,
   ApiHallazgosRoute: ApiHallazgosRoute,
+  ApiNotificacionesRoute: ApiNotificacionesRoute,
   ApiWikiChatRoute: ApiWikiChatRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,

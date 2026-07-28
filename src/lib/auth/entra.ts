@@ -1,4 +1,6 @@
-const LOGIN_SCOPES = "openid profile email User.Read";
+import { getCurrentSession, setCurrentSession } from "@/lib/auth/session";
+
+const LOGIN_SCOPES = "openid profile email offline_access User.Read Calendars.Read";
 
 function entraConfig() {
     const tenantId = process.env.ENTRA_TENANT_ID;
@@ -30,7 +32,13 @@ export function buildLogoutUrl(postLogoutRedirectUri: string): string {
     return url.toString();
 }
 
-export async function exchangeCodeForAccessToken(code: string): Promise<string> {
+export type UserTokens = {
+    accessToken: string;
+    refreshToken: string | null;
+    expiresAt: number; // epoch ms
+};
+
+export async function exchangeCodeForAccessToken(code: string): Promise<UserTokens> {
     const { tenantId, clientId, clientSecret, redirectUri } = entraConfig();
     const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
         method: "POST",
@@ -45,8 +53,71 @@ export async function exchangeCodeForAccessToken(code: string): Promise<string> 
         }),
     });
     if (!res.ok) throw new Error(`Entra token exchange failed (${res.status}): ${await res.text()}`);
-    const json = (await res.json()) as { access_token: string };
-    return json.access_token;
+    const json = (await res.json()) as { access_token: string; refresh_token?: string; expires_in: number };
+    return { accessToken: json.access_token, refreshToken: json.refresh_token ?? null, expiresAt: Date.now() + json.expires_in * 1000 };
+}
+
+// El access token del usuario expira ~1h; el refresh token permite renovarlo sin pedirle que
+// vuelva a loguearse mientras dure su sesión de 8h en la app.
+export async function refreshUserAccessToken(refreshToken: string): Promise<UserTokens> {
+    const { tenantId, clientId, clientSecret } = entraConfig();
+    const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            grant_type: "refresh_token",
+            refresh_token: refreshToken,
+            scope: LOGIN_SCOPES,
+        }),
+    });
+    if (!res.ok) throw new Error(`Entra token refresh failed (${res.status}): ${await res.text()}`);
+    const json = (await res.json()) as { access_token: string; refresh_token?: string; expires_in: number };
+    return { accessToken: json.access_token, refreshToken: json.refresh_token ?? refreshToken, expiresAt: Date.now() + json.expires_in * 1000 };
+}
+
+export type CalendarEvent = {
+    id: string;
+    subject: string;
+    start: string;
+    end: string;
+    organizer: string | null;
+    isOnlineMeeting: boolean;
+    joinUrl: string | null;
+    webLink: string;
+};
+
+export async function fetchCalendarView(accessToken: string, startIso: string, endIso: string): Promise<CalendarEvent[]> {
+    const url =
+        `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${encodeURIComponent(startIso)}&endDateTime=${encodeURIComponent(endIso)}` +
+        `&$select=id,subject,start,end,organizer,isOnlineMeeting,onlineMeeting,webLink&$orderby=start/dateTime&$top=50`;
+    const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}`, Prefer: 'outlook.timezone="America/Bogota"' },
+    });
+    if (!res.ok) throw new Error(`Graph /me/calendarView failed (${res.status}): ${await res.text()}`);
+    const json = (await res.json()) as {
+        value: Array<{
+            id: string;
+            subject: string;
+            start: { dateTime: string };
+            end: { dateTime: string };
+            organizer?: { emailAddress?: { name?: string } };
+            isOnlineMeeting: boolean;
+            onlineMeeting?: { joinUrl?: string };
+            webLink: string;
+        }>;
+    };
+    return json.value.map((e) => ({
+        id: e.id,
+        subject: e.subject || "(Sin título)",
+        start: e.start.dateTime,
+        end: e.end.dateTime,
+        organizer: e.organizer?.emailAddress?.name ?? null,
+        isOnlineMeeting: e.isOnlineMeeting,
+        joinUrl: e.onlineMeeting?.joinUrl ?? null,
+        webLink: e.webLink,
+    }));
 }
 
 export type GraphProfile = {
@@ -150,4 +221,102 @@ export async function fetchUsersByDisplayNames(names: string[]): Promise<GraphPr
 
     const found = results.filter((u): u is GraphProfile => u !== null);
     return Promise.all(found.map(async (u) => ({ ...u, photoUrl: await fetchUserPhoto(u.id, token).catch(() => null) })));
+}
+
+// Token delegado (Calendars.Read) del usuario logueado, renovándolo con el refresh token si ya
+// expiró. Si el usuario inició sesión antes de agregar este scope, no habrá msRefreshToken todavía
+// — por eso el error pide volver a loguearse en vez de fallar en silencio.
+export async function getValidUserAccessToken(): Promise<string> {
+    const session = await getCurrentSession();
+    if (!session?.msAccessToken) {
+        throw new Error("No hay sesión de Microsoft con acceso al calendario. Cierra sesión y vuelve a iniciarla.");
+    }
+    if (session.msExpiresAt && session.msExpiresAt > Date.now() + 30_000) {
+        return session.msAccessToken;
+    }
+    if (!session.msRefreshToken) {
+        throw new Error("La sesión de Microsoft expiró y no se puede renovar. Cierra sesión y vuelve a iniciarla.");
+    }
+    const refreshed = await refreshUserAccessToken(session.msRefreshToken);
+    await setCurrentSession({
+        msAccessToken: refreshed.accessToken,
+        msRefreshToken: refreshed.refreshToken,
+        msExpiresAt: refreshed.expiresAt,
+    });
+    return refreshed.accessToken;
+}
+
+// Requiere el permiso de aplicación "Group.Read.All" con consentimiento de admin. Busca el grupo
+// por nombre exacto y devuelve sus miembros con foto — misma forma que fetchUsersByDisplayNames,
+// para poder mezclarlos en team.functions.ts sin distinguir la fuente.
+export async function fetchGroupMembers(groupDisplayName: string): Promise<GraphProfile[]> {
+    const token = await getGraphAppToken();
+    const groupFilter = `displayName eq '${escapeODataStringLiteral(groupDisplayName)}'`;
+    const groupRes = await fetch(
+        `https://graph.microsoft.com/v1.0/groups?$filter=${encodeURIComponent(groupFilter)}&$select=id`,
+        { headers: { Authorization: `Bearer ${token}` } },
+    );
+    if (!groupRes.ok) throw new Error(`Graph /groups failed (${groupRes.status}): ${await groupRes.text()}`);
+    const groupJson = (await groupRes.json()) as { value: Array<{ id: string }> };
+    const groupId = groupJson.value[0]?.id;
+    if (!groupId) return [];
+
+    const membersRes = await fetch(
+        `https://graph.microsoft.com/v1.0/groups/${groupId}/members?$select=id,displayName,mail,userPrincipalName,jobTitle&$top=999`,
+        { headers: { Authorization: `Bearer ${token}` } },
+    );
+    if (!membersRes.ok) throw new Error(`Graph /groups/members failed (${membersRes.status}): ${await membersRes.text()}`);
+    const membersJson = (await membersRes.json()) as { value: GraphProfile[] };
+
+    return Promise.all(
+        membersJson.value.map(async (u) => ({ ...u, photoUrl: await fetchUserPhoto(u.id, token).catch(() => null) })),
+    );
+}
+
+export type PresenceStatus = { userId: string; availability: string; activity: string };
+
+// Requiere el permiso de aplicación "Presence.Read.All" con consentimiento de admin. Un solo
+// request por lote (máx. 650 ids) en vez de uno por usuario.
+export async function fetchPresences(userIds: string[]): Promise<Map<string, PresenceStatus>> {
+    if (!userIds.length) return new Map();
+    const token = await getGraphAppToken();
+    const res = await fetch("https://graph.microsoft.com/v1.0/communications/getPresencesByUserId", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: userIds }),
+    });
+    if (!res.ok) throw new Error(`Graph presence failed (${res.status}): ${await res.text()}`);
+    const json = (await res.json()) as { value: Array<{ id: string; availability: string; activity: string }> };
+    return new Map(json.value.map((p) => [p.id, { userId: p.id, availability: p.availability, activity: p.activity }]));
+}
+
+export type NewMeeting = {
+    subject: string;
+    startIso: string;
+    endIso: string;
+    description?: string;
+    attendeeEmails?: string[];
+    isOnlineMeeting?: boolean;
+};
+
+export type CreatedMeeting = { id: string; webLink: string; joinUrl: string | null };
+
+// Requiere el scope delegado "Calendars.ReadWrite" (token del usuario logueado, no de aplicación).
+export async function createCalendarEvent(accessToken: string, meeting: NewMeeting): Promise<CreatedMeeting> {
+    const res = await fetch("https://graph.microsoft.com/v1.0/me/events", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+            subject: meeting.subject,
+            body: { contentType: "text", content: meeting.description ?? "" },
+            start: { dateTime: meeting.startIso, timeZone: "America/Bogota" },
+            end: { dateTime: meeting.endIso, timeZone: "America/Bogota" },
+            attendees: (meeting.attendeeEmails ?? []).map((email) => ({ emailAddress: { address: email }, type: "required" })),
+            isOnlineMeeting: meeting.isOnlineMeeting ?? true,
+            onlineMeetingProvider: meeting.isOnlineMeeting === false ? undefined : "teamsForBusiness",
+        }),
+    });
+    if (!res.ok) throw new Error(`Graph create event failed (${res.status}): ${await res.text()}`);
+    const json = (await res.json()) as { id: string; webLink: string; onlineMeeting?: { joinUrl?: string } };
+    return { id: json.id, webLink: json.webLink, joinUrl: json.onlineMeeting?.joinUrl ?? null };
 }

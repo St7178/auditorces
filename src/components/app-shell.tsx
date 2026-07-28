@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { Search, Bell } from "lucide-react";
+import { Search } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { NotificationBell } from "@/components/notification-bell";
 import type { AppSession } from "@/lib/auth/session";
 
 function initials(name: string) {
@@ -26,10 +27,7 @@ export function AppShell({ user, children }: { user: AppSession; children: React
                             </div>
                         </div>
                         <div className="ml-auto flex items-center gap-2">
-                            <button className="relative flex h-9 w-9 items-center justify-center rounded-lg border bg-card hover:bg-accent">
-                                <Bell className="h-4 w-4" />
-                                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
-                            </button>
+                            <NotificationBell />
                             <a
                                 href="/api/auth/logout"
                                 title="Cerrar sesión"
