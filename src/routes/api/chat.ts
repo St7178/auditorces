@@ -16,9 +16,9 @@ Tu personalidad:
 - Hablas siempre en español colombiano corporativo.
 - Usas emojis con moderación (🛡️ 📊 ✅ ⚠️).
 - Nunca pides cargar documentos confidenciales.
-- Solo preguntas por la UBICACIÓN de la evidencia (SharePoint, Power BI, SAP, Solman, Carpeta de Red, Sistema Corporativo, Otro).
+- NUNCA le preguntes al usuario dónde está la evidencia o en qué sistema/carpeta está un documento. Ya conoces los documentos reales del SIG mediante la herramienta consultarDocumentacion (sincronizada desde "Procesos CES - Documentación") — consúltala y trabaja directamente con lo que encuentres ahí. Si un documento que necesitas no aparece en esa consulta, dilo explícitamente como un hallazgo ("no encuentro evidencia documentada de X"), pero no le pidas al usuario que te diga dónde buscar.
 
-Tus temas: Auditorías internas y externas, ISO 9001:2015, Sistema Integrado de Gestión (SIG), Riesgos, Indicadores, Contratos, Proveedores, Mejora continua, Procesos CES.
+Tus temas: Auditorías internas y externas, ISO 9001:2015, ISO/IEC 27001:2013, Sistema Integrado de Gestión (SIG), Riesgos, Indicadores, Contratos, Proveedores, Mejora continua, Procesos CES.
 
 HERRAMIENTAS — tienes acceso a los datos REALES y actuales del dashboard mediante herramientas:
 - consultarRiesgos, consultarIndicadores, consultarClientes, consultarProcesos, consultarDocumentacion.
@@ -30,14 +30,17 @@ REGLA CRÍTICA DE ALCANCE — no mezclar procesos: consultarRiesgos y consultarD
 - La matriz de riesgos de CES casi siempre solo clasifica por categoría macro (Procesos Estratégicos/Misionales/de Apoyo), no por proceso específico — así que total:0 en un proceso Misional puntual es NORMAL y esperado, no un error tuyo. Nunca sustituyas con riesgos de otro proceso solo porque "algo" salió en la consulta sin filtro.
 - Solo omite el parámetro "proceso" si el usuario pide explícitamente una vista general de TODOS los riesgos/documentos sin filtrar.
 
+REGLA — total de riesgos encontrados: NUNCA reportes una cifra de "total de riesgos encontrados" al auditar un proceso, EXCEPTO cuando el proceso auditado sea exactamente "Administración de Riesgos" (el subproceso de Procesos Estratégicos dedicado a la gestión de riesgos). Para cualquier otro proceso, si necesitas mencionar riesgos hazlo de forma cualitativa (cuáles, su nivel, su estado), nunca como conteo total del proceso.
+
+REGLA — fechas de documentos: los documentos del SIG solo tienen fecha de PUBLICACIÓN/actualización. No existe (ni preguntes, ni menciones) una "próxima revisión" — ese campo ya no aplica.
+
 CÓMO HACER UNA AUDITORÍA:
 1. Pregunta qué proceso desea auditar (o usa consultarProcesos para listarlos).
-2. Usa consultarRiesgos, consultarIndicadores y/o consultarDocumentacion — SIEMPRE con el proceso como filtro (ver regla de arriba) — para entender el estado real de ese proceso antes de hacer preguntas. Indicadores no está tagged por proceso todavía, acláralo si lo usas.
-3. Haz preguntas dinámicas basadas en las cláusulas de ISO 9001 aplicables al proceso.
-4. Solicita la ubicación de la evidencia (nunca el archivo).
-5. Cuando identifiques un hallazgo concreto (una no conformidad, riesgo no gestionado, oportunidad de mejora), usa la herramienta proponerHallazgo para registrarlo. Esta herramienta SIEMPRE pide confirmación explícita del usuario antes de guardarse — nunca digas que "ya quedó guardado" hasta que la herramienta confirme que el usuario aprobó.
-6. Al final de la auditoría, entrega un resumen con los hallazgos propuestos, oportunidades y recomendaciones.
-7. Si el usuario pide agendar una reunión (ej. "agéndame la auditoría de Riesgos el viernes a las 10am"), usa la herramienta agendarReunion. También pide confirmación explícita antes de crearse en el calendario real del usuario. Calcula la fecha/hora exacta en ISO 8601 con zona horaria de Bogotá (UTC-5) a partir de la fecha de hoy que se indica abajo — nunca inventes una fecha sin ancla.
+2. Usa consultarRiesgos, consultarIndicadores y/o consultarDocumentacion — SIEMPRE con el proceso como filtro (ver regla de arriba) — para entender el estado real de ese proceso antes de hacer preguntas. Indicadores no está tagged por proceso todavía, acláralo si lo usas. consultarDocumentacion ya te dice qué evidencia existe — no le preguntes al usuario por ubicaciones.
+3. Haz preguntas dinámicas basadas en las cláusulas de la norma seleccionada (ver bloque "NORMA APLICABLE" abajo) que sean pertinentes al proceso.
+4. Cuando identifiques un hallazgo concreto (una no conformidad, riesgo no gestionado, oportunidad de mejora), usa la herramienta proponerHallazgo para registrarlo. Esta herramienta se guarda automáticamente en el dashboard, sin pedir aprobación — en cuanto la ejecutes, considera el hallazgo ya registrado y continúa la auditoría.
+5. Al final de la auditoría, entrega un resumen breve de los hallazgos que quedaron registrados en el dashboard, oportunidades y recomendaciones. No pidas confirmación para "guardar" nada, ya quedó guardado.
+6. Si el usuario pide agendar una reunión (ej. "agéndame la auditoría de Riesgos el viernes a las 10am"), usa la herramienta agendarReunion. Esta sí requiere confirmación explícita antes de crearse en el calendario real del usuario. Calcula la fecha/hora exacta en ISO 8601 con zona horaria de Bogotá (UTC-5) a partir de la fecha de hoy que se indica abajo — nunca inventes una fecha sin ancla.
 
 Sé conciso, usa listas y estructura visual (títulos con **negrita**). Responde en markdown.`;
 
@@ -64,6 +67,24 @@ function lastUserText(messages: UIMessage[]): string {
     return last.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ");
 }
 
+type Norma = "iso9001" | "iso27001";
+
+const NORMA_BLOCKS: Record<Norma, string> = {
+    iso9001: `NORMA APLICABLE: ISO 9001:2015 (Sistema de Gestión de Calidad). Enfoca tus preguntas de auditoría en la
+conformidad del servicio/producto entregado al cliente, la satisfacción del cliente, el contexto y las partes
+interesadas (4), liderazgo y política de calidad (5), riesgos y oportunidades operacionales y objetivos de
+calidad (6), competencia/comunicación/información documentada (7), planificación y control operacional,
+diseño y desarrollo, producción y provisión del servicio (8), seguimiento/medición/auditoría interna/revisión
+por la dirección (9), y no conformidades/mejora continua (10).`,
+    iso27001: `NORMA APLICABLE: ISO/IEC 27001:2013 (Sistema de Gestión de Seguridad de la Información). Enfoca tus
+preguntas de auditoría en la protección de la confidencialidad, integridad y disponibilidad de la información
+del proceso: valoración y tratamiento de riesgos de seguridad de la información (6.1.2/6.1.3), objetivos de
+seguridad (6.2), auditoría interna del SGSI (9.2), y los controles del Anexo A pertinentes al proceso (control
+de acceso, gestión de activos, criptografía, seguridad física, seguridad de las operaciones, seguridad de las
+comunicaciones, gestión de incidentes de seguridad, continuidad y cumplimiento). No preguntes por conformidad
+de calidad del servicio en sí — el foco es la seguridad de la información.`,
+};
+
 export const Route = createFileRoute("/api/chat")({
     server: {
         handlers: {
@@ -72,20 +93,23 @@ export const Route = createFileRoute("/api/chat")({
                 const session = await getCurrentSession();
                 if (!session) return new Response("Unauthorized", { status: 401 });
 
-                const { messages } = (await request.json()) as { messages: UIMessage[] };
+                const body = (await request.json()) as { messages: UIMessage[]; norm?: Norma };
+                const { messages } = body;
+                const norm: Norma = body.norm === "iso27001" ? "iso27001" : "iso9001";
                 const key = process.env.OPENAI_API_KEY;
                 if (!key) return new Response("Missing OPENAI_API_KEY", { status: 500 });
 
                 const openai = createOpenAI({ apiKey: key });
 
                 const query = lastUserText(messages);
-                const relevantChunks = query ? await retrieveRelevantChunks(query, key) : [];
+                const sourcePrefix = norm === "iso27001" ? "iso27001" : "iso9001";
+                const relevantChunks = query ? await retrieveRelevantChunks(query, key, 5, sourcePrefix) : [];
                 const retrievedBlock = relevantChunks.length
                     ? `Contexto recuperado de la base de conocimiento (usa esto para responder con precisión; si no es relevante, ignóralo):\n${relevantChunks.map((c) => `--- ${c.source} ---\n${c.text}`).join("\n\n")}`
                     : "";
 
                 const fechaHoyBlock = `Fecha y hora actuales (America/Bogota, UTC-5): ${new Date().toLocaleString("es-CO", { timeZone: "America/Bogota", dateStyle: "full", timeStyle: "short" })}.`;
-                const system = [SYSTEM_PROMPT, fechaHoyBlock, INVENTARIO_BLOCK, retrievedBlock].filter(Boolean).join("\n\n");
+                const system = [SYSTEM_PROMPT, NORMA_BLOCKS[norm], fechaHoyBlock, INVENTARIO_BLOCK, retrievedBlock].filter(Boolean).join("\n\n");
 
                 const tools = {
                     consultarRiesgos: tool({
@@ -124,30 +148,29 @@ export const Route = createFileRoute("/api/chat")({
                     }),
                     consultarDocumentacion: tool({
                         description:
-                            "Consulta el registro real y actual de documentos del SIG (nombre, código, responsable, fecha, tipo), sincronizado desde SharePoint. Pasa 'proceso' SIEMPRE que estés auditando un proceso específico — filtra server-side por el campo tipo/ubicación. Si total sale 0, dilo explícitamente en vez de mostrar documentos de otro proceso.",
+                            "Consulta el registro real y actual de documentos del SIG (nombre, código, responsable, fecha de publicación/actualización, ubicación), sincronizado desde 'Procesos CES - Documentación'. Úsala para saber qué evidencia/documentos YA EXISTEN — nunca le preguntes al usuario dónde está la evidencia, esta herramienta ya lo sabe. Pasa 'proceso' SIEMPRE que estés auditando un proceso específico — filtra server-side por el campo tipo/ubicación. Si total sale 0, dilo explícitamente en vez de mostrar documentos de otro proceso.",
                         inputSchema: z.object({
                             proceso: z.string().optional().describe("Nombre del proceso CES a filtrar. Omite solo si de verdad quieres TODOS los documentos sin filtrar."),
                         }),
                         execute: async ({ proceso }) => {
                             const stored = await getDocumentacion<typeof DOCUMENTOS>().catch(() => null);
-                            const documentos = stored ?? DOCUMENTOS;
+                            const documentos = (stored ?? DOCUMENTOS).map(({ proximaRevision: _proximaRevision, ...doc }) => doc);
                             if (!proceso) return { proceso: null, total: documentos.length, documentos };
-                            const filtrados = (documentos as any[]).filter((d) => matchesProceso(d.ubicacion, proceso));
+                            const filtrados = documentos.filter((d) => matchesProceso(d.ubicacion, proceso));
                             return { proceso, total: filtrados.length, documentos: filtrados };
                         },
                     }),
                     proponerHallazgo: tool({
                         description:
-                            "Propone un hallazgo de auditoría (no conformidad, riesgo no gestionado u oportunidad de mejora) para guardarlo en el dashboard. SIEMPRE requiere confirmación explícita del usuario antes de guardarse — úsala en cuanto identifiques un hallazgo concreto durante la auditoría, no esperes al final.",
+                            "Registra automáticamente un hallazgo de auditoría (no conformidad, riesgo no gestionado u oportunidad de mejora) en el dashboard, sin pedir confirmación al usuario. Úsala en cuanto identifiques un hallazgo concreto durante la auditoría, no esperes al final. Después de ejecutarla, resume brevemente al usuario qué quedó registrado.",
                         inputSchema: z.object({
                             proceso: z.string().describe("Proceso CES auditado donde se encontró el hallazgo"),
                             titulo: z.string().describe("Título corto del hallazgo"),
                             descripcion: z.string().describe("Descripción detallada de qué se encontró y por qué es un hallazgo"),
                             nivelRiesgo: z.enum(["Bajo", "Medio", "Alto", "Crítico"]).optional().describe("Nivel de riesgo asociado, si aplica"),
                             recomendacion: z.string().describe("Recomendación de tratamiento o acción correctiva"),
-                            evidenciaUbicacion: z.string().optional().describe("Ubicación de la evidencia (SharePoint, SAP, Power BI, etc.), nunca el archivo en sí"),
+                            evidenciaUbicacion: z.string().optional().describe("Ubicación de la evidencia ya identificada vía consultarDocumentacion (SharePoint, SAP, Power BI, etc.), nunca el archivo en sí"),
                         }),
-                        needsApproval: true,
                         execute: async (input) => {
                             const saved = await saveHallazgo(input);
                             return { guardado: true, hallazgo: saved };

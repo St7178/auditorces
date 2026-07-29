@@ -81,14 +81,18 @@ export const CRONOGRAMA = [
 ];
 
 export const KPIS_DASHBOARD = [
-    { label: "Auditorías pendientes", value: 3, delta: "+1", tone: "warning" as const, icon: "clipboard" },
+    // Aún no hay una fuente real para "auditorías pendientes" (eso lo reportará CES AUDITOR desde el
+    // chat cuando exista ese seguimiento) — se deja sin valor en vez de mostrar una cifra inventada.
+    { label: "Auditorías pendientes", value: null as number | null, delta: "", tone: "muted" as const, icon: "clipboard" },
     { label: "Riesgos en seguimiento", value: 6, delta: "-2", tone: "brand" as const, icon: "shield" },
     { label: "Clientes activos", value: 8, delta: "+1", tone: "brand" as const, icon: "users" },
     { label: "Contratos por vencer", value: 2, delta: "60d", tone: "warning" as const, icon: "file" },
     { label: "Proveedores registrados", value: 6, delta: "=", tone: "muted" as const, icon: "truck" },
     { label: "Indicadores activos", value: 6, delta: "+0", tone: "brand" as const, icon: "gauge" },
-    { label: "Acciones pendientes", value: 12, delta: "+3", tone: "warning" as const, icon: "list" },
-    { label: "Hallazgos abiertos", value: 4, delta: "-1", tone: "brand" as const, icon: "alert" },
+    // "Hallazgos pendientes" y "Hallazgos abiertos" se sobrescriben en el dashboard con datos reales
+    // de /api/hallazgos (lo que CES AUDITOR va registrando en el chat) — estos son solo el fallback.
+    { label: "Hallazgos pendientes", value: 0, delta: "", tone: "warning" as const, icon: "list" },
+    { label: "Hallazgos abiertos", value: 0, delta: "", tone: "brand" as const, icon: "alert" },
 ];
 
 // Conocimiento interno: base metodológica sobre la que se construye la sección de Riesgos.
@@ -262,9 +266,8 @@ export const INVENTARIO_DOCUMENTAL_CES = [
 ];
 
 export const RECOMENDACIONES_IA = [
-    { titulo: "Matriz de riesgos desactualizada", texto: "La matriz de riesgos tiene más de 12 meses sin actualización. Se recomienda revisarla antes del 30 de julio.", nivel: "alta" },
+    { titulo: "Matriz de riesgos desactualizada", texto: "Se recomienda revisar la matriz de riesgos periódicamente para mantenerla actualizada.", nivel: "alta" },
     { titulo: "Evaluación de proveedor VMware", texto: "La evaluación del proveedor VMware supera los 12 meses. Programa una nueva evaluación.", nivel: "media" },
     { titulo: "Contratos próximos a vencer", texto: "2 contratos vencen en los próximos 60 días (Bancolombia, VMware).", nivel: "alta" },
     { titulo: "Indicador sin seguimiento", texto: "El indicador de Capacidad se mantiene estable pero sin comentarios de análisis en el último mes.", nivel: "baja" },
-    { titulo: "Auditoría interna próxima", texto: "La auditoría interna SIG está programada en 20 días. Prepara la documentación.", nivel: "alta" },
 ];

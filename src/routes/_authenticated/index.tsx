@@ -1,14 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
     ClipboardList, ShieldAlert, Users, FileText, Truck, Gauge, ListChecks, AlertTriangle,
-    Sparkles, ArrowUpRight, TrendingUp,
+    Sparkles, ArrowUpRight, TrendingUp, Video,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { KPIS_DASHBOARD, RECOMENDACIONES_IA, INDICADORES, CRONOGRAMA } from "@/lib/ces-data";
+import { KPIS_DASHBOARD, RECOMENDACIONES_IA, INDICADORES } from "@/lib/ces-data";
+import { getMisReuniones } from "@/lib/calendar.functions";
+import type { CalendarEvent } from "@/lib/auth/entra";
 import {
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
     RadialBarChart, RadialBar, PolarAngleAxis,
@@ -35,6 +37,15 @@ function nivelTone(n: string | null) {
 
 export const Route = createFileRoute("/_authenticated/")({
     component: Dashboard,
+    loader: async (): Promise<{ eventos: CalendarEvent[]; eventosError: string | null }> => {
+        try {
+            return { eventos: await getMisReuniones(), eventosError: null };
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.error("No se pudo cargar el calendario desde Microsoft Graph:", err);
+            return { eventos: [], eventosError: message };
+        }
+    },
     head: () => ({
         meta: [
             { title: "Dashboard — CES SIG" },
@@ -55,6 +66,7 @@ const cumplimientoData = [
 
 function Dashboard() {
     const { user } = AuthenticatedRoute.useRouteContext();
+    const { eventos, eventosError } = Route.useLoaderData();
     const firstName = user?.name?.split(" ")[0] ?? "Usuario";
     const [hallazgos, setHallazgos] = useState<Hallazgo[] | null>(null);
 
@@ -71,10 +83,16 @@ function Dashboard() {
         };
     }, []);
 
+    // "Hallazgos pendientes" y "Hallazgos abiertos" salen de lo que CES AUDITOR registra en el chat
+    // (tabla hallazgos_auditoria) — no hay todavía un flujo de cierre, así que ambos coinciden hasta
+    // que exista esa distinción; se calculan por separado para que no dependan uno del otro.
     const hallazgosAbiertos = hallazgos?.filter((h) => h.estado === "Abierto").length;
-    const kpis = KPIS_DASHBOARD.map((k) =>
-        k.icon === "alert" && hallazgosAbiertos !== undefined ? { ...k, value: hallazgosAbiertos, delta: "vivo" } : k
-    );
+    const hallazgosPendientes = hallazgos?.length;
+    const kpis = KPIS_DASHBOARD.map((k) => {
+        if (k.label === "Hallazgos abiertos" && hallazgosAbiertos !== undefined) return { ...k, value: hallazgosAbiertos, delta: "vivo" };
+        if (k.label === "Hallazgos pendientes" && hallazgosPendientes !== undefined) return { ...k, value: hallazgosPendientes, delta: "vivo" };
+        return k;
+    });
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -115,7 +133,7 @@ function Dashboard() {
                                     </div>
                                     <span className="text-[11px] font-semibold text-muted-foreground">{k.delta}</span>
                                 </div>
-                                <div className="mt-4 text-3xl font-bold tracking-tight">{k.value}</div>
+                                <div className="mt-4 text-3xl font-bold tracking-tight">{k.value === null || k.value === undefined ? "—" : k.value}</div>
                                 <div className="mt-1 text-xs text-muted-foreground">{k.label}</div>
                             </CardContent>
                         </Card>
@@ -186,7 +204,7 @@ function Dashboard() {
                                     <Sparkles className="h-4 w-4" />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-semibold">Recomendaciones de CES Guardian</h2>
+                                    <h2 className="text-lg font-semibold">Recomendaciones de CES AUDITOR</h2>
                                     <p className="text-xs text-muted-foreground">Análisis inteligente del estado del área</p>
                                 </div>
                             </div>
@@ -209,20 +227,44 @@ function Dashboard() {
                 <Card className="border-border/60">
                     <CardContent className="p-6">
                         <h2 className="text-lg font-semibold">Próximos eventos</h2>
-                        <p className="text-xs text-muted-foreground">Cronograma CES</p>
+                        <p className="text-xs text-muted-foreground">Calendario de Outlook</p>
                         <div className="mt-4 space-y-3">
-                            {CRONOGRAMA.slice(0, 5).map((e) => (
-                                <div key={e.id} className="flex gap-3 rounded-lg border p-3">
-                                    <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-soft text-brand">
-                                        <div className="text-[10px] font-semibold uppercase">{new Date(e.fecha).toLocaleDateString("es", { month: "short" })}</div>
-                                        <div className="-mt-0.5 text-lg font-bold leading-none">{new Date(e.fecha).getDate()}</div>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="truncate text-sm font-semibold">{e.evento}</div>
-                                        <div className="text-xs text-muted-foreground">{e.responsable} · {e.tipo}</div>
-                                    </div>
+                            {eventosError && (
+                                <div className="text-xs text-muted-foreground">
+                                    No se pudo cargar tu calendario de Microsoft. Cierra sesión y vuelve a iniciarla para autorizar el acceso.
                                 </div>
-                            ))}
+                            )}
+                            {!eventosError && eventos.length === 0 && (
+                                <div className="text-xs text-muted-foreground">No tienes reuniones en los próximos 14 días.</div>
+                            )}
+                            {eventos.slice(0, 5).map((e) => {
+                                const d = new Date(e.start);
+                                return (
+                                    <div key={e.id} className="flex gap-3 rounded-lg border p-3">
+                                        <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-soft text-brand">
+                                            <div className="text-[10px] font-semibold uppercase">{d.toLocaleDateString("es", { month: "short" })}</div>
+                                            <div className="-mt-0.5 text-lg font-bold leading-none">{d.getDate()}</div>
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="truncate text-sm font-semibold">{e.subject}</div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {d.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
+                                                {e.organizer ? ` · ${e.organizer}` : ""}
+                                            </div>
+                                        </div>
+                                        {e.isOnlineMeeting && e.joinUrl && (
+                                            <a
+                                                href={e.joinUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex h-8 shrink-0 items-center gap-1.5 self-center rounded-lg border px-2 text-xs font-medium hover:bg-accent"
+                                            >
+                                                <Video className="h-3.5 w-3.5" />
+                                            </a>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </CardContent>
                 </Card>

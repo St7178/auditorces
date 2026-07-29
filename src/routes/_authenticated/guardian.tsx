@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, Loader2, ShieldCheck, Search, AlertTriangle, CheckCircle2, XCircle, CalendarPlus } from "lucide-react";
+import { Sparkles, Send, Loader2, ShieldCheck, Search, CheckCircle2, XCircle, CalendarPlus, FileCheck2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ChatMarkdown } from "@/components/chat-markdown";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
@@ -20,48 +20,24 @@ function ToolPart({ part, onApprove }: { part: any; onApprove: (id: string, appr
 
     if (toolName === "proponerHallazgo") {
         const input = part.input || {};
-        if (part.state === "approval-requested") {
-            return (
-                <div className="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs text-amber-900">
-                    <div className="flex items-center gap-1.5 font-semibold">
-                        <AlertTriangle className="h-3.5 w-3.5" /> Hallazgo propuesto — requiere tu confirmación
-                    </div>
-                    <div className="mt-1.5 space-y-1">
-                        {input.proceso && <div><strong>Proceso:</strong> {input.proceso}</div>}
-                        {input.titulo && <div className="font-semibold">{input.titulo}</div>}
-                        {input.descripcion && <div>{input.descripcion}</div>}
-                        {input.nivelRiesgo && <div><strong>Nivel de riesgo:</strong> {input.nivelRiesgo}</div>}
-                        {input.recomendacion && <div><strong>Recomendación:</strong> {input.recomendacion}</div>}
-                        {input.evidenciaUbicacion && <div><strong>Evidencia:</strong> {input.evidenciaUbicacion}</div>}
-                    </div>
-                    <div className="mt-2 flex gap-2">
-                        <button
-                            onClick={() => onApprove(part.approval.id, true)}
-                            className="rounded-lg bg-brand px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-brand/90"
-                        >
-                            Aprobar y guardar
-                        </button>
-                        <button
-                            onClick={() => onApprove(part.approval.id, false)}
-                            className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-semibold text-amber-900 hover:bg-amber-100"
-                        >
-                            Descartar
-                        </button>
-                    </div>
-                </div>
-            );
-        }
         if (part.state === "output-available") {
             return (
-                <div className="flex items-center gap-1.5 rounded-lg bg-brand-soft px-3 py-1.5 text-xs text-brand">
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> Hallazgo guardado en el dashboard{input.titulo ? `: ${input.titulo}` : ""}
+                <div className="rounded-xl border border-brand/30 bg-brand-soft p-3 text-xs text-brand">
+                    <div className="flex items-center gap-1.5 font-semibold">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> Hallazgo guardado automáticamente en el dashboard
+                    </div>
+                    <div className="mt-1.5 space-y-1 text-brand/90">
+                        {input.proceso && <div><strong>Proceso:</strong> {input.proceso}</div>}
+                        {input.titulo && <div className="font-semibold">{input.titulo}</div>}
+                        {input.nivelRiesgo && <div><strong>Nivel de riesgo:</strong> {input.nivelRiesgo}</div>}
+                    </div>
                 </div>
             );
         }
-        if (part.state === "output-denied") {
+        if (part.state === "input-streaming" || part.state === "input-available") {
             return (
-                <div className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground">
-                    <XCircle className="h-3.5 w-3.5 shrink-0" /> Hallazgo descartado{input.titulo ? `: ${input.titulo}` : ""}
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Registrando hallazgo…
                 </div>
             );
         }
@@ -179,8 +155,9 @@ function GuardianPage() {
         ? user.name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase()
         : "US";
     const [input, setInput] = useState("");
+    const [norma, setNorma] = useState<"iso9001" | "iso27001">("iso9001");
     const { messages, sendMessage, addToolApprovalResponse, status } = useChat({
-        transport: new DefaultChatTransport({ api: "/api/chat" }),
+        transport: new DefaultChatTransport({ api: "/api/chat", body: { norm: norma } }),
         sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     });
     const endRef = useRef<HTMLDivElement>(null);
@@ -220,7 +197,25 @@ function GuardianPage() {
                             <span className="h-1.5 w-1.5 rounded-full bg-brand" /> En línea
                         </span>
                     </div>
-                    <p className="text-sm text-muted-foreground">Tu asistente inteligente de calidad y auditoría · ISO 9001:2015 · SIG</p>
+                    <p className="text-sm text-muted-foreground">Tu asistente inteligente de calidad y auditoría · SIG</p>
+                </div>
+                <div className="ml-auto flex shrink-0 items-center gap-1.5 rounded-xl border bg-card p-1">
+                    {(
+                        [
+                            { id: "iso9001", label: "ISO 9001" },
+                            { id: "iso27001", label: "ISO 27001" },
+                        ] as const
+                    ).map((n) => (
+                        <button
+                            key={n.id}
+                            onClick={() => setNorma(n.id)}
+                            className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                                norma === n.id ? "bg-brand text-white" : "text-muted-foreground hover:bg-muted"
+                            }`}
+                        >
+                            <FileCheck2 className="h-3.5 w-3.5" /> {n.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -237,7 +232,7 @@ function GuardianPage() {
                                     Puedo ayudarte con:
                                 </p>
                                 <ul className="mt-3 grid gap-1.5 text-sm sm:grid-cols-2">
-                                    {["Auditorías", "Riesgos", "Indicadores", "Contratos", "Proveedores", "Mejora continua", "ISO 9001", "Sistema Integrado de Gestión"].map((t) => (
+                                    {["Auditorías", "Riesgos", "Indicadores", "Contratos", "Proveedores", "Mejora continua", norma === "iso27001" ? "ISO 27001" : "ISO 9001", "Sistema Integrado de Gestión"].map((t) => (
                                         <li key={t} className="flex items-center gap-2">
                                             <span className="h-1.5 w-1.5 rounded-full bg-brand" /> {t}
                                         </li>

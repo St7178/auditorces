@@ -1,0 +1,18 @@
+Cambios en CES AUDITOR:
+En respuestas - eliminar:
+1. Riesgos - Total de Riesgos encontrados (Solo aplica para la auditoria de procesos estratégicos para el subproceso de  'Administracion de Riesgos')
+2. Proxima revisión (solo hay una fecha de publicacion de los documentos)
+3. Ubicacion de evidencia. No debe preguntar por la ubicacion de los documentos, debe conocer los archivos que existen tomados de 'Procesos CES - Documentacion'
+4. No debe pedir aprobacion para registrar el hallazgo encontrado tras la auditoria, registrar automaticamente en el dashboard lo que se encontró- que simplemente el chat saque un resumen de lo que encontró y ya 
+ 
+En la interfaz del chat:
+1. Agregar dos botones para preguntar con la norma que se desee; sea normal ISO 9001 o norma ISO  27001, depende la que se seleccione será la manera en la que el chat va a preguntar y a tener en cuenta a la hora de auditar. (Crea un md para @NTC ISO IEC 27001 2013.pdf)
+ 
+Cambios en Dashboard:
+1. Auditorias pendientes no deberia mostrar nada ya que eso lo va a arrojar el mismo chat.
+2. 'Auditorias pendientes' 'Hallazgos pendientes' y 'Hallazgos abiertos' va a ser automaticamente tomado del chat y lo que cada usuario hable en el chat.
+3. Reemplazar texto 'Recomendaciones de CES Guardian' por 'Recomendaciones de CES AUDITOR' y eliminar 'Auditoria interna proxima' del cuadro - en la misma seccion al apartado derecho en 'Proximos eventos' deberán ir los eventos del calendario de outlook.
+Tambien en las recomendaciones dice: 
+Matriz de riesgos desactualizada
+La matriz de riesgos tiene más de 12 meses sin actualización. Se recomienda revisarla antes del 30 de julio.
+Mejor algo como: Revisar matriz de riesgo, se recomienda revisar , que no traiga fecha

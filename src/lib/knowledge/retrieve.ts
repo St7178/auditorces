@@ -29,12 +29,21 @@ async function embedQuery(query: string, apiKey: string): Promise<number[]> {
 /**
  * Recupera los `topK` fragmentos de la base de conocimiento más relevantes para `query`.
  * Devuelve [] si el índice aún no fue generado (ver scripts/ingest-knowledge.mjs) o si falla el embedding.
+ * `sourcePrefix`, si se indica, restringe la búsqueda a los chunks cuyo `source` empiece con ese texto
+ * (ej. "iso27001" para priorizar la norma seleccionada en el chat, ver src/lib/knowledge/sources/*.md).
  */
-export async function retrieveRelevantChunks(query: string, apiKey: string, topK = 5): Promise<KnowledgeChunk[]> {
+export async function retrieveRelevantChunks(
+    query: string,
+    apiKey: string,
+    topK = 5,
+    sourcePrefix?: string,
+): Promise<KnowledgeChunk[]> {
     if (KNOWLEDGE_INDEX.chunks.length === 0) return [];
+    const pool = sourcePrefix ? KNOWLEDGE_INDEX.chunks.filter((c) => c.source.startsWith(sourcePrefix)) : KNOWLEDGE_INDEX.chunks;
+    if (pool.length === 0) return [];
     try {
         const queryEmbedding = await embedQuery(query, apiKey);
-        return [...KNOWLEDGE_INDEX.chunks]
+        return [...pool]
             .map((chunk) => ({ chunk, score: cosineSimilarity(queryEmbedding, chunk.embedding) }))
             .sort((a, b) => b.score - a.score)
             .slice(0, topK)
