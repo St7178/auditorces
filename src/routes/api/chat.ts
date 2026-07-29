@@ -24,9 +24,15 @@ HERRAMIENTAS — tienes acceso a los datos REALES y actuales del dashboard media
 - consultarRiesgos, consultarIndicadores, consultarClientes, consultarProcesos, consultarDocumentacion.
 Úsalas SIEMPRE que la pregunta dependa de datos actuales (ej. "qué riesgos hay", "cómo van los indicadores", "qué clientes tenemos", "qué documentos existen"). No inventes cifras ni nombres — si necesitas un dato real, consulta la herramienta correspondiente antes de responder.
 
+REGLA CRÍTICA DE ALCANCE — no mezclar procesos: consultarRiesgos y consultarDocumentacion aceptan un parámetro "proceso" que filtra server-side (no es un truco de redacción, el filtro es real). Cuando estés auditando o hablando de UN proceso específico:
+- Pasa SIEMPRE ese proceso exacto como parámetro "proceso" en ambas herramientas.
+- Cada respuesta trae "total": si total es 0, significa que NO hay riesgos/documentos registrados específicamente para ese proceso — dilo explícitamente ("No tengo riesgos registrados específicamente para Arquitectura de Soluciones en la matriz actual") y sigue la auditoría preguntando directamente al usuario por esa información, en vez de mostrar riesgos o documentos de otro proceso como si aplicaran.
+- La matriz de riesgos de CES casi siempre solo clasifica por categoría macro (Procesos Estratégicos/Misionales/de Apoyo), no por proceso específico — así que total:0 en un proceso Misional puntual es NORMAL y esperado, no un error tuyo. Nunca sustituyas con riesgos de otro proceso solo porque "algo" salió en la consulta sin filtro.
+- Solo omite el parámetro "proceso" si el usuario pide explícitamente una vista general de TODOS los riesgos/documentos sin filtrar.
+
 CÓMO HACER UNA AUDITORÍA:
 1. Pregunta qué proceso desea auditar (o usa consultarProcesos para listarlos).
-2. Usa consultarRiesgos, consultarIndicadores y/o consultarDocumentacion para entender el estado real de ese proceso antes de hacer preguntas.
+2. Usa consultarRiesgos, consultarIndicadores y/o consultarDocumentacion — SIEMPRE con el proceso como filtro (ver regla de arriba) — para entender el estado real de ese proceso antes de hacer preguntas. Indicadores no está tagged por proceso todavía, acláralo si lo usas.
 3. Haz preguntas dinámicas basadas en las cláusulas de ISO 9001 aplicables al proceso.
 4. Solicita la ubicación de la evidencia (nunca el archivo).
 5. Cuando identifiques un hallazgo concreto (una no conformidad, riesgo no gestionado, oportunidad de mejora), usa la herramienta proponerHallazgo para registrarlo. Esta herramienta SIEMPRE pide confirmación explícita del usuario antes de guardarse — nunca digas que "ya quedó guardado" hasta que la herramienta confirme que el usuario aprobó.
@@ -38,6 +44,19 @@ Sé conciso, usa listas y estructura visual (títulos con **negrita**). Responde
 const INVENTARIO_BLOCK = `Conocimiento interno — Información documentada del SIG aplicable a CES (código · nombre · subproceso):
 ${INVENTARIO_DOCUMENTAL_CES.map((d) => `- ${d.codigo} · ${d.nombre} · ${d.subproceso} (${d.observacion})`).join("\n")}
 Usa esta lista para responder qué documento/código corresponde a qué proceso. Si el usuario pide un documento que no aparece aquí, dile que no está en el alcance de CES o que no tienes registro de él — no inventes códigos.`;
+
+function normalize(s: string) {
+    return s
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
+        .trim();
+}
+
+function matchesProceso(haystack: string | null | undefined, proceso: string) {
+    if (!haystack) return false;
+    return normalize(haystack).includes(normalize(proceso));
+}
 
 function lastUserText(messages: UIMessage[]): string {
     const last = [...messages].reverse().find((m) => m.role === "user");
@@ -70,11 +89,19 @@ export const Route = createFileRoute("/api/chat")({
 
                 const tools = {
                     consultarRiesgos: tool({
-                        description: "Consulta el registro real y actual de riesgos operacionales de CES (Riesgos CES), sincronizado desde la Matriz de Riesgos de SharePoint.",
-                        inputSchema: z.object({}),
-                        execute: async () => {
+                        description:
+                            "Consulta el registro real y actual de riesgos operacionales de CES, sincronizado desde la Matriz de Riesgos de SharePoint. Pasa 'proceso' SIEMPRE que estés auditando un proceso específico — filtra server-side y NO inventa coincidencias: si no hay riesgos para ese proceso exacto, total sale en 0 y el array viene vacío. En ese caso dilo explícitamente, no muestres riesgos de otros procesos.",
+                        inputSchema: z.object({
+                            proceso: z.string().optional().describe("Nombre del proceso CES a filtrar (ej. 'Arquitectura de Soluciones'). Omite solo si de verdad quieres TODOS los riesgos sin filtrar."),
+                        }),
+                        execute: async ({ proceso }) => {
                             const stored = await getRiesgos<typeof REGISTRO_RIESGOS_CES>().catch(() => null);
-                            return stored ?? REGISTRO_RIESGOS_CES;
+                            const riesgos = stored ?? REGISTRO_RIESGOS_CES;
+                            if (!proceso) return { proceso: null, total: riesgos.length, riesgos };
+                            const filtrados = (riesgos as any[]).filter(
+                                (r) => matchesProceso(r.procesoNivel1, proceso) || matchesProceso(r.procesoNivel2, proceso),
+                            );
+                            return { proceso, total: filtrados.length, riesgos: filtrados };
                         },
                     }),
                     consultarIndicadores: tool({
@@ -96,11 +123,17 @@ export const Route = createFileRoute("/api/chat")({
                         execute: async () => MAPA_PROCESOS_CES,
                     }),
                     consultarDocumentacion: tool({
-                        description: "Consulta el registro real y actual de documentos del SIG (nombre, código, responsable, fecha, tipo), sincronizado desde SharePoint.",
-                        inputSchema: z.object({}),
-                        execute: async () => {
+                        description:
+                            "Consulta el registro real y actual de documentos del SIG (nombre, código, responsable, fecha, tipo), sincronizado desde SharePoint. Pasa 'proceso' SIEMPRE que estés auditando un proceso específico — filtra server-side por el campo tipo/ubicación. Si total sale 0, dilo explícitamente en vez de mostrar documentos de otro proceso.",
+                        inputSchema: z.object({
+                            proceso: z.string().optional().describe("Nombre del proceso CES a filtrar. Omite solo si de verdad quieres TODOS los documentos sin filtrar."),
+                        }),
+                        execute: async ({ proceso }) => {
                             const stored = await getDocumentacion<typeof DOCUMENTOS>().catch(() => null);
-                            return stored ?? DOCUMENTOS;
+                            const documentos = stored ?? DOCUMENTOS;
+                            if (!proceso) return { proceso: null, total: documentos.length, documentos };
+                            const filtrados = (documentos as any[]).filter((d) => matchesProceso(d.ubicacion, proceso));
+                            return { proceso, total: filtrados.length, documentos: filtrados };
                         },
                     }),
                     proponerHallazgo: tool({

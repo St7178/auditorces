@@ -160,14 +160,16 @@ const SUGERENCIAS = [
     "Explícame la cláusula 8.1 de ISO 9001",
 ];
 
+// Deben coincidir EXACTO con los nombres de MAPA_PROCESOS_CES (ces-data.ts) — el chat filtra
+// riesgos/documentos por este texto literal, así que un nombre distinto rompe el filtro.
 const PROCESOS_AUDITABLES = [
     "Administración de Riesgos",
-    "Gestión de Servicios TIC",
+    "Gestión de Servicios de TIC",
     "Gestión de Proyectos",
     "Arquitectura de Soluciones",
     "Gestión de Logística y Compras",
     "Gestión Jurídica",
-    "Gestión del Servicio al Cliente",
+    "Gestión de Servicio al Cliente",
 ];
 
 function GuardianPage() {

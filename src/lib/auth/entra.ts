@@ -126,12 +126,13 @@ export type GraphProfile = {
     mail: string | null;
     userPrincipalName: string;
     jobTitle: string | null;
+    department: string | null;
     photoUrl?: string | null;
 };
 
 export async function fetchGraphMe(accessToken: string): Promise<GraphProfile> {
     const res = await fetch(
-        "https://graph.microsoft.com/v1.0/me?$select=id,displayName,mail,userPrincipalName,jobTitle",
+        "https://graph.microsoft.com/v1.0/me?$select=id,displayName,mail,userPrincipalName,jobTitle,department",
         { headers: { Authorization: `Bearer ${accessToken}` } },
     );
     if (!res.ok) throw new Error(`Graph /me failed (${res.status}): ${await res.text()}`);
@@ -180,6 +181,24 @@ async function fetchUserPhoto(userId: string, token: string): Promise<string | n
     return `data:${contentType};base64,${base64}`;
 }
 
+const USER_SELECT = "id,displayName,mail,userPrincipalName,jobTitle,department";
+
+// Prueba mínima de acceso al directorio: si el permiso de aplicación "User.Read.All" no está
+// concedido (o el consentimiento de admin no se ha propagado todavía), esto falla con 401/403 de
+// forma clara — en vez de dejar que cada búsqueda individual falle en silencio y parezca que
+// "no hay nadie" en vez de "no tengo permiso para ver a nadie".
+export async function checkGraphDirectoryAccess(): Promise<void> {
+    const token = await getGraphAppToken();
+    const res = await fetch(`https://graph.microsoft.com/v1.0/users?$top=1&$select=id`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+        throw new Error(
+            `Sin acceso al directorio de Microsoft Entra ID (${res.status}). Verifica en Azure Portal → App registrations → API permissions que "User.Read.All" (aplicación) tenga el consentimiento de administrador concedido. Detalle: ${await res.text()}`,
+        );
+    }
+}
+
 // $filter=contains(...) es una "advanced query" en Graph: exige el header ConsistencyLevel: eventual
 // y el parámetro $count=true, aunque no se use el conteo directamente.
 export async function fetchUsersWithJobTitleContaining(term: string): Promise<GraphProfile[]> {
@@ -187,11 +206,31 @@ export async function fetchUsersWithJobTitleContaining(term: string): Promise<Gr
     const filter = `contains(jobTitle,'${escapeODataStringLiteral(term)}')`;
     const url =
         `https://graph.microsoft.com/v1.0/users?$filter=${encodeURIComponent(filter)}` +
-        `&$select=id,displayName,mail,userPrincipalName,jobTitle&$count=true&$top=999`;
+        `&$select=${USER_SELECT}&$count=true&$top=999`;
     const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}`, ConsistencyLevel: "eventual" },
     });
-    if (!res.ok) throw new Error(`Graph /users failed (${res.status}): ${await res.text()}`);
+    if (!res.ok) throw new Error(`Graph /users (jobTitle) failed (${res.status}): ${await res.text()}`);
+    const json = (await res.json()) as { value: GraphProfile[] };
+
+    const users = await Promise.all(
+        json.value.map(async (u) => ({ ...u, photoUrl: await fetchUserPhoto(u.id, token).catch(() => null) })),
+    );
+    return users;
+}
+
+// Igual que fetchUsersWithJobTitleContaining pero sobre el campo "department" — el campo correcto
+// para "todos los usuarios del departamento CES", que es distinto del cargo/rol de la persona.
+export async function fetchUsersWithDepartment(term: string): Promise<GraphProfile[]> {
+    const token = await getGraphAppToken();
+    const filter = `contains(department,'${escapeODataStringLiteral(term)}')`;
+    const url =
+        `https://graph.microsoft.com/v1.0/users?$filter=${encodeURIComponent(filter)}` +
+        `&$select=${USER_SELECT}&$count=true&$top=999`;
+    const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}`, ConsistencyLevel: "eventual" },
+    });
+    if (!res.ok) throw new Error(`Graph /users (department) failed (${res.status}): ${await res.text()}`);
     const json = (await res.json()) as { value: GraphProfile[] };
 
     const users = await Promise.all(
@@ -211,7 +250,7 @@ export async function fetchUsersByDisplayNames(names: string[]): Promise<GraphPr
             const filter = `displayName eq '${escapeODataStringLiteral(name)}'`;
             const url =
                 `https://graph.microsoft.com/v1.0/users?$filter=${encodeURIComponent(filter)}` +
-                `&$select=id,displayName,mail,userPrincipalName,jobTitle&$top=1`;
+                `&$select=${USER_SELECT}&$top=1`;
             const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
             if (!res.ok) return null;
             const json = (await res.json()) as { value: GraphProfile[] };
@@ -262,7 +301,7 @@ export async function fetchGroupMembers(groupDisplayName: string): Promise<Graph
     if (!groupId) return [];
 
     const membersRes = await fetch(
-        `https://graph.microsoft.com/v1.0/groups/${groupId}/members?$select=id,displayName,mail,userPrincipalName,jobTitle&$top=999`,
+        `https://graph.microsoft.com/v1.0/groups/${groupId}/members?$select=id,displayName,mail,userPrincipalName,jobTitle,department&$top=999`,
         { headers: { Authorization: `Bearer ${token}` } },
     );
     if (!membersRes.ok) throw new Error(`Graph /groups/members failed (${membersRes.status}): ${await membersRes.text()}`);
