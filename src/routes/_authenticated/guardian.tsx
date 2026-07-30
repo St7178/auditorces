@@ -246,7 +246,7 @@ function GuardianPage() {
                                     {PROCESOS_AUDITABLES.map((p) => (
                                         <button
                                             key={p}
-                                            onClick={() => submit(`Quiero auditar el proceso: ${p}`)}
+                                            onClick={() => submit(`Quiero auditar el proceso: ${p}, con base en los procesos y documentos registrados en Procesos CES.`)}
                                             className="rounded-xl border bg-card p-3 text-left text-sm transition hover:border-brand hover:bg-brand-soft/40"
                                         >
                                             <div className="font-medium">{p}</div>

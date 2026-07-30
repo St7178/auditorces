@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
 import { MAPA_PROCESOS_CES, DOCUMENTOS } from "@/lib/ces-data";
-import { FileText } from "lucide-react";
+import { FileText, Link2, KeyRound, ShieldQuestion, LifeBuoy } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/procesos")({
@@ -16,6 +16,13 @@ const CATEGORIA_ICONO: Record<string, string> = {
     "Procesos Estratégicos": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Proceso%20Estrategico.png",
     "Procesos Misionales": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Proceso%20Misional.png",
     "Procesos de Apoyo": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Proceso%20de%20apoyo.png",
+};
+
+// Colores solicitados para diferenciar de un vistazo cada grupo de procesos en los acordeones.
+const CATEGORIA_COLOR: Record<string, { bg: string; fg: string }> = {
+    "Procesos Estratégicos": { bg: "#2596be", fg: "#ffffff" },
+    "Procesos Misionales": { bg: "#9DDB58", fg: "#1a2e05" },
+    "Procesos de Apoyo": { bg: "#B4D8F5", fg: "#0c2a43" },
 };
 
 // Ubicacion llega como "Sección Excel / subproceso" — solo se muestra la parte de después del "/"
@@ -81,6 +88,49 @@ function ProcesosPage() {
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader eyebrow="Sistema Integrado de Gestión" title="Procesos CES" description="Cloud Enterprise Services." />
 
+            <Card className="mt-6 border-brand/30 bg-gradient-to-br from-brand-soft to-secondary">
+                <CardContent className="p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-brand">Cómo acceder al SIG completo (CnetWiki)</h3>
+                        <a
+                            href="https://wiki.grupocnet.com/index.php/P%C3%A1gina_principal"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand/90"
+                        >
+                            <Link2 className="h-3.5 w-3.5" /> Ir a CnetWiki
+                        </a>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Aquí solo se muestran los registros sincronizados de este proceso. La caracterización completa, políticas, manuales,
+                        procedimientos e instructivos originales viven en CnetWiki, el Sistema Integrado de Gestión de Compunet.
+                    </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        <div className="flex items-start gap-2">
+                            <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                            <div className="text-xs">
+                                <div className="font-semibold">Credenciales</div>
+                                <div className="text-muted-foreground">Tu usuario de dominio Cnet y la contraseña asignada por la Mesa Integral de Servicios (se personaliza desde "Preferencias → Cambiar Contraseña").</div>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                            <ShieldQuestion className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                            <div className="text-xs">
+                                <div className="font-semibold">Uso de la información</div>
+                                <div className="text-muted-foreground">Es solo para consulta interna. Únicamente formatos, presentaciones y certificaciones se pueden descargar; para enviar algo a un externo se pide "Copia No Controlada" a sistemaintegradodegestion@grupocnet.com.</div>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                            <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                            <div className="text-xs">
+                                <div className="font-semibold">Soporte</div>
+                                <div className="text-muted-foreground">Incidentes o solicitudes funcionales sobre CnetWiki se reportan por ticket en SOLMAN.</div>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
             <div className="mt-6 overflow-hidden rounded-2xl border bg-card">
                 <img
                     src="https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/711px-MAPA_DE_PROCESOS.jpg"
@@ -129,12 +179,16 @@ function ProcesosPage() {
                         <Accordion type="multiple" className="px-5">
                             {MAPA_PROCESOS_CES.map((cat) => {
                                 const docsCategoria = cat.procesos.flatMap((p) => documentosPorProceso.get(p) || []);
+                                const color = CATEGORIA_COLOR[cat.categoria];
                                 return (
                                     <AccordionItem key={cat.categoria} value={cat.categoria}>
-                                        <AccordionTrigger>
+                                        <AccordionTrigger
+                                            className="rounded-lg px-3 hover:no-underline"
+                                            style={color ? { backgroundColor: color.bg, color: color.fg } : undefined}
+                                        >
                                             <div className="flex flex-1 items-center justify-between pr-3 text-left">
                                                 <span className="font-medium">{cat.categoria}</span>
-                                                <Badge variant="secondary" className="text-[10px]">{docsCategoria.length} documento(s)</Badge>
+                                                <Badge variant="secondary" className="text-[10px] text-foreground">{docsCategoria.length} documento(s)</Badge>
                                             </div>
                                         </AccordionTrigger>
                                         <AccordionContent>

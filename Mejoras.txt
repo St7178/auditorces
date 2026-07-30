@@ -1,18 +1,36 @@
-Cambios en CES AUDITOR:
-En respuestas - eliminar:
-1. Riesgos - Total de Riesgos encontrados (Solo aplica para la auditoria de procesos estratégicos para el subproceso de  'Administracion de Riesgos')
-2. Proxima revisión (solo hay una fecha de publicacion de los documentos)
-3. Ubicacion de evidencia. No debe preguntar por la ubicacion de los documentos, debe conocer los archivos que existen tomados de 'Procesos CES - Documentacion'
-4. No debe pedir aprobacion para registrar el hallazgo encontrado tras la auditoria, registrar automaticamente en el dashboard lo que se encontró- que simplemente el chat saque un resumen de lo que encontró y ya 
- 
-En la interfaz del chat:
-1. Agregar dos botones para preguntar con la norma que se desee; sea normal ISO 9001 o norma ISO  27001, depende la que se seleccione será la manera en la que el chat va a preguntar y a tener en cuenta a la hora de auditar. (Crea un md para @NTC ISO IEC 27001 2013.pdf)
- 
-Cambios en Dashboard:
-1. Auditorias pendientes no deberia mostrar nada ya que eso lo va a arrojar el mismo chat.
-2. 'Auditorias pendientes' 'Hallazgos pendientes' y 'Hallazgos abiertos' va a ser automaticamente tomado del chat y lo que cada usuario hable en el chat.
-3. Reemplazar texto 'Recomendaciones de CES Guardian' por 'Recomendaciones de CES AUDITOR' y eliminar 'Auditoria interna proxima' del cuadro - en la misma seccion al apartado derecho en 'Proximos eventos' deberán ir los eventos del calendario de outlook.
-Tambien en las recomendaciones dice: 
-Matriz de riesgos desactualizada
-La matriz de riesgos tiene más de 12 meses sin actualización. Se recomienda revisarla antes del 30 de julio.
-Mejor algo como: Revisar matriz de riesgo, se recomienda revisar , que no traiga fecha
+En dashboard:
+'Riesgos en seguimiento' deben ser la misma cantidad de riesgos que estén en el item 'Riesgos CES'
+'Clientes activos' dice que hay 8 pero en realidad actualmente son 10, que tome esa informacion siempre, si se llega actualizar tiene que mostrarse.
+
+En CES AUDITOR:
+Los botones y sugerencias: 
+
+Iniciar auditoría
+
+Administración de Riesgos
+Iniciar auditoría conversacional
+
+Gestión de Servicios de TIC
+Iniciar auditoría conversacional
+
+Gestión de Proyectos
+Iniciar auditoría conversacional
+
+Arquitectura de Soluciones
+Iniciar auditoría conversacional
+
+Gestión de Logística y Compras
+Iniciar auditoría conversacional
+
+Gestión Jurídica
+Iniciar auditoría conversacional
+
+Gestión de Servicio al Cliente
+Iniciar auditoría conversacional
+
+Tienen que hacer referencia a los procesos y documentos que están en 'Procesos CES' basicamente la auditoria se va hacer siempre con base en todo lo que hay en 'Procesos CES'
+
+En 'Procesos CES' agregar al inicio y que se vea resaltado, informacion relevante del documento @Manual_de_Usuario_CnetWiki_SIG.pdf como el link de la wiki, instrucciones para acceder, que credenciales se necesitan, y la informacion que consideres importante. Tampoco algo muy extenso, analizalo y agrega lo que consideres aparte de lo que te digo.
+En 'Procesos CES' agregar color especifico a las listas desplegables de los documentos; Procesos Estrategicos: #2596be - Procesos Misionales: #9DDB58 - Procesos de Apoyo: #B4D8F5
+
+En 'Riesgos CES' agregar esta imagen al principio del encabezado: https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/imagen%20%281%29.png

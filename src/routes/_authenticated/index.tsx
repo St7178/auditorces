@@ -69,12 +69,28 @@ function Dashboard() {
     const { eventos, eventosError } = Route.useLoaderData();
     const firstName = user?.name?.split(" ")[0] ?? "Usuario";
     const [hallazgos, setHallazgos] = useState<Hallazgo[] | null>(null);
+    const [clientesCount, setClientesCount] = useState<number | null>(null);
+    const [riesgosCount, setRiesgosCount] = useState<number | null>(null);
 
     useEffect(() => {
         let mounted = true;
         fetch("/api/hallazgos")
             .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
             .then((data) => mounted && setHallazgos(data))
+            .catch(() => {
+                /* fallback: KPI estático se mantiene */
+            });
+        // Mismas fuentes reales que consumen /clientes y /riesgos — así el KPI del dashboard
+        // nunca queda desincronizado de lo que esas páginas muestran.
+        fetch("/api/sync/clientes")
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+            .then((data: Array<{ estado: string }>) => mounted && setClientesCount(data.filter((c) => c.estado === "Activo").length))
+            .catch(() => {
+                /* fallback: KPI estático se mantiene */
+            });
+        fetch("/api/sync/riesgos")
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+            .then((data: unknown[]) => mounted && setRiesgosCount(data.length))
             .catch(() => {
                 /* fallback: KPI estático se mantiene */
             });
@@ -91,6 +107,8 @@ function Dashboard() {
     const kpis = KPIS_DASHBOARD.map((k) => {
         if (k.label === "Hallazgos abiertos" && hallazgosAbiertos !== undefined) return { ...k, value: hallazgosAbiertos, delta: "vivo" };
         if (k.label === "Hallazgos pendientes" && hallazgosPendientes !== undefined) return { ...k, value: hallazgosPendientes, delta: "vivo" };
+        if (k.label === "Clientes activos" && clientesCount !== null) return { ...k, value: clientesCount, delta: "vivo" };
+        if (k.label === "Riesgos en seguimiento" && riesgosCount !== null) return { ...k, value: riesgosCount, delta: "vivo" };
         return k;
     });
 
