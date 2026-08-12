@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/page-header";
-import { EQUIPO } from "@/lib/ces-data";
-import { Mail, MessageSquare, IdCard, AlertTriangle } from "lucide-react";
+import { EQUIPO, CLIENTES } from "@/lib/ces-data";
+import { Mail, ArrowRight, AlertTriangle } from "lucide-react";
 import { getCesTeamFromEntra } from "@/lib/team.functions";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/equipo")({
     component: EquipoPage,
@@ -29,31 +29,49 @@ function normalizeName(name: string) {
     return name.trim().toLowerCase();
 }
 
-const PRESENCE_LABEL: Record<string, { label: string; dot: string }> = {
-    Available: { label: "Disponible", dot: "bg-emerald-500" },
-    AvailableIdle: { label: "Disponible", dot: "bg-emerald-500" },
-    Busy: { label: "Ocupado", dot: "bg-amber-500" },
-    BusyIdle: { label: "Ocupado", dot: "bg-amber-500" },
-    DoNotDisturb: { label: "No molestar", dot: "bg-red-500" },
-    BeRightBack: { label: "Vuelvo enseguida", dot: "bg-amber-500" },
-    Away: { label: "Ausente", dot: "bg-amber-400" },
-    Offline: { label: "Sin conexión", dot: "bg-muted-foreground/40" },
-};
+// Un cliente se considera "al día" (🟢) si su estado es Activo; cualquier otro estado (En renovación,
+// etc.) se muestra en amarillo — mismo criterio que ya usa /clientes.
+type ClienteAsignado = { nombre: string; activo: boolean | null };
 
-function PresenceBadge({ availability }: { availability?: string | null }) {
-    if (!availability) return null;
-    const info = PRESENCE_LABEL[availability];
-    if (!info) return null;
+function ClientesTable({ clientes }: { clientes: ClienteAsignado[] }) {
+    if (clientes.length === 0) {
+        return <div className="mt-2 text-[11px] text-muted-foreground">Sin clientes asignados.</div>;
+    }
     return (
-        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-            <span className={`h-1.5 w-1.5 rounded-full ${info.dot}`} /> {info.label}
-        </span>
+        <div className="mt-2 overflow-hidden rounded-lg border">
+            <table className="w-full text-[11px]">
+                <tbody className="divide-y">
+                    {clientes.map((c) => (
+                        <tr key={c.nombre}>
+                            <td className="px-2 py-1.5">{c.nombre}</td>
+                            <td className="px-2 py-1.5 text-right">
+                                {c.activo === null ? "⚪" : c.activo ? "🟢" : "🟡"}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
     );
 }
 
 function EquipoPage() {
     const { entraUsers, error } = Route.useLoaderData();
     const entraByName = new Map(entraUsers.map((u) => [normalizeName(u.displayName), u]));
+    const [clientesSync, setClientesSync] = useState<typeof CLIENTES | null>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        fetch("/api/sync/clientes")
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+            .then((data) => mounted && setClientesSync(data))
+            .catch(() => {
+                /* fallback: se usa la lista estática de EQUIPO.clientes */
+            });
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
     // El directorio Entra ID es la fuente de verdad para nombre, cargo y foto real;
     // EQUIPO solo aporta el contexto CES (clientes/procesos) que Entra no tiene.
@@ -65,10 +83,21 @@ function EquipoPage() {
             cargo: match?.jobTitle ?? m.cargo,
             mail: match?.mail ?? match?.userPrincipalName ?? null,
             photoUrl: match?.photoUrl ?? null,
-            availability: match?.availability ?? null,
             enDirectorio: Boolean(match),
         };
     });
+
+    // Cliente asignado por persona: se cruza el nombre (ya fusionado con Entra) contra el campo
+    // `responsable` de los clientes reales sincronizados. Si no hay coincidencias ahí (porque el
+    // roster estático usa nombres de demo desactualizados), se cae a EQUIPO.clientes con estado
+    // desconocido en vez de dejar la tarjeta vacía.
+    function clientesDe(m: (typeof equipo)[number]): ClienteAsignado[] {
+        if (clientesSync) {
+            const reales = clientesSync.filter((c) => normalizeName(c.responsable) === normalizeName(m.nombre));
+            if (reales.length > 0) return reales.map((c) => ({ nombre: c.nombre, activo: c.estado === "Activo" }));
+        }
+        return m.clientes.map((nombre) => ({ nombre, activo: null }));
+    }
 
     const knownNames = new Set(EQUIPO.map((m) => normalizeName(m.nombre)));
     const entraOnly = entraUsers.filter((u) => !knownNames.has(normalizeName(u.displayName)));
@@ -90,39 +119,35 @@ function EquipoPage() {
             )}
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {equipo.map((m) => (
-                    <Card key={m.id} className="group overflow-hidden border-border/60 transition hover:shadow-lg">
-                        <div className="h-20 bg-gradient-to-br from-brand/80 to-[oklch(0.5_0.14_240)]" style={{ filter: `hue-rotate(${parseInt(m.color) - 152}deg)` }} />
-                        <CardContent className="-mt-10 p-5">
-                            <Avatar className="h-16 w-16 rounded-2xl border-4 border-card shadow-lg">
-                                <AvatarImage src={m.photoUrl ?? undefined} alt={m.nombre} className="object-cover" />
-                                <AvatarFallback className="rounded-2xl bg-card text-lg font-bold text-brand">{initials(m.nombre)}</AvatarFallback>
-                            </Avatar>
-                            <div className="mt-3 text-base font-semibold">{m.nombre}</div>
-                            <div className="text-xs text-muted-foreground">{m.cargo}</div>
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                                {m.enDirectorio && (
-                                    <Badge variant="secondary" className="gap-1 text-[10px]"><IdCard className="h-3 w-3" /> Directorio Entra ID</Badge>
-                                )}
-                                <PresenceBadge availability={m.availability} />
-                            </div>
-                            <div className="mt-3 flex flex-wrap gap-1">
-                                {m.procesos.slice(0, 2).map((p) => (
-                                    <Badge key={p} variant="secondary" className="text-[10px]">{p}</Badge>
-                                ))}
-                            </div>
-                            <div className="mt-3 text-[11px] text-muted-foreground">
-                                <span className="font-semibold text-foreground">Clientes:</span> {m.clientes.join(", ")}
-                            </div>
-                            <div className="mt-4 flex gap-2">
-                                <a href={m.mail ? `mailto:${m.mail}` : undefined} className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent aria-disabled:pointer-events-none aria-disabled:opacity-50" aria-disabled={!m.mail}>
-                                    <Mail className="h-3 w-3" /> Email
-                                </a>
-                                <button className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent"><MessageSquare className="h-3 w-3" /> Chat</button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+                {equipo.map((m) => {
+                    const clientes = clientesDe(m);
+                    return (
+                        <Card key={m.id} className="group overflow-hidden border-border/60 transition hover:shadow-lg">
+                            <div className="h-20 bg-gradient-to-br from-brand/80 to-[oklch(0.5_0.14_240)]" style={{ filter: `hue-rotate(${parseInt(m.color) - 152}deg)` }} />
+                            <CardContent className="-mt-10 p-5">
+                                <Avatar className="h-16 w-16 rounded-2xl border-4 border-card shadow-lg">
+                                    <AvatarImage src={m.photoUrl ?? undefined} alt={m.nombre} className="object-cover" />
+                                    <AvatarFallback className="rounded-2xl bg-card text-lg font-bold text-brand">{initials(m.nombre)}</AvatarFallback>
+                                </Avatar>
+                                <div className="mt-3 text-base font-semibold">{m.nombre}</div>
+                                <div className="text-xs text-muted-foreground">{m.cargo}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">{m.mail ?? "Correo no disponible"}</div>
+
+                                <div className="mt-3 text-[11px] font-semibold text-foreground">{clientes.length} cliente{clientes.length === 1 ? "" : "s"} asignado{clientes.length === 1 ? "" : "s"}</div>
+                                <ClientesTable clientes={clientes} />
+
+                                <div className="mt-4 flex gap-2">
+                                    <a href={m.mail ? `mailto:${m.mail}` : undefined} className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent aria-disabled:pointer-events-none aria-disabled:opacity-50" aria-disabled={!m.mail}>
+                                        <Mail className="h-3 w-3" /> Email
+                                    </a>
+                                    <Link to="/clientes" className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent">
+                                        Ir al Cliente <ArrowRight className="h-3 w-3" />
+                                    </Link>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
 
                 {entraOnly.map((u) => (
                     <Card key={u.id} className="group overflow-hidden border-dashed border-border/60 transition hover:shadow-lg">
@@ -134,14 +159,15 @@ function EquipoPage() {
                             </Avatar>
                             <div className="mt-3 text-base font-semibold">{u.displayName}</div>
                             <div className="text-xs text-muted-foreground">{u.jobTitle}</div>
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                                <Badge variant="secondary" className="gap-1 text-[10px]"><IdCard className="h-3 w-3" /> Directorio Entra ID</Badge>
-                                <PresenceBadge availability={u.availability} />
-                            </div>
+                            <div className="mt-1 text-xs text-muted-foreground">{u.mail ?? u.userPrincipalName ?? "Correo no disponible"}</div>
+                            <div className="mt-3 text-[11px] font-semibold text-foreground">0 clientes asignados</div>
                             <div className="mt-4 flex gap-2">
                                 <a href={`mailto:${u.mail ?? u.userPrincipalName}`} className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent">
                                     <Mail className="h-3 w-3" /> Email
                                 </a>
+                                <Link to="/clientes" className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent">
+                                    Ir al Cliente <ArrowRight className="h-3 w-3" />
+                                </Link>
                             </div>
                         </CardContent>
                     </Card>

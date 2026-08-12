@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, Loader2, ShieldCheck, Search, CheckCircle2, XCircle, CalendarPlus, FileCheck2 } from "lucide-react";
+import { Sparkles, Send, Loader2, ShieldCheck, Search, CheckCircle2, XCircle, CalendarPlus, FileCheck2, ClipboardCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ChatMarkdown } from "@/components/chat-markdown";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
+import { MAPA_PROCESOS_CES, CATEGORIA_COLOR } from "@/lib/ces-data";
 
 const TOOL_LABELS: Record<string, string> = {
     consultarRiesgos: "Riesgos CES",
@@ -38,6 +39,46 @@ function ToolPart({ part, onApprove }: { part: any; onApprove: (id: string, appr
             return (
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                     <Loader2 className="h-3 w-3 animate-spin" /> Registrando hallazgo…
+                </div>
+            );
+        }
+        return null;
+    }
+
+    if (toolName === "generarInformeAuditoria") {
+        const input = part.input || {};
+        if (part.state === "output-available") {
+            return (
+                <div className="rounded-xl border border-brand/30 bg-card p-4 text-xs">
+                    <div className="flex items-center gap-1.5 font-semibold text-brand">
+                        <ClipboardCheck className="h-4 w-4 shrink-0" /> Informe de Auditoría
+                    </div>
+                    {input.proceso && (
+                        <div className="mt-1.5 inline-flex items-center rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-semibold text-brand">
+                            Proceso auditado: {input.proceso}
+                        </div>
+                    )}
+                    {input.resumenEjecutivo && <p className="mt-2 text-muted-foreground">{input.resumenEjecutivo}</p>}
+                    <div className="mt-2">
+                        <strong>Hallazgos registrados:</strong> {input.hallazgosRegistrados ?? 0}
+                    </div>
+                    {input.recomendaciones?.length > 0 && (
+                        <div className="mt-2">
+                            <div className="font-semibold">Recomendaciones</div>
+                            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
+                                {input.recomendaciones.map((r: string, i: number) => (
+                                    <li key={i}>{r}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        if (part.state === "input-streaming" || part.state === "input-available") {
+            return (
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Generando informe de auditoría…
                 </div>
             );
         }
@@ -136,17 +177,46 @@ const SUGERENCIAS = [
     "Explícame la cláusula 8.1 de ISO 9001",
 ];
 
-// Deben coincidir EXACTO con los nombres de MAPA_PROCESOS_CES (ces-data.ts) — el chat filtra
-// riesgos/documentos por este texto literal, así que un nombre distinto rompe el filtro.
-const PROCESOS_AUDITABLES = [
-    "Administración de Riesgos",
-    "Gestión de Servicios de TIC",
-    "Gestión de Proyectos",
-    "Arquitectura de Soluciones",
-    "Gestión de Logística y Compras",
-    "Gestión Jurídica",
-    "Gestión de Servicio al Cliente",
-];
+const MODOS = [
+    { id: "principiante", label: "🟢 Principiante" },
+    { id: "intermedio", label: "🟡 Intermedio" },
+    { id: "avanzado", label: "🔵 Avanzado" },
+] as const;
+
+// Selector de proceso a auditar, agrupado por categoría igual que en /procesos — se toma directo de
+// MAPA_PROCESOS_CES para que nunca quede desincronizado del filtro real que usa el backend. Se usa tanto
+// en el estado vacío inicial como al terminar una auditoría (botón "¿Quieres auditar otro proceso?").
+function ProcesoPicker({ onPick }: { onPick: (proceso: string) => void }) {
+    return (
+        <div className="space-y-4">
+            {MAPA_PROCESOS_CES.map((cat) => {
+                const color = CATEGORIA_COLOR[cat.categoria];
+                return (
+                    <div key={cat.categoria}>
+                        <div
+                            className="mb-1.5 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                            style={color ? { backgroundColor: color.bg, color: color.fg } : undefined}
+                        >
+                            {cat.categoria}
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            {cat.procesos.map((p) => (
+                                <button
+                                    key={p}
+                                    onClick={() => onPick(p)}
+                                    className="rounded-xl border bg-card p-3 text-left text-sm transition hover:border-brand hover:bg-brand-soft/40"
+                                >
+                                    <div className="font-medium">{p}</div>
+                                    <div className="text-[11px] text-muted-foreground">Iniciar auditoría conversacional</div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
 function GuardianPage() {
     const { user } = AuthenticatedRoute.useRouteContext();
@@ -156,8 +226,9 @@ function GuardianPage() {
         : "US";
     const [input, setInput] = useState("");
     const [norma, setNorma] = useState<"iso9001" | "iso27001">("iso9001");
+    const [modo, setModo] = useState<"principiante" | "intermedio" | "avanzado">("intermedio");
     const { messages, sendMessage, addToolApprovalResponse, status } = useChat({
-        transport: new DefaultChatTransport({ api: "/api/chat", body: { norm: norma } }),
+        transport: new DefaultChatTransport({ api: "/api/chat", body: { norm: norma, modo } }),
         sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     });
     const endRef = useRef<HTMLDivElement>(null);
@@ -180,10 +251,18 @@ function GuardianPage() {
 
     const empty = messages.length === 0;
 
+    // Cuando el último mensaje del asistente ya cerró la auditoría (generarInformeAuditoria con salida
+    // disponible), se vuelve a mostrar el selector de proceso para poder auditar otro sin recargar la página.
+    const lastMessage = messages[messages.length - 1];
+    const auditoriaFinalizada =
+        !loading &&
+        lastMessage?.role === "assistant" &&
+        lastMessage.parts.some((p: any) => p.type === "tool-generarInformeAuditoria" && p.state === "output-available");
+
     return (
         <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
             {/* Header */}
-            <div className="mb-4 flex items-start gap-4">
+            <div className="mb-4 flex flex-wrap items-start gap-4">
                 <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-brand shadow-sm shadow-slate-200 border border-slate-200">
                     <Sparkles className="h-7 w-7" />
                     <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-brand shadow-sm shadow-slate-200">
@@ -199,23 +278,39 @@ function GuardianPage() {
                     </div>
                     <p className="text-sm text-muted-foreground">Tu asistente inteligente de calidad y auditoría · SIG</p>
                 </div>
-                <div className="ml-auto flex shrink-0 items-center gap-1.5 rounded-xl border bg-card p-1">
-                    {(
-                        [
-                            { id: "iso9001", label: "ISO 9001" },
-                            { id: "iso27001", label: "ISO 27001" },
-                        ] as const
-                    ).map((n) => (
-                        <button
-                            key={n.id}
-                            onClick={() => setNorma(n.id)}
-                            className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                                norma === n.id ? "bg-brand text-white" : "text-muted-foreground hover:bg-muted"
-                            }`}
-                        >
-                            <FileCheck2 className="h-3.5 w-3.5" /> {n.label}
-                        </button>
-                    ))}
+
+                <div className="ml-auto flex flex-wrap items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-1.5 rounded-xl border bg-card p-1">
+                        {(
+                            [
+                                { id: "iso9001", label: "ISO 9001" },
+                                { id: "iso27001", label: "ISO 27001" },
+                            ] as const
+                        ).map((n) => (
+                            <button
+                                key={n.id}
+                                onClick={() => setNorma(n.id)}
+                                className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                                    norma === n.id ? "bg-brand text-white" : "text-muted-foreground hover:bg-muted"
+                                }`}
+                            >
+                                <FileCheck2 className="h-3.5 w-3.5" /> {n.label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5 rounded-xl border bg-card p-1">
+                        {MODOS.map((m) => (
+                            <button
+                                key={m.id}
+                                onClick={() => setModo(m.id)}
+                                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                                    modo === m.id ? "bg-brand text-white" : "text-muted-foreground hover:bg-muted"
+                                }`}
+                            >
+                                {m.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -241,19 +336,8 @@ function GuardianPage() {
                             </div>
 
                             <div className="mt-6">
-                                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Iniciar auditoría</div>
-                                <div className="grid gap-2 sm:grid-cols-2">
-                                    {PROCESOS_AUDITABLES.map((p) => (
-                                        <button
-                                            key={p}
-                                            onClick={() => submit(`Quiero auditar el proceso: ${p}, con base en los procesos y documentos registrados en Procesos CES.`)}
-                                            className="rounded-xl border bg-card p-3 text-left text-sm transition hover:border-brand hover:bg-brand-soft/40"
-                                        >
-                                            <div className="font-medium">{p}</div>
-                                            <div className="text-[11px] text-muted-foreground">Iniciar auditoría conversacional</div>
-                                        </button>
-                                    ))}
-                                </div>
+                                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Antes de iniciar: selecciona el proceso</div>
+                                <ProcesoPicker onPick={(p) => submit(`Quiero auditar el proceso: ${p}, con base en los procesos y documentos registrados en Procesos CES.`)} />
                             </div>
 
                             <div className="mt-6">
@@ -299,6 +383,12 @@ function GuardianPage() {
                                     <div className="rounded-2xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
                                         <Loader2 className="inline h-3 w-3 animate-spin" /> Analizando…
                                     </div>
+                                </div>
+                            )}
+                            {auditoriaFinalizada && (
+                                <div className="rounded-2xl border bg-gradient-to-br from-brand-soft to-secondary p-4">
+                                    <div className="mb-3 text-sm font-semibold text-brand">¿Quieres auditar otro proceso?</div>
+                                    <ProcesoPicker onPick={(p) => submit(`Quiero auditar el proceso: ${p}, con base en los procesos y documentos registrados en Procesos CES.`)} />
                                 </div>
                             )}
                             <div ref={endRef} />

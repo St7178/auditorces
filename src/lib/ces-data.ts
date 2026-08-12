@@ -24,6 +24,14 @@ export const MAPA_PROCESOS_CES = [
     { categoria: "Procesos de Apoyo", procesos: ["Gestión de la Información", "Gestión Sistema Integrado", "Gestión Humana", "Gestión de Logística y Compras", "Gestión Jurídica", "Gestión Financiera", "Ventas", "Comunicaciones y Mercadeo"] },
 ];
 
+// Colores por categoría de proceso — usados en /procesos (acordeones de documentos) y en /guardian
+// (selector de proceso a auditar) para que ambas pantallas se lean como el mismo sistema visual.
+export const CATEGORIA_COLOR: Record<string, { bg: string; fg: string }> = {
+    "Procesos Estratégicos": { bg: "#2596be", fg: "#ffffff" },
+    "Procesos Misionales": { bg: "#9DDB58", fg: "#1a2e05" },
+    "Procesos de Apoyo": { bg: "#B4D8F5", fg: "#0c2a43" },
+};
+
 export const RIESGOS = [
     { id: "R-01", nombre: "Indisponibilidad de servicio crítico", nivel: "Alto", estado: "En seguimiento", responsable: "Andrés Cano", ultimaActualizacion: "2026-06-20", proximaRevision: "2026-08-20", evidencia: "SharePoint / CES / Riesgos" },
     { id: "R-02", nombre: "Fuga de información cliente", nivel: "Crítico", estado: "En seguimiento", responsable: "Johann Steven Toro", ultimaActualizacion: "2026-06-15", proximaRevision: "2026-07-30", evidencia: "SharePoint / Seguridad" },

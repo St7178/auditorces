@@ -3,8 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
-import { MAPA_PROCESOS_CES, DOCUMENTOS } from "@/lib/ces-data";
-import { FileText, Link2, KeyRound, ShieldQuestion, LifeBuoy } from "lucide-react";
+import { MAPA_PROCESOS_CES, DOCUMENTOS, CATEGORIA_COLOR } from "@/lib/ces-data";
+import { FileText, Link2, KeyRound, ShieldQuestion, LifeBuoy, GraduationCap, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/procesos")({
@@ -18,12 +18,46 @@ const CATEGORIA_ICONO: Record<string, string> = {
     "Procesos de Apoyo": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Proceso%20de%20apoyo.png",
 };
 
-// Colores solicitados para diferenciar de un vistazo cada grupo de procesos en los acordeones.
-const CATEGORIA_COLOR: Record<string, { bg: string; fg: string }> = {
-    "Procesos Estratégicos": { bg: "#2596be", fg: "#ffffff" },
-    "Procesos Misionales": { bg: "#9DDB58", fg: "#1a2e05" },
-    "Procesos de Apoyo": { bg: "#B4D8F5", fg: "#0c2a43" },
-};
+// Conceptos base de la información documentada del SIG, para quien recién entra a la plataforma.
+const CONCEPTOS_SIG: Array<{ tipo: string; explicacion: string; detalle?: string[]; ejemploCodigo?: string }> = [
+    {
+        tipo: "Manual",
+        explicacion: "Documento que reúne las directrices generales de un sistema de gestión: para qué existe, cómo está organizado y qué reglas generales aplican a todos los procesos.",
+    },
+    {
+        tipo: "Procedimiento",
+        explicacion: "Describe paso a paso cómo se ejecuta una actividad o proceso, quién es responsable de cada paso y qué controles aplican en el camino.",
+    },
+    {
+        tipo: "Instructivo",
+        explicacion: "Explica cómo realizar una tarea puntual y específica dentro de un procedimiento, casi siempre con un nivel de detalle técnico u operativo mayor.",
+    },
+    {
+        tipo: "Formato",
+        explicacion: "Plantilla en blanco, lista para diligenciar, que estandariza cómo se captura cierta información (por ejemplo, un formato de solicitud o de evaluación).",
+    },
+    {
+        tipo: "Registro",
+        explicacion: "Es un formato ya diligenciado: la evidencia de que una actividad efectivamente ocurrió (una lista de asistencia firmada, una evaluación completada, etc.).",
+    },
+    {
+        tipo: "Caracterización",
+        explicacion: "Ficha que describe un proceso completo del SIG: su objetivo, alcance, entradas y salidas, responsables, riesgos asociados e indicadores.",
+        detalle: [
+            "¿Para qué sirve? Para entender de un vistazo cómo funciona un proceso completo, sin tener que leer todos sus documentos por separado.",
+            "¿Qué contiene? Objetivo, alcance, dueño del proceso, entradas/proveedor, actividades (ciclo PHVA), salidas/cliente, recursos, requisitos aplicables y riesgos asociados.",
+        ],
+    },
+    {
+        tipo: "Política",
+        explicacion: "Declaración de intención y dirección de la Alta Dirección sobre un tema del SIG (calidad, seguridad de la información, etc.) — el marco que deben respetar procedimientos e instructivos.",
+        ejemploCodigo: "M.SI.001",
+    },
+];
+
+function ejemploDoc(codigo: string, documentos: typeof DOCUMENTOS) {
+    return documentos.find((d) => d.codigo === codigo);
+}
 
 // Ubicacion llega como "Sección Excel / subproceso" — solo se muestra la parte de después del "/"
 // (la sección ya está implícita en el acordeón que agrupa por proceso).
@@ -57,6 +91,7 @@ const SECCION_A_PROCESO: Record<string, string> = {
 
 function ProcesosPage() {
     const [documentos, setDocumentos] = useState(DOCUMENTOS);
+    const [ejemploAbierto, setEjemploAbierto] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -87,6 +122,16 @@ function ProcesosPage() {
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader eyebrow="Sistema Integrado de Gestión" title="Procesos CES" description="Cloud Enterprise Services." />
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium">
+                    🟢 Sistema de Gestión de Calidad (ISO 9001)
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium">
+                    🔵 Seguridad de la Información (ISO/IEC 27001)
+                </span>
+                <span className="text-xs text-muted-foreground">El SIG de CES está certificado bajo ambas normas.</span>
+            </div>
 
             <Card className="mt-6 border-brand/30 bg-gradient-to-br from-brand-soft to-secondary">
                 <CardContent className="p-5">
@@ -285,6 +330,63 @@ function ProcesosPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             )}
+                        </Accordion>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="mt-10">
+                <div className="flex items-center gap-2">
+                    <GraduationCap className="h-5 w-5 text-brand" />
+                    <h2 className="text-lg font-semibold">📚 ¿No conoces estos documentos?</h2>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">Centro de Aprendizaje SIG — los tipos de información documentada que vas a encontrar en cada proceso.</p>
+
+                <Card className="mt-4 border-border/60">
+                    <CardContent className="p-0">
+                        <Accordion type="multiple" className="px-5">
+                            {CONCEPTOS_SIG.map((c) => {
+                                const ejemplo = c.ejemploCodigo ? ejemploDoc(c.ejemploCodigo, documentos) : undefined;
+                                return (
+                                    <AccordionItem key={c.tipo} value={c.tipo}>
+                                        <AccordionTrigger>
+                                            <span className="font-medium">¿Qué es un{c.tipo === "Política" || c.tipo === "Caracterización" ? "a" : ""} {c.tipo}?</span>
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <p className="text-sm text-muted-foreground">{c.explicacion}</p>
+                                            {c.detalle && (
+                                                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                                                    {c.detalle.map((d) => (
+                                                        <li key={d}>{d}</li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                            {c.ejemploCodigo && (
+                                                <div className="mt-3">
+                                                    <button
+                                                        onClick={() => setEjemploAbierto((v) => !v)}
+                                                        className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                                                    >
+                                                        Ver ejemplo <ChevronDown className={`h-3 w-3 transition-transform ${ejemploAbierto ? "rotate-180" : ""}`} />
+                                                    </button>
+                                                    {ejemploAbierto && (
+                                                        <div className="mt-2 rounded-lg border bg-muted/20 p-3 text-xs">
+                                                            {ejemplo ? (
+                                                                <>
+                                                                    <span className="font-mono text-muted-foreground">{ejemplo.codigo}</span> · <span className="font-medium">{ejemplo.nombre}</span>
+                                                                    <div className="mt-0.5 text-muted-foreground">{ejemplo.ubicacion}</div>
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-muted-foreground">Documento de ejemplo no disponible por ahora.</span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                );
+                            })}
                         </Accordion>
                     </CardContent>
                 </Card>

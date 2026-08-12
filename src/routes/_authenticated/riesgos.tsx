@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
 import { METODOLOGIA_RIESGOS, REGISTRO_RIESGOS_CES } from "@/lib/ces-data";
-import { BookOpen, FileSpreadsheet } from "lucide-react";
+import { BookOpen, FileSpreadsheet, ShieldQuestion } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/riesgos")({
@@ -47,6 +47,36 @@ function RiesgosPage() {
             </div>
 
             <PageHeader eyebrow="Administración de Riesgos" title="Riesgos Operacionales" description="Solo se registra la ubicación de la evidencia. No se almacenan matrices ni documentos confidenciales." />
+
+            <Card className="mt-6 border-border/60">
+                <CardContent className="p-5">
+                    <div className="flex items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
+                            <ShieldQuestion className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="font-semibold">¿Qué son los riesgos operacionales?</div>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Son eventos o condiciones inciertas que, de materializarse, afectarían la capacidad del área CES para
+                                cumplir sus objetivos, la prestación del servicio a los clientes o los requisitos de las normas que
+                                aplican (ISO 9001 e ISO/IEC 27001). Se identifican, analizan, tratan y monitorean siguiendo el ciclo
+                                definido en la metodología {METODOLOGIA_RIESGOS.codigo}.
+                            </p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="mt-6 overflow-hidden border-border/60">
+                <div className="px-5 pt-5">
+                    <div className="font-semibold">¿Cómo identificar un riesgo?</div>
+                </div>
+                <img
+                    src="https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Imagen%20riesgos%20%281%29.png"
+                    alt="Cómo identificar un riesgo"
+                    className="mx-auto mt-3 h-auto max-h-96 w-full object-contain"
+                />
+            </Card>
 
             <Card className="mt-6 border-border/60">
                 <CardContent className="p-5">

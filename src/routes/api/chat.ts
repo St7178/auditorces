@@ -36,12 +36,14 @@ REGLA — fechas de documentos: los documentos del SIG solo tienen fecha de PUBL
 
 REGLA — la fuente de verdad es "Procesos CES": TODA auditoría se hace exclusivamente con base en lo que existe en la página "Procesos CES" del portal (el mapa de procesos y sus documentos asociados). En cuanto el usuario elija un proceso a auditar, tu PRIMER paso siempre es llamar consultarProcesos (para ubicar el proceso dentro de su categoría — Estratégico/Misional/de Apoyo) y consultarDocumentacion con ese proceso (para ver exactamente los documentos que existen ahí). Tus preguntas de auditoría deben girar en torno a esos documentos concretos (¿está vigente?, ¿cubre lo que exige la norma?, ¿hay evidencia de que se aplica?) — no inventes clausulas o temas que no tengan relación con algún documento o dato real de ese proceso.
 
+REGLA — preguntas conceptuales durante la auditoría: en cualquier momento el usuario puede interrumpir con una duda conceptual (ej. "¿qué significa esta pregunta?", "¿qué es una evidencia objetiva?", "¿qué es una no conformidad?", "¿qué solicita la norma en este requisito?", "¿qué control de ISO/IEC 27001 aplica?"). Respóndela con claridad y luego RETOMA la auditoría exactamente en el punto donde ibas — no la reinicies ni pierdas el contexto del proceso que se estaba auditando.
+
 CÓMO HACER UNA AUDITORÍA:
 1. Pregunta qué proceso desea auditar (o usa consultarProcesos para listarlos).
 2. Usa consultarProcesos, consultarRiesgos, consultarIndicadores y consultarDocumentacion — SIEMPRE con el proceso como filtro (ver reglas de arriba) — para entender el estado real de ese proceso ANTES de hacer preguntas. Indicadores no está tagged por proceso todavía, acláralo si lo usas. consultarDocumentacion ya te dice qué evidencia existe — no le preguntes al usuario por ubicaciones.
-3. Haz preguntas dinámicas basadas en las cláusulas de la norma seleccionada (ver bloque "NORMA APLICABLE" abajo) que sean pertinentes al proceso Y a los documentos reales que encontraste en el paso 2.
+3. Haz preguntas dinámicas basadas en las cláusulas de la norma seleccionada (ver bloque "NORMA APLICABLE" abajo) que sean pertinentes al proceso Y a los documentos reales que encontraste en el paso 2. Adapta el estilo de las preguntas y explicaciones al modo de experiencia seleccionado (ver bloque "MODO DE EXPERIENCIA" abajo).
 4. Cuando identifiques un hallazgo concreto (una no conformidad, riesgo no gestionado, oportunidad de mejora), usa la herramienta proponerHallazgo para registrarlo. Esta herramienta se guarda automáticamente en el dashboard, sin pedir aprobación — en cuanto la ejecutes, considera el hallazgo ya registrado y continúa la auditoría.
-5. Al final de la auditoría, entrega un resumen breve de los hallazgos que quedaron registrados en el dashboard, oportunidades y recomendaciones. No pidas confirmación para "guardar" nada, ya quedó guardado.
+5. Cuando genuinamente termines de auditar el proceso (ya recorriste los documentos/requisitos relevantes y registraste los hallazgos que encontraste), usa la herramienta generarInformeAuditoria UNA sola vez para cerrar la auditoría con un informe estructurado. No la llames antes de tiempo ni más de una vez por proceso auditado.
 6. Si el usuario pide agendar una reunión (ej. "agéndame la auditoría de Riesgos el viernes a las 10am"), usa la herramienta agendarReunion. Esta sí requiere confirmación explícita antes de crearse en el calendario real del usuario. Calcula la fecha/hora exacta en ISO 8601 con zona horaria de Bogotá (UTC-5) a partir de la fecha de hoy que se indica abajo — nunca inventes una fecha sin ancla.
 
 Sé conciso, usa listas y estructura visual (títulos con **negrita**). Responde en markdown.`;
@@ -87,6 +89,22 @@ comunicaciones, gestión de incidentes de seguridad, continuidad y cumplimiento)
 de calidad del servicio en sí — el foco es la seguridad de la información.`,
 };
 
+type Modo = "principiante" | "intermedio" | "avanzado";
+
+const MODO_BLOCKS: Record<Modo, string> = {
+    principiante: `MODO DE EXPERIENCIA: Principiante — el usuario es nuevo o tiene poco conocimiento del SIG. Antes de cada
+pregunta de auditoría, explícala en lenguaje sencillo (qué te estoy preguntando y por qué), da un ejemplo
+práctico cuando ayude, y explica de forma breve el concepto de la norma seleccionada detrás de la pregunta.
+Prioriza que el usuario entienda por qué la pregunta importa, no solo que la responda rápido.`,
+    intermedio: `MODO DE EXPERIENCIA: Intermedio — el usuario ya conoce los procesos pero quiere apoyo durante la
+auditoría. Haz preguntas directas, sin explicaciones previas innecesarias. Explica un concepto SOLO si el
+usuario lo pide explícitamente. Profundiza en los requisitos específicos que apliquen al proceso.`,
+    avanzado: `MODO DE EXPERIENCIA: Avanzado — el usuario es coordinador o tiene experiencia auditando Sistemas
+Integrados de Gestión. Haz una auditoría técnica y ágil: preguntas orientadas directamente a evidencia
+objetiva, evalúa el cumplimiento de los requisitos aplicables sin rodeos, y reduce al mínimo las
+explicaciones — asume que el usuario ya domina los conceptos de la norma.`,
+};
+
 export const Route = createFileRoute("/api/chat")({
     server: {
         handlers: {
@@ -95,9 +113,10 @@ export const Route = createFileRoute("/api/chat")({
                 const session = await getCurrentSession();
                 if (!session) return new Response("Unauthorized", { status: 401 });
 
-                const body = (await request.json()) as { messages: UIMessage[]; norm?: Norma };
+                const body = (await request.json()) as { messages: UIMessage[]; norm?: Norma; modo?: Modo };
                 const { messages } = body;
                 const norm: Norma = body.norm === "iso27001" ? "iso27001" : "iso9001";
+                const modo: Modo = body.modo === "principiante" || body.modo === "avanzado" ? body.modo : "intermedio";
                 const key = process.env.OPENAI_API_KEY;
                 if (!key) return new Response("Missing OPENAI_API_KEY", { status: 500 });
 
@@ -111,7 +130,7 @@ export const Route = createFileRoute("/api/chat")({
                     : "";
 
                 const fechaHoyBlock = `Fecha y hora actuales (America/Bogota, UTC-5): ${new Date().toLocaleString("es-CO", { timeZone: "America/Bogota", dateStyle: "full", timeStyle: "short" })}.`;
-                const system = [SYSTEM_PROMPT, NORMA_BLOCKS[norm], fechaHoyBlock, INVENTARIO_BLOCK, retrievedBlock].filter(Boolean).join("\n\n");
+                const system = [SYSTEM_PROMPT, NORMA_BLOCKS[norm], MODO_BLOCKS[modo], fechaHoyBlock, INVENTARIO_BLOCK, retrievedBlock].filter(Boolean).join("\n\n");
 
                 const tools = {
                     consultarRiesgos: tool({
@@ -178,6 +197,17 @@ export const Route = createFileRoute("/api/chat")({
                             return { guardado: true, hallazgo: saved };
                         },
                     }),
+                    generarInformeAuditoria: tool({
+                        description:
+                            "Cierra la auditoría de un proceso con un informe estructurado (no vuelve a guardar hallazgos, esos ya se guardaron individualmente vía proponerHallazgo — este tool es solo para presentar el cierre). Úsalo UNA vez, cuando termines genuinamente de auditar el proceso.",
+                        inputSchema: z.object({
+                            proceso: z.string().describe("Proceso CES que se auditó"),
+                            resumenEjecutivo: z.string().describe("Resumen breve de qué se revisó y cómo quedó el proceso"),
+                            hallazgosRegistrados: z.number().describe("Cantidad de hallazgos registrados durante esta auditoría (0 si no se encontró ninguno)"),
+                            recomendaciones: z.array(z.string()).describe("Lista de recomendaciones u oportunidades de mejora, aunque no se hayan registrado como hallazgo"),
+                        }),
+                        execute: async (input) => input,
+                    }),
                     agendarReunion: tool({
                         description:
                             "Agenda una reunión real en el calendario de Outlook del usuario logueado (con link de Teams si aplica). SIEMPRE requiere confirmación explícita del usuario antes de crearse.",
@@ -210,7 +240,7 @@ export const Route = createFileRoute("/api/chat")({
                     system,
                     messages: await convertToModelMessages(messages),
                     tools,
-                    stopWhen: stepCountIs(8),
+                    stopWhen: stepCountIs(20),
                 });
 
                 return result.toUIMessageStreamResponse({ originalMessages: messages });

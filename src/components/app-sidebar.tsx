@@ -27,33 +27,29 @@ import {
 
 const nav = [
     {
-        section: "Principal", items: [
+        section: "🏠 Inicio", items: [
             { title: "Dashboard", url: "/", icon: LayoutDashboard },
             { title: "CES AUDITOR", url: "/guardian", icon: Sparkles, highlight: true },
         ]
     },
     {
-        section: "Gestión CES", items: [
+        section: "👥 Gestión CES", items: [
             { title: "Equipo CES", url: "/equipo", icon: Users },
             { title: "Procesos CES", url: "/procesos", icon: Workflow },
             { title: "Riesgos CES", url: "/riesgos", icon: ShieldAlert },
             { title: "Indicadores CES", url: "/indicadores", icon: Gauge },
-        ]
-    },
-    {
-        section: "Relacionamiento", items: [
             { title: "Clientes CES", url: "/clientes", icon: Building2 },
             { title: "Proveedores CES", url: "/proveedores", icon: Truck },
         ]
     },
     {
-        section: "Conocimiento", items: [
+        section: "📚 Conocimiento", items: [
+            { title: "Wiki CES", url: "/chat", icon: MessagesSquare },
             { title: "Cronograma", url: "/cronograma", icon: Calendar },
-            { title: "Chat Wiki", url: "/chat", icon: MessagesSquare },
         ]
     },
     {
-        section: "Sistema", items: [
+        section: "⚙️ Sistema", items: [
             { title: "Configuración", url: "/configuracion", icon: Settings },
         ]
     },
