@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
 import { MAPA_PROCESOS_CES, DOCUMENTOS, CATEGORIA_COLOR } from "@/lib/ces-data";
-import { FileText, Link2, KeyRound, ShieldQuestion, LifeBuoy, GraduationCap, ChevronDown } from "lucide-react";
+import { FileText, Link2, KeyRound, ShieldQuestion, LifeBuoy, GraduationCap, ChevronDown, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/procesos")({
@@ -350,6 +350,39 @@ function ProcesosPage() {
                                     </AccordionContent>
                                 </AccordionItem>
                             )}
+                        </Accordion>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="mt-10">
+                <Card className="border-border/60">
+                    <CardContent className="p-0">
+                        <Accordion type="single" collapsible className="px-5">
+                            <AccordionItem value="vulnerabilidades-ces">
+                                <AccordionTrigger>
+                                    <div className="flex items-center gap-2">
+                                        <ShieldAlert className="h-4 w-4 text-brand" />
+                                        <span className="font-semibold">Vulnerabilidades CES</span>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <p className="text-sm text-muted-foreground">
+                                        Es una debilidad en un proceso, sistema o control que una amenaza puede aprovechar para materializarse. En
+                                        seguridad de la información, identificar vulnerabilidades es la base de la valoración de riesgos (numeral
+                                        6.1.2 de ISO/IEC 27001).
+                                    </p>
+                                    <a
+                                        href="https://wiki.grupocnet.com/index.php/PLANES_DE_ACCI%C3%93N_A_VENCERSE"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand/90"
+                                    >
+                                        <Link2 className="h-3.5 w-3.5" /> Ver vulnerabilidades en la Wiki
+                                    </a>
+                                    <p className="mt-2 text-[11px] text-muted-foreground">Requiere iniciar sesión en CnetWiki con tu usuario de dominio Cnet.</p>
+                                </AccordionContent>
+                            </AccordionItem>
                         </Accordion>
                     </CardContent>
                 </Card>

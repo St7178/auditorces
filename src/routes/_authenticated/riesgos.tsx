@@ -33,10 +33,6 @@ const CONCEPTOS_RIESGOS: Array<{ pregunta: string; explicacion: string }> = [
         explicacion: "Es la causa potencial de un evento no deseado: lo que podría hacer que el riesgo se materialice (por ejemplo, un proveedor incumple un SLA, o alguien accede sin autorización a un sistema).",
     },
     {
-        pregunta: "¿Qué es una Vulnerabilidad? (más orientado a ISO/IEC 27001)",
-        explicacion: "Es una debilidad en un proceso, sistema o control que una amenaza puede aprovechar para materializarse. En seguridad de la información, identificar vulnerabilidades es la base de la valoración de riesgos (numeral 6.1.2 de ISO/IEC 27001).",
-    },
-    {
         pregunta: "¿Qué es un Control?",
         explicacion: `Es una medida que reduce la probabilidad o el impacto de un riesgo. En CES se clasifican en ${METODOLOGIA_RIESGOS.tiposControl.map((c) => `${c.tipo} (actúa ${c.tipo === "Preventivo" ? "antes, sobre la causa" : c.tipo === "Detectivo" ? "durante, alertando" : "después, corrigiendo"}, efectividad de referencia ${c.efectividad})`).join("; ")}.`,
     },
