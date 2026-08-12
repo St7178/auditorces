@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
 import { METODOLOGIA_RIESGOS, REGISTRO_RIESGOS_CES } from "@/lib/ces-data";
-import { BookOpen, FileSpreadsheet, ShieldQuestion } from "lucide-react";
+import { BookOpen, FileSpreadsheet, ShieldQuestion, GraduationCap, Lightbulb } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/riesgos")({
@@ -19,6 +19,54 @@ function nivelTone(n: string) {
     if (n === "Medio") return "bg-amber-100 text-amber-700";
     return "bg-brand-soft text-brand";
 }
+
+// Centro de Aprendizaje SIG de esta sección — conceptos base de gestión de riesgos, alineados con la
+// metodología M.RI.001.014 (METODOLOGIA_RIESGOS) para que las cifras/escalas que menciona coincidan
+// con lo que ya se ve en "Base metodológica" más arriba en la página.
+const CONCEPTOS_RIESGOS: Array<{ pregunta: string; explicacion: string }> = [
+    {
+        pregunta: "¿Qué es un Riesgo?",
+        explicacion: "Es la posibilidad de que ocurra un evento incierto que, de materializarse, afecte el cumplimiento de los objetivos del proceso o del área CES — puede ser un efecto negativo (amenaza) o, en algunos marcos, una oportunidad.",
+    },
+    {
+        pregunta: "¿Qué es una Amenaza?",
+        explicacion: "Es la causa potencial de un evento no deseado: lo que podría hacer que el riesgo se materialice (por ejemplo, un proveedor incumple un SLA, o alguien accede sin autorización a un sistema).",
+    },
+    {
+        pregunta: "¿Qué es una Vulnerabilidad? (más orientado a ISO/IEC 27001)",
+        explicacion: "Es una debilidad en un proceso, sistema o control que una amenaza puede aprovechar para materializarse. En seguridad de la información, identificar vulnerabilidades es la base de la valoración de riesgos (numeral 6.1.2 de ISO/IEC 27001).",
+    },
+    {
+        pregunta: "¿Qué es un Control?",
+        explicacion: `Es una medida que reduce la probabilidad o el impacto de un riesgo. En CES se clasifican en ${METODOLOGIA_RIESGOS.tiposControl.map((c) => `${c.tipo} (actúa ${c.tipo === "Preventivo" ? "antes, sobre la causa" : c.tipo === "Detectivo" ? "durante, alertando" : "después, corrigiendo"}, efectividad de referencia ${c.efectividad})`).join("; ")}.`,
+    },
+    {
+        pregunta: "¿Qué es una Acción de Tratamiento?",
+        explicacion: `Es la decisión sobre qué hacer con un riesgo ya identificado. Las opciones de la metodología CES son: ${METODOLOGIA_RIESGOS.opcionesTratamiento.map((t) => `${t.opcion} (${t.descripcion})`).join("; ")}.`,
+    },
+    {
+        pregunta: "¿Qué es Probabilidad?",
+        explicacion: `Qué tan factible es que el riesgo ocurra. La escala de CES va de ${METODOLOGIA_RIESGOS.escalaProbabilidad[4].categoria} (${METODOLOGIA_RIESGOS.escalaProbabilidad[4].rango}) a ${METODOLOGIA_RIESGOS.escalaProbabilidad[0].categoria} (${METODOLOGIA_RIESGOS.escalaProbabilidad[0].rango}).`,
+    },
+    {
+        pregunta: "¿Qué es Impacto?",
+        explicacion: `Qué tan grave sería el efecto si el riesgo se materializa. La escala de CES va de ${METODOLOGIA_RIESGOS.escalaImpacto[0].categoria} a ${METODOLOGIA_RIESGOS.escalaImpacto[4].categoria}.`,
+    },
+    {
+        pregunta: "¿Cómo se calcula un riesgo?",
+        explicacion: "El nivel de riesgo inherente resulta de combinar Probabilidad × Impacto (antes de aplicar controles). Al aplicar los controles existentes y su efectividad, ese nivel baja al riesgo residual — el que realmente queda vigente y se monitorea.",
+    },
+    {
+        pregunta: "¿Qué es un Riesgo Residual?",
+        explicacion: "Es el nivel de riesgo que queda después de aplicar los controles ya implementados. Si el riesgo residual es Alto o Extremo, la metodología exige un plan de mitigación obligatorio; si es Moderado, queda a criterio del Dueño del Proceso.",
+    },
+];
+
+const SABIAS_QUE = [
+    "Un riesgo no siempre se elimina. Muchas veces solo se reduce.",
+    "Un riesgo alto no significa que el proceso esté mal.",
+    "Todos los integrantes de CES pueden identificar riesgos.",
+];
 
 function RiesgosPage() {
     const [registro, setRegistro] = useState(REGISTRO_RIESGOS_CES);
@@ -260,6 +308,46 @@ function RiesgosPage() {
                                 </AccordionItem>
                             ))}
                         </Accordion>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="mt-10">
+                <div className="flex items-center gap-2">
+                    <GraduationCap className="h-5 w-5 text-brand" />
+                    <h2 className="text-lg font-semibold">Centro de Aprendizaje SIG</h2>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">Conceptos base para entender y hablar de riesgos en CES.</p>
+
+                <Card className="mt-4 border-border/60">
+                    <CardContent className="p-0">
+                        <Accordion type="multiple" className="px-5">
+                            {CONCEPTOS_RIESGOS.map((c) => (
+                                <AccordionItem key={c.pregunta} value={c.pregunta}>
+                                    <AccordionTrigger>
+                                        <span className="font-medium">{c.pregunta}</span>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <p className="text-sm text-muted-foreground">{c.explicacion}</p>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    </CardContent>
+                </Card>
+
+                <Card className="mt-4 border-brand/30 bg-gradient-to-br from-brand-soft to-secondary">
+                    <CardContent className="p-5">
+                        <div className="flex items-center gap-2 font-semibold text-brand">
+                            <Lightbulb className="h-4 w-4" /> ¿Sabías qué?
+                        </div>
+                        <ul className="mt-3 space-y-2">
+                            {SABIAS_QUE.map((s) => (
+                                <li key={s} className="flex items-start gap-2 text-sm">
+                                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand" /> {s}
+                                </li>
+                            ))}
+                        </ul>
                     </CardContent>
                 </Card>
             </div>
