@@ -182,6 +182,20 @@ const MODO_ESTILO: Record<(typeof MODOS)[number]["id"], string> = {
     avanzado: "border-blue-300 bg-blue-100 text-blue-800",
 };
 
+// Fondo de la tarjeta de bienvenida en el estado vacío del chat — cambia con el modo para que se sienta
+// como "entrar" a ese modo, no solo un badge chico.
+const MODO_TARJETA: Record<(typeof MODOS)[number]["id"], string> = {
+    principiante: "border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70",
+    intermedio: "border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70",
+    avanzado: "border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70",
+};
+
+const MODO_DIVISOR: Record<(typeof MODOS)[number]["id"], string> = {
+    principiante: "border-emerald-300/50",
+    intermedio: "border-amber-300/50",
+    avanzado: "border-blue-300/50",
+};
+
 const NORMA_LABEL: Record<"iso9001" | "iso27001", string> = {
     iso9001: "ISO 9001:2015 (Sistema de Gestión de Calidad)",
     iso27001: "ISO/IEC 27001:2013 (Seguridad de la Información)",
@@ -375,13 +389,13 @@ function GuardianPage() {
                 <div className="flex-1 overflow-y-auto px-6 py-6">
                     {empty ? (
                         <div className="mx-auto max-w-2xl">
-                            <div className="rounded-2xl border bg-gradient-to-br from-brand-soft to-secondary p-6">
+                            <div className={`rounded-2xl border p-6 transition-colors ${MODO_TARJETA[modo]}`}>
                                 <p className="text-sm leading-relaxed">
                                     Hola <strong>{firstName}</strong> 👋, soy CES Auditor. Estoy aquí para ayudarte en la gestión del área CES.<br /><br />
                                     Puedo acompañarte en auditorías, resolver dudas sobre los procesos, explicarte los requisitos de ISO 9001 e ISO/IEC 27001, ayudarte a encontrar información y recomendar mejoras.
                                 </p>
 
-                                <div className="mt-4 border-t border-brand/20 pt-4">
+                                <div className={`mt-4 border-t pt-4 ${MODO_DIVISOR[modo]}`}>
                                     <div className="text-sm font-semibold">{MODO_INFO[modo].titulo}</div>
                                     <p className="mt-1 text-sm text-muted-foreground">{MODO_INFO[modo].ideal}</p>
                                     <div className="mt-2 text-xs font-semibold text-foreground">El CES Auditor:</div>
