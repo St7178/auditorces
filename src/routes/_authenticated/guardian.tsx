@@ -170,18 +170,15 @@ export const Route = createFileRoute("/_authenticated/guardian")({
     }),
 });
 
-const SUGERENCIAS = [
-    "Quiero iniciar una auditoría",
-    "¿Qué riesgos debo revisar esta semana?",
-    "Ayúdame a preparar la auditoría del SIG",
-    "Explícame la cláusula 8.1 de ISO 9001",
-];
-
 const MODOS = [
     { id: "principiante", label: "🟢 Principiante" },
     { id: "intermedio", label: "🟡 Intermedio" },
     { id: "avanzado", label: "🔵 Avanzado" },
 ] as const;
+
+// El picker de auditoría no debe ofrecer Ventas ni Comunicaciones y Mercadeo — sí se siguen mostrando
+// normalmente en /procesos, esto solo acota qué procesos se pueden auditar desde el chat.
+const PROCESOS_EXCLUIDOS_AUDITORIA = new Set(["Ventas", "Comunicaciones y Mercadeo"]);
 
 // Selector de proceso a auditar, agrupado por categoría igual que en /procesos — se toma directo de
 // MAPA_PROCESOS_CES para que nunca quede desincronizado del filtro real que usa el backend. Se usa tanto
@@ -191,6 +188,8 @@ function ProcesoPicker({ onPick }: { onPick: (proceso: string) => void }) {
         <div className="space-y-4">
             {MAPA_PROCESOS_CES.map((cat) => {
                 const color = CATEGORIA_COLOR[cat.categoria];
+                const procesos = cat.procesos.filter((p) => !PROCESOS_EXCLUIDOS_AUDITORIA.has(p));
+                if (procesos.length === 0) return null;
                 return (
                     <div key={cat.categoria}>
                         <div
@@ -200,7 +199,7 @@ function ProcesoPicker({ onPick }: { onPick: (proceso: string) => void }) {
                             {cat.categoria}
                         </div>
                         <div className="grid gap-2 sm:grid-cols-2">
-                            {cat.procesos.map((p) => (
+                            {procesos.map((p) => (
                                 <button
                                     key={p}
                                     onClick={() => onPick(p)}
@@ -227,7 +226,7 @@ function GuardianPage() {
     const [input, setInput] = useState("");
     const [norma, setNorma] = useState<"iso9001" | "iso27001">("iso9001");
     const [modo, setModo] = useState<"principiante" | "intermedio" | "avanzado">("intermedio");
-    const { messages, sendMessage, addToolApprovalResponse, status } = useChat({
+    const { messages, sendMessage, addToolApprovalResponse, status, setMessages, stop } = useChat({
         transport: new DefaultChatTransport({ api: "/api/chat", body: { norm: norma, modo } }),
         sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     });
@@ -236,6 +235,17 @@ function GuardianPage() {
 
     const handleApprove = (approvalId: string, approved: boolean) => {
         void addToolApprovalResponse({ id: approvalId, approved });
+    };
+
+    // Cambiar de modo a mitad de una auditoría cambia por completo cómo debe preguntar el asistente —
+    // seguir la conversación vieja con reglas nuevas quedaría inconsistente, así que se reinicia el chat.
+    const handleModoChange = (nuevo: typeof modo) => {
+        if (nuevo === modo) return;
+        if (messages.length > 0) {
+            if (loading) void stop();
+            setMessages([]);
+        }
+        setModo(nuevo);
     };
 
     useEffect(() => {
@@ -270,10 +280,13 @@ function GuardianPage() {
                     </span>
                 </div>
                 <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <h1 className="truncate text-2xl font-bold">CES AUDITOR</h1>
                         <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-semibold text-brand">
                             <span className="h-1.5 w-1.5 rounded-full bg-brand" /> En línea
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-foreground">
+                            Modo actual: {MODOS.find((m) => m.id === modo)?.label}
                         </span>
                     </div>
                     <p className="text-sm text-muted-foreground">Tu asistente inteligente de calidad y auditoría · SIG</p>
@@ -302,12 +315,15 @@ function GuardianPage() {
                         {MODOS.map((m) => (
                             <button
                                 key={m.id}
-                                onClick={() => setModo(m.id)}
-                                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                                    modo === m.id ? "bg-brand text-white" : "text-muted-foreground hover:bg-muted"
+                                onClick={() => handleModoChange(m.id)}
+                                aria-pressed={modo === m.id}
+                                className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                                    modo === m.id
+                                        ? "bg-brand text-white ring-2 ring-brand/40 ring-offset-1"
+                                        : "text-muted-foreground hover:bg-muted"
                                 }`}
                             >
-                                {m.label}
+                                {modo === m.id && <CheckCircle2 className="h-3.5 w-3.5" />} {m.label}
                             </button>
                         ))}
                     </div>
@@ -320,35 +336,15 @@ function GuardianPage() {
                     {empty ? (
                         <div className="mx-auto max-w-2xl">
                             <div className="rounded-2xl border bg-gradient-to-br from-brand-soft to-secondary p-6">
-                                <div className="text-sm font-semibold text-brand">CES AUDITOR</div>
-                                <p className="mt-2 text-sm leading-relaxed">
-                                    Hola <strong>{firstName}</strong> 👋<br />
-                                    Estoy aquí para ayudarte a mantener CES preparado para auditorías internas y externas.<br /><br />
-                                    Puedo ayudarte con:
+                                <p className="text-sm leading-relaxed">
+                                    Hola <strong>{firstName}</strong> 👋, soy CES Auditor. Estoy aquí para ayudarte en la gestión del área CES.<br /><br />
+                                    Puedo acompañarte en auditorías, resolver dudas sobre los procesos, explicarte los requisitos de ISO 9001 e ISO/IEC 27001, ayudarte a encontrar información y recomendar mejoras.
                                 </p>
-                                <ul className="mt-3 grid gap-1.5 text-sm sm:grid-cols-2">
-                                    {["Auditorías", "Riesgos", "Indicadores", "Contratos", "Proveedores", "Mejora continua", norma === "iso27001" ? "ISO 27001" : "ISO 9001", "Sistema Integrado de Gestión"].map((t) => (
-                                        <li key={t} className="flex items-center gap-2">
-                                            <span className="h-1.5 w-1.5 rounded-full bg-brand" /> {t}
-                                        </li>
-                                    ))}
-                                </ul>
                             </div>
 
                             <div className="mt-6">
                                 <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Antes de iniciar: selecciona el proceso</div>
                                 <ProcesoPicker onPick={(p) => submit(`Quiero auditar el proceso: ${p}, con base en los procesos y documentos registrados en Procesos CES.`)} />
-                            </div>
-
-                            <div className="mt-6">
-                                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sugerencias</div>
-                                <div className="flex flex-wrap gap-2">
-                                    {SUGERENCIAS.map((s) => (
-                                        <button key={s} onClick={() => submit(s)} className="rounded-full border bg-card px-3 py-1.5 text-xs hover:border-brand hover:text-brand">
-                                            {s}
-                                        </button>
-                                    ))}
-                                </div>
                             </div>
                         </div>
                     ) : (
