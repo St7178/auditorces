@@ -19,13 +19,14 @@ import { Route as AuthenticatedCronogramaRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEquipoRouteImport } from './routes/_authenticated/equipo'
 import { Route as AuthenticatedGuardianRouteImport } from './routes/_authenticated/guardian'
 import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
-import { Route as AuthenticatedProcesosRouteImport } from './routes/_authenticated/procesos'
 import { Route as AuthenticatedProveedoresRouteImport } from './routes/_authenticated/proveedores'
 import { Route as AuthenticatedRiesgosRouteImport } from './routes/_authenticated/riesgos'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiHallazgosRouteImport } from './routes/api/hallazgos'
 import { Route as ApiNotificacionesRouteImport } from './routes/api/notificaciones'
 import { Route as ApiWikiChatRouteImport } from './routes/api/wiki-chat'
+import { Route as AuthenticatedProcesosIndexRouteImport } from './routes/_authenticated/procesos/index'
+import { Route as AuthenticatedProcesosVulnerabilidadesRouteImport } from './routes/_authenticated/procesos/vulnerabilidades'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
@@ -84,11 +85,6 @@ const AuthenticatedIndicadoresRoute =
     path: '/indicadores',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedProcesosRoute = AuthenticatedProcesosRouteImport.update({
-  id: '/procesos',
-  path: '/procesos',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedProveedoresRoute =
   AuthenticatedProveedoresRouteImport.update({
     id: '/proveedores',
@@ -120,6 +116,18 @@ const ApiWikiChatRoute = ApiWikiChatRouteImport.update({
   path: '/api/wiki-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedProcesosIndexRoute =
+  AuthenticatedProcesosIndexRouteImport.update({
+    id: '/procesos/',
+    path: '/procesos/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProcesosVulnerabilidadesRoute =
+  AuthenticatedProcesosVulnerabilidadesRouteImport.update({
+    id: '/procesos/vulnerabilidades',
+    path: '/procesos/vulnerabilidades',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ApiAuthCallbackRoute = ApiAuthCallbackRouteImport.update({
   id: '/api/auth/callback',
   path: '/api/auth/callback',
@@ -161,19 +169,20 @@ export interface FileRoutesByFullPath {
   '/equipo': typeof AuthenticatedEquipoRoute
   '/guardian': typeof AuthenticatedGuardianRoute
   '/indicadores': typeof AuthenticatedIndicadoresRoute
-  '/procesos': typeof AuthenticatedProcesosRoute
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
   '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
+  '/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
+  '/procesos/': typeof AuthenticatedProcesosIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -184,7 +193,6 @@ export interface FileRoutesByTo {
   '/equipo': typeof AuthenticatedEquipoRoute
   '/guardian': typeof AuthenticatedGuardianRoute
   '/indicadores': typeof AuthenticatedIndicadoresRoute
-  '/procesos': typeof AuthenticatedProcesosRoute
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
@@ -192,12 +200,14 @@ export interface FileRoutesByTo {
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/': typeof AuthenticatedIndexRoute
+  '/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
+  '/procesos': typeof AuthenticatedProcesosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -210,7 +220,6 @@ export interface FileRoutesById {
   '/_authenticated/equipo': typeof AuthenticatedEquipoRoute
   '/_authenticated/guardian': typeof AuthenticatedGuardianRoute
   '/_authenticated/indicadores': typeof AuthenticatedIndicadoresRoute
-  '/_authenticated/procesos': typeof AuthenticatedProcesosRoute
   '/_authenticated/proveedores': typeof AuthenticatedProveedoresRoute
   '/_authenticated/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
@@ -218,12 +227,14 @@ export interface FileRoutesById {
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
+  '/_authenticated/procesos/': typeof AuthenticatedProcesosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -237,19 +248,20 @@ export interface FileRouteTypes {
     | '/equipo'
     | '/guardian'
     | '/indicadores'
-    | '/procesos'
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
     | '/api/hallazgos'
     | '/api/notificaciones'
     | '/api/wiki-chat'
+    | '/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/riesgos'
+    | '/procesos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -260,7 +272,6 @@ export interface FileRouteTypes {
     | '/equipo'
     | '/guardian'
     | '/indicadores'
-    | '/procesos'
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
@@ -268,12 +279,14 @@ export interface FileRouteTypes {
     | '/api/notificaciones'
     | '/api/wiki-chat'
     | '/'
+    | '/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/riesgos'
+    | '/procesos'
   id:
     | '__root__'
     | '/_authenticated'
@@ -285,7 +298,6 @@ export interface FileRouteTypes {
     | '/_authenticated/equipo'
     | '/_authenticated/guardian'
     | '/_authenticated/indicadores'
-    | '/_authenticated/procesos'
     | '/_authenticated/proveedores'
     | '/_authenticated/riesgos'
     | '/api/chat'
@@ -293,12 +305,14 @@ export interface FileRouteTypes {
     | '/api/notificaciones'
     | '/api/wiki-chat'
     | '/_authenticated/'
+    | '/_authenticated/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/riesgos'
+    | '/_authenticated/procesos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -388,13 +402,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndicadoresRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/procesos': {
-      id: '/_authenticated/procesos'
-      path: '/procesos'
-      fullPath: '/procesos'
-      preLoaderRoute: typeof AuthenticatedProcesosRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/proveedores': {
       id: '/_authenticated/proveedores'
       path: '/proveedores'
@@ -436,6 +443,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/wiki-chat'
       preLoaderRoute: typeof ApiWikiChatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/procesos/': {
+      id: '/_authenticated/procesos/'
+      path: '/procesos'
+      fullPath: '/procesos/'
+      preLoaderRoute: typeof AuthenticatedProcesosIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/procesos/vulnerabilidades': {
+      id: '/_authenticated/procesos/vulnerabilidades'
+      path: '/procesos/vulnerabilidades'
+      fullPath: '/procesos/vulnerabilidades'
+      preLoaderRoute: typeof AuthenticatedProcesosVulnerabilidadesRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/api/auth/callback': {
       id: '/api/auth/callback'
@@ -490,10 +511,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEquipoRoute: typeof AuthenticatedEquipoRoute
   AuthenticatedGuardianRoute: typeof AuthenticatedGuardianRoute
   AuthenticatedIndicadoresRoute: typeof AuthenticatedIndicadoresRoute
-  AuthenticatedProcesosRoute: typeof AuthenticatedProcesosRoute
   AuthenticatedProveedoresRoute: typeof AuthenticatedProveedoresRoute
   AuthenticatedRiesgosRoute: typeof AuthenticatedRiesgosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedProcesosVulnerabilidadesRoute: typeof AuthenticatedProcesosVulnerabilidadesRoute
+  AuthenticatedProcesosIndexRoute: typeof AuthenticatedProcesosIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -504,10 +526,12 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedEquipoRoute: AuthenticatedEquipoRoute,
   AuthenticatedGuardianRoute: AuthenticatedGuardianRoute,
   AuthenticatedIndicadoresRoute: AuthenticatedIndicadoresRoute,
-  AuthenticatedProcesosRoute: AuthenticatedProcesosRoute,
   AuthenticatedProveedoresRoute: AuthenticatedProveedoresRoute,
   AuthenticatedRiesgosRoute: AuthenticatedRiesgosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedProcesosVulnerabilidadesRoute:
+    AuthenticatedProcesosVulnerabilidadesRoute,
+  AuthenticatedProcesosIndexRoute: AuthenticatedProcesosIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
