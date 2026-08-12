@@ -182,6 +182,46 @@ const MODO_ESTILO: Record<(typeof MODOS)[number]["id"], string> = {
     avanzado: "border-blue-300 bg-blue-100 text-blue-800",
 };
 
+const NORMA_LABEL: Record<"iso9001" | "iso27001", string> = {
+    iso9001: "ISO 9001:2015 (Sistema de Gestión de Calidad)",
+    iso27001: "ISO/IEC 27001:2013 (Seguridad de la Información)",
+};
+
+// Descripción del modo que se muestra en el estado vacío del chat, para que quede claro qué esperar
+// antes de iniciar — se recalcula sola cuando cambia `modo` o `norma` porque se arma en el render.
+const MODO_INFO: Record<(typeof MODOS)[number]["id"], { titulo: string; ideal: string; puntos: (norma: "iso9001" | "iso27001") => string[] }> = {
+    principiante: {
+        titulo: "🟢 Modo Principiante",
+        ideal: "Ideal para personas nuevas o con poco conocimiento del Sistema Integrado de Gestión.",
+        puntos: (norma) => [
+            "Explica cada pregunta antes de realizarla.",
+            "Utiliza un lenguaje sencillo.",
+            "Da ejemplos prácticos.",
+            `Explica conceptos de ${NORMA_LABEL[norma]}.`,
+            "Indica por qué la pregunta es importante.",
+        ],
+    },
+    intermedio: {
+        titulo: "🟡 Modo Intermedio",
+        ideal: "Ideal para personas que conocen los procesos, pero requieren apoyo durante la auditoría.",
+        puntos: () => [
+            "Hace preguntas más directas.",
+            "Explica únicamente cuando el usuario lo solicita.",
+            "Profundiza en requisitos específicos.",
+        ],
+    },
+    avanzado: {
+        titulo: "🔵 Modo Avanzado",
+        ideal: "Ideal para coordinadores o personal con experiencia en auditorías y Sistemas Integrados de Gestión.",
+        puntos: () => [
+            "Realiza una auditoría técnica.",
+            "Formula preguntas orientadas a evidencias.",
+            "Evalúa el cumplimiento de los requisitos aplicables.",
+            "Reduce las explicaciones para hacer la auditoría más ágil.",
+        ],
+    },
+};
+
 // Selector de proceso a auditar, agrupado por categoría igual que en /procesos — se toma directo de
 // MAPA_PROCESOS_CES para que nunca quede desincronizado del filtro real que usa el backend. Se usa tanto
 // en el estado vacío inicial como al terminar una auditoría (botón "¿Quieres auditar otro proceso?").
@@ -340,6 +380,22 @@ function GuardianPage() {
                                     Hola <strong>{firstName}</strong> 👋, soy CES Auditor. Estoy aquí para ayudarte en la gestión del área CES.<br /><br />
                                     Puedo acompañarte en auditorías, resolver dudas sobre los procesos, explicarte los requisitos de ISO 9001 e ISO/IEC 27001, ayudarte a encontrar información y recomendar mejoras.
                                 </p>
+
+                                <div className="mt-4 border-t border-brand/20 pt-4">
+                                    <div className="text-sm font-semibold">{MODO_INFO[modo].titulo}</div>
+                                    <p className="mt-1 text-sm text-muted-foreground">{MODO_INFO[modo].ideal}</p>
+                                    <div className="mt-2 text-xs font-semibold text-foreground">El CES Auditor:</div>
+                                    <ul className="mt-1 space-y-1 text-sm">
+                                        {MODO_INFO[modo].puntos(norma).map((p) => (
+                                            <li key={p} className="flex items-start gap-2">
+                                                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand" /> {p}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="mt-3 text-xs text-muted-foreground">
+                                        <strong className="text-foreground">Norma aplicada en esta auditoría:</strong> {NORMA_LABEL[norma]}.
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="mt-6">
