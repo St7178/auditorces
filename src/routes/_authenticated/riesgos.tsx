@@ -38,14 +38,6 @@ function RiesgosPage() {
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <div className="mb-6 overflow-hidden rounded-2xl border bg-card">
-                <img
-                    src="https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/imagen%20%281%29.png"
-                    alt="Riesgos Operacionales CES"
-                    className="mx-auto h-auto max-h-64 w-full object-cover"
-                />
-            </div>
-
             <PageHeader eyebrow="Administración de Riesgos" title="Riesgos Operacionales" description="Solo se registra la ubicación de la evidencia. No se almacenan matrices ni documentos confidenciales." />
 
             <Card className="mt-6 border-border/60">
