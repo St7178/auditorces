@@ -19,3 +19,26 @@ export function setNotifPref(tipo: NotifTipo, enabled: boolean) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
     window.dispatchEvent(new Event(PREFS_CHANGED_EVENT));
 }
+
+// Notificaciones leídas: los ids son deterministas (derivados del dato real, ej. "riesgo-R-01"), así
+// que una vez marcada como leída se mantiene así entre visitas mientras esa notificación exista.
+const READ_STORAGE_KEY = "ces-notif-read";
+export const READ_CHANGED_EVENT = "ces-notif-read-changed";
+
+export function getReadNotifIds(): Set<string> {
+    if (typeof window === "undefined") return new Set();
+    try {
+        const raw = window.localStorage.getItem(READ_STORAGE_KEY);
+        return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+        return new Set();
+    }
+}
+
+export function markNotifRead(id: string) {
+    const ids = getReadNotifIds();
+    if (ids.has(id)) return;
+    ids.add(id);
+    window.localStorage.setItem(READ_STORAGE_KEY, JSON.stringify([...ids]));
+    window.dispatchEvent(new Event(READ_CHANGED_EVENT));
+}

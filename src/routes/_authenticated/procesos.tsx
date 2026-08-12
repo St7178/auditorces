@@ -19,26 +19,34 @@ const CATEGORIA_ICONO: Record<string, string> = {
 };
 
 // Conceptos base de la información documentada del SIG, para quien recién entra a la plataforma.
+// ejemploCodigo apunta a un documento real (código exacto tal como llega sincronizado) para que "Ver
+// ejemplo" no sea un dato inventado — si algún día ese código no está sincronizado, se avisa en vez de
+// mostrar algo falso (ver ejemploDoc).
 const CONCEPTOS_SIG: Array<{ tipo: string; explicacion: string; detalle?: string[]; ejemploCodigo?: string }> = [
     {
         tipo: "Manual",
         explicacion: "Documento que reúne las directrices generales de un sistema de gestión: para qué existe, cómo está organizado y qué reglas generales aplican a todos los procesos.",
+        ejemploCodigo: "M.GI.003.007",
     },
     {
         tipo: "Procedimiento",
         explicacion: "Describe paso a paso cómo se ejecuta una actividad o proceso, quién es responsable de cada paso y qué controles aplican en el camino.",
+        ejemploCodigo: "P.GI.001.015",
     },
     {
         tipo: "Instructivo",
         explicacion: "Explica cómo realizar una tarea puntual y específica dentro de un procedimiento, casi siempre con un nivel de detalle técnico u operativo mayor.",
+        ejemploCodigo: "I.KM.001.004",
     },
     {
         tipo: "Formato",
         explicacion: "Plantilla en blanco, lista para diligenciar, que estandariza cómo se captura cierta información (por ejemplo, un formato de solicitud o de evaluación).",
+        ejemploCodigo: "F.GI.001.003",
     },
     {
         tipo: "Registro",
         explicacion: "Es un formato ya diligenciado: la evidencia de que una actividad efectivamente ocurrió (una lista de asistencia firmada, una evaluación completada, etc.).",
+        ejemploCodigo: "R.GH.006.043",
     },
     {
         tipo: "Caracterización",
@@ -47,6 +55,7 @@ const CONCEPTOS_SIG: Array<{ tipo: string; explicacion: string; detalle?: string
             "¿Para qué sirve? Para entender de un vistazo cómo funciona un proceso completo, sin tener que leer todos sus documentos por separado.",
             "¿Qué contiene? Objetivo, alcance, dueño del proceso, entradas/proveedor, actividades (ciclo PHVA), salidas/cliente, recursos, requisitos aplicables y riesgos asociados.",
         ],
+        ejemploCodigo: "C.AS.003,006",
     },
     {
         tipo: "Política",
@@ -85,11 +94,24 @@ const SECCION_A_PROCESO: Record<string, string> = {
     "PROCESOS MISIONALES - GESTION DE PROYECTOS": "Gestión de Proyectos",
     "PROCESOS MISIONALES - GESTION DE SERVICIOS DE TIC": "Gestión de Servicios de TIC",
     "PROCESOS MISIONALES - SERVICIO AL CLIENTE": "Gestión de Servicio al Cliente",
+    // El Excel de origen escribe estas tres secciones de Procesos de Apoyo con variaciones (doble
+    // espacio, "GESTION DE GESTIÓN HUMANA" en vez de "GESTIÓN HUMANA") — normalizeKey ya colapsa
+    // espacios/tildes, así que estas claves deben coincidir con esa forma normalizada exacta.
+    "PROCESOS DE APOYO - GESTION DEL SISTEMA INTEGRADO": "Gestión Sistema Integrado",
+    "PROCESOS DE APOYO - GESTION DE GESTION HUMANA": "Gestión Humana",
+    "PROCESOS DE APOYO - GESTION JURIDICA": "Gestión Jurídica",
 };
 
 function ProcesosPage() {
     const [documentos, setDocumentos] = useState(DOCUMENTOS);
-    const [ejemploAbierto, setEjemploAbierto] = useState(false);
+    const [ejemplosAbiertos, setEjemplosAbiertos] = useState<Set<string>>(new Set());
+    const toggleEjemplo = (tipo: string) =>
+        setEjemplosAbiertos((prev) => {
+            const next = new Set(prev);
+            if (next.has(tipo)) next.delete(tipo);
+            else next.add(tipo);
+            return next;
+        });
 
     useEffect(() => {
         let mounted = true;
@@ -362,12 +384,12 @@ function ProcesosPage() {
                                             {c.ejemploCodigo && (
                                                 <div className="mt-3">
                                                     <button
-                                                        onClick={() => setEjemploAbierto((v) => !v)}
+                                                        onClick={() => toggleEjemplo(c.tipo)}
                                                         className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-accent"
                                                     >
-                                                        Ver ejemplo <ChevronDown className={`h-3 w-3 transition-transform ${ejemploAbierto ? "rotate-180" : ""}`} />
+                                                        Ver ejemplo <ChevronDown className={`h-3 w-3 transition-transform ${ejemplosAbiertos.has(c.tipo) ? "rotate-180" : ""}`} />
                                                     </button>
-                                                    {ejemploAbierto && (
+                                                    {ejemplosAbiertos.has(c.tipo) && (
                                                         <div className="mt-2 rounded-lg border bg-muted/20 p-3 text-xs">
                                                             {ejemplo ? (
                                                                 <>

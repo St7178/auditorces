@@ -9,7 +9,7 @@ import {
     DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import type { Notificacion } from "@/routes/api/notificaciones";
-import { getNotifPrefs, PREFS_CHANGED_EVENT } from "@/lib/notification-prefs";
+import { getNotifPrefs, PREFS_CHANGED_EVENT, getReadNotifIds, markNotifRead, READ_CHANGED_EVENT } from "@/lib/notification-prefs";
 
 const TIPO_ICON: Record<Notificacion["tipo"], typeof Bell> = {
     contrato: FileText,
@@ -27,6 +27,7 @@ const NIVEL_DOT: Record<Notificacion["nivel"], string> = {
 export function NotificationBell() {
     const [notifs, setNotifs] = useState<Notificacion[]>([]);
     const [prefs, setPrefs] = useState(getNotifPrefs());
+    const [readIds, setReadIds] = useState(getReadNotifIds());
 
     useEffect(() => {
         let mounted = true;
@@ -37,23 +38,27 @@ export function NotificationBell() {
                 /* sin notificaciones si falla */
             });
         const onPrefsChanged = () => setPrefs(getNotifPrefs());
+        const onReadChanged = () => setReadIds(getReadNotifIds());
         window.addEventListener(PREFS_CHANGED_EVENT, onPrefsChanged);
+        window.addEventListener(READ_CHANGED_EVENT, onReadChanged);
         return () => {
             mounted = false;
             window.removeEventListener(PREFS_CHANGED_EVENT, onPrefsChanged);
+            window.removeEventListener(READ_CHANGED_EVENT, onReadChanged);
         };
     }, []);
 
     const visibles = notifs.filter((n) => prefs[n.tipo]);
+    const sinLeer = visibles.filter((n) => !readIds.has(n.id)).length;
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button className="relative flex h-9 w-9 items-center justify-center rounded-lg border bg-card hover:bg-accent">
                     <Bell className="h-4 w-4" />
-                    {visibles.length > 0 && (
+                    {sinLeer > 0 && (
                         <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">
-                            {visibles.length > 9 ? "9+" : visibles.length}
+                            {sinLeer > 9 ? "9+" : sinLeer}
                         </span>
                     )}
                 </button>
@@ -66,10 +71,11 @@ export function NotificationBell() {
                 ) : (
                     visibles.slice(0, 8).map((n) => {
                         const Icon = TIPO_ICON[n.tipo] ?? AlertTriangle;
+                        const leida = readIds.has(n.id);
                         return (
                             <DropdownMenuItem key={n.id} asChild>
-                                <a href={n.href} className="flex items-start gap-2 py-2">
-                                    <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${NIVEL_DOT[n.nivel]}`} />
+                                <a href={n.href} onClick={() => markNotifRead(n.id)} className={`flex items-start gap-2 py-2 ${leida ? "opacity-60" : ""}`}>
+                                    <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${leida ? "bg-muted-foreground/30" : NIVEL_DOT[n.nivel]}`} />
                                     <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                                     <span className="min-w-0">
                                         <span className="block truncate text-xs font-medium">{n.titulo}</span>

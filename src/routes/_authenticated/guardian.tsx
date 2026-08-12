@@ -176,6 +176,12 @@ const MODOS = [
     { id: "avanzado", label: "🔵 Avanzado" },
 ] as const;
 
+const MODO_ESTILO: Record<(typeof MODOS)[number]["id"], string> = {
+    principiante: "border-emerald-300 bg-emerald-100 text-emerald-800",
+    intermedio: "border-amber-300 bg-amber-100 text-amber-800",
+    avanzado: "border-blue-300 bg-blue-100 text-blue-800",
+};
+
 // Selector de proceso a auditar, agrupado por categoría igual que en /procesos — se toma directo de
 // MAPA_PROCESOS_CES para que nunca quede desincronizado del filtro real que usa el backend. Se usa tanto
 // en el estado vacío inicial como al terminar una auditoría (botón "¿Quieres auditar otro proceso?").
@@ -279,7 +285,7 @@ function GuardianPage() {
                         <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-semibold text-brand">
                             <span className="h-1.5 w-1.5 rounded-full bg-brand" /> En línea
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-foreground">
+                        <span className={`inline-flex items-center gap-1 rounded-full border-2 px-3 py-1 text-xs font-bold shadow-sm ${MODO_ESTILO[modo]}`}>
                             Modo actual: {MODOS.find((m) => m.id === modo)?.label}
                         </span>
                     </div>
