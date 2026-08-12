@@ -176,10 +176,6 @@ const MODOS = [
     { id: "avanzado", label: "🔵 Avanzado" },
 ] as const;
 
-// El picker de auditoría no debe ofrecer Ventas ni Comunicaciones y Mercadeo — sí se siguen mostrando
-// normalmente en /procesos, esto solo acota qué procesos se pueden auditar desde el chat.
-const PROCESOS_EXCLUIDOS_AUDITORIA = new Set(["Ventas", "Comunicaciones y Mercadeo"]);
-
 // Selector de proceso a auditar, agrupado por categoría igual que en /procesos — se toma directo de
 // MAPA_PROCESOS_CES para que nunca quede desincronizado del filtro real que usa el backend. Se usa tanto
 // en el estado vacío inicial como al terminar una auditoría (botón "¿Quieres auditar otro proceso?").
@@ -188,8 +184,6 @@ function ProcesoPicker({ onPick }: { onPick: (proceso: string) => void }) {
         <div className="space-y-4">
             {MAPA_PROCESOS_CES.map((cat) => {
                 const color = CATEGORIA_COLOR[cat.categoria];
-                const procesos = cat.procesos.filter((p) => !PROCESOS_EXCLUIDOS_AUDITORIA.has(p));
-                if (procesos.length === 0) return null;
                 return (
                     <div key={cat.categoria}>
                         <div
@@ -199,7 +193,7 @@ function ProcesoPicker({ onPick }: { onPick: (proceso: string) => void }) {
                             {cat.categoria}
                         </div>
                         <div className="grid gap-2 sm:grid-cols-2">
-                            {procesos.map((p) => (
+                            {cat.procesos.map((p) => (
                                 <button
                                     key={p}
                                     onClick={() => onPick(p)}

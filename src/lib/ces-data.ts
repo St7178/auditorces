@@ -21,7 +21,7 @@ export const EQUIPO = [
 export const MAPA_PROCESOS_CES = [
     { categoria: "Procesos Estratégicos", procesos: ["Planeación Estratégica", "Administración de Riesgos"] },
     { categoria: "Procesos Misionales", procesos: ["Arquitectura de Soluciones", "Gestión de Proyectos", "Gestión de Servicios de TIC", "Gestión de Servicio al Cliente"] },
-    { categoria: "Procesos de Apoyo", procesos: ["Gestión de la Información", "Gestión Sistema Integrado", "Gestión Humana", "Gestión de Logística y Compras", "Gestión Jurídica", "Gestión Financiera", "Ventas", "Comunicaciones y Mercadeo"] },
+    { categoria: "Procesos de Apoyo", procesos: ["Gestión de la Información", "Gestión Sistema Integrado", "Gestión Humana", "Gestión de Logística y Compras", "Gestión Jurídica", "Gestión Financiera"] },
 ];
 
 // Colores por categoría de proceso — usados en /procesos (acordeones de documentos) y en /guardian

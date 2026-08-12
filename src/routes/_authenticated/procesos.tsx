@@ -85,8 +85,6 @@ const SECCION_A_PROCESO: Record<string, string> = {
     "PROCESOS MISIONALES - GESTION DE PROYECTOS": "Gestión de Proyectos",
     "PROCESOS MISIONALES - GESTION DE SERVICIOS DE TIC": "Gestión de Servicios de TIC",
     "PROCESOS MISIONALES - SERVICIO AL CLIENTE": "Gestión de Servicio al Cliente",
-    "VENTAS": "Ventas",
-    "COMUNICACIONES Y MERCADEO": "Comunicaciones y Mercadeo",
 };
 
 function ProcesosPage() {
