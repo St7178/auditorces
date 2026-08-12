@@ -22,6 +22,7 @@ import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenti
 import { Route as AuthenticatedProveedoresRouteImport } from './routes/_authenticated/proveedores'
 import { Route as AuthenticatedRiesgosRouteImport } from './routes/_authenticated/riesgos'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiChecklistClientesEstadoRouteImport } from './routes/api/checklist-clientes-estado'
 import { Route as ApiHallazgosRouteImport } from './routes/api/hallazgos'
 import { Route as ApiNotificacionesRouteImport } from './routes/api/notificaciones'
 import { Route as ApiWikiChatRouteImport } from './routes/api/wiki-chat'
@@ -102,6 +103,12 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChecklistClientesEstadoRoute =
+  ApiChecklistClientesEstadoRouteImport.update({
+    id: '/api/checklist-clientes-estado',
+    path: '/api/checklist-clientes-estado',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiHallazgosRoute = ApiHallazgosRouteImport.update({
   id: '/api/hallazgos',
   path: '/api/hallazgos',
@@ -179,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/checklist-clientes-estado': typeof ApiChecklistClientesEstadoRoute
   '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
@@ -204,6 +212,7 @@ export interface FileRoutesByTo {
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/checklist-clientes-estado': typeof ApiChecklistClientesEstadoRoute
   '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
@@ -232,6 +241,7 @@ export interface FileRoutesById {
   '/_authenticated/proveedores': typeof AuthenticatedProveedoresRoute
   '/_authenticated/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/checklist-clientes-estado': typeof ApiChecklistClientesEstadoRoute
   '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
+    | '/api/checklist-clientes-estado'
     | '/api/hallazgos'
     | '/api/notificaciones'
     | '/api/wiki-chat'
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
+    | '/api/checklist-clientes-estado'
     | '/api/hallazgos'
     | '/api/notificaciones'
     | '/api/wiki-chat'
@@ -313,6 +325,7 @@ export interface FileRouteTypes {
     | '/_authenticated/proveedores'
     | '/_authenticated/riesgos'
     | '/api/chat'
+    | '/api/checklist-clientes-estado'
     | '/api/hallazgos'
     | '/api/notificaciones'
     | '/api/wiki-chat'
@@ -332,6 +345,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiChecklistClientesEstadoRoute: typeof ApiChecklistClientesEstadoRoute
   ApiHallazgosRoute: typeof ApiHallazgosRoute
   ApiNotificacionesRoute: typeof ApiNotificacionesRoute
   ApiWikiChatRoute: typeof ApiWikiChatRoute
@@ -435,6 +449,13 @@ declare module '@tanstack/react-router' {
       path: '/api/chat'
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/checklist-clientes-estado': {
+      id: '/api/checklist-clientes-estado'
+      path: '/api/checklist-clientes-estado'
+      fullPath: '/api/checklist-clientes-estado'
+      preLoaderRoute: typeof ApiChecklistClientesEstadoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/hallazgos': {
@@ -563,6 +584,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiChecklistClientesEstadoRoute: ApiChecklistClientesEstadoRoute,
   ApiHallazgosRoute: ApiHallazgosRoute,
   ApiNotificacionesRoute: ApiNotificacionesRoute,
   ApiWikiChatRoute: ApiWikiChatRoute,

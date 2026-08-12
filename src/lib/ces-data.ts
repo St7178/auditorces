@@ -65,30 +65,33 @@ export const CLIENTES = [
 // cada vez que corre el flujo de n8n contra "Control_Entrega_Documentación_Clientes.xlsx", hoja "CES").
 // No está atado a un cliente específico: es la lista estándar de documentos que debe entregarse en
 // todo cierre de implementación CES, dividida en lo que se entrega al cliente vs. lo interno de CES.
+// Los `id` son slugs de "código + nombre" (deterministas) — NO posicionales — para que si un nuevo
+// sync reordena o agrega/quita filas, el estado marcado (ver checklist-clientes-estado) siga apuntando
+// al documento correcto en vez de desplazarse.
 export const CHECKLIST_DOCUMENTACION_CLIENTES = {
     cliente: [
-        { id: "cliente-1", codigo: "F.GE.406 - F.GE.407", nombre: "Diagrama de Red Versión Cliente y Versión Cnet", estado: "Pendiente" },
-        { id: "cliente-2", codigo: "F.CS.405", nombre: "Formato Estrategia de Backup", estado: "Pendiente" },
-        { id: "cliente-3", codigo: "F.GE.409", nombre: "Diagrama de Servicios CES", estado: "Pendiente" },
-        { id: "cliente-4", codigo: "Anexo", nombre: "Contactos y Escalamientos Servicios TI", estado: "Pendiente" },
-        { id: "cliente-5", codigo: "M.OS.401", nombre: "Manual Operación del Servicio", estado: "Pendiente" },
-        { id: "cliente-6", codigo: "F.GP.401", nombre: "Acta de Entrega de Servicios", estado: "Pendiente" },
-        { id: "cliente-7", codigo: "I.OS.401", nombre: "Registro de Solicitudes en la Mesa Integral de Servicios SOLMAN 7,2", estado: "Pendiente" },
-        { id: "cliente-8", codigo: "F.VE.011.008", nombre: "Hoja de control", estado: "Pendiente" },
+        { id: "cliente-f-ge-406-f-ge-407-diagrama-de-red-version-cliente-y-version-cnet", codigo: "F.GE.406 - F.GE.407", nombre: "Diagrama de Red Versión Cliente y Versión Cnet" },
+        { id: "cliente-f-cs-405-formato-estrategia-de-backup", codigo: "F.CS.405", nombre: "Formato Estrategia de Backup" },
+        { id: "cliente-f-ge-409-diagrama-de-servicios-ces", codigo: "F.GE.409", nombre: "Diagrama de Servicios CES" },
+        { id: "cliente-anexo-contactos-y-escalamientos-servicios-ti", codigo: "Anexo", nombre: "Contactos y Escalamientos Servicios TI" },
+        { id: "cliente-m-os-401-manual-operacion-del-servicio", codigo: "M.OS.401", nombre: "Manual Operación del Servicio" },
+        { id: "cliente-f-gp-401-acta-de-entrega-de-servicios", codigo: "F.GP.401", nombre: "Acta de Entrega de Servicios" },
+        { id: "cliente-i-os-401-registro-de-solicitudes-en-la-mesa-integral-de-servicios-solman-7-2", codigo: "I.OS.401", nombre: "Registro de Solicitudes en la Mesa Integral de Servicios SOLMAN 7,2" },
+        { id: "cliente-f-ve-011-008-hoja-de-control", codigo: "F.VE.011.008", nombre: "Hoja de control" },
     ],
     interna: [
-        { id: "interna-1", codigo: "F.GP.401", nombre: "Acta de entrega del Servicio firmada por el cliente", estado: "Pendiente" },
-        { id: "interna-2", codigo: "F.GP.403", nombre: "Verificación de Instalación de Servicios de Red", estado: "Pendiente" },
-        { id: "interna-3", codigo: "Anexo 1 y 2", nombre: "Anexos del contrato de Servicios (formato no editable)", estado: "Pendiente" },
-        { id: "interna-4", codigo: "F.VE.461", nombre: "Propuesta Servicios de Infraestructura CES", estado: "Pendiente" },
-        { id: "interna-5", codigo: "NA", nombre: "Email con Premisas Comerciales", estado: "Pendiente" },
-        { id: "interna-6", codigo: "NA", nombre: "Autorización Vicepresidencia de Servicios y Operaciones de TI de inicio sin contrato", estado: "Pendiente" },
-        { id: "interna-7", codigo: "NA", nombre: "Presentación del Proyecto", estado: "Pendiente" },
-        { id: "interna-8", codigo: "NA", nombre: "Levantamiento de información", estado: "Pendiente" },
-        { id: "interna-9", codigo: "NA", nombre: "Contactos (Nombre, cargo, número fijo, celular, correo electrónico y dirección exacta del cliente)", estado: "Pendiente" },
-        { id: "interna-10", codigo: "NA", nombre: "Solicitud a la MIS para creación del cliente e inicio de informes de gestión", estado: "Pendiente" },
-        { id: "interna-11", codigo: "NA", nombre: "Creación del Cliente en Solution Manager", estado: "Pendiente" },
-        { id: "interna-12", codigo: "NA", nombre: "Validación Capacitación al Cliente MIS", estado: "Pendiente" },
+        { id: "interna-f-gp-401-acta-de-entrega-del-servicio-firmada-por-el-cliente", codigo: "F.GP.401", nombre: "Acta de entrega del Servicio firmada por el cliente" },
+        { id: "interna-f-gp-403-verificacion-de-instalacion-de-servicios-de-red", codigo: "F.GP.403", nombre: "Verificación de Instalación de Servicios de Red" },
+        { id: "interna-anexo-1-y-2-anexos-del-contrato-de-servicios-formato-no-editable", codigo: "Anexo 1 y 2", nombre: "Anexos del contrato de Servicios (formato no editable)" },
+        { id: "interna-f-ve-461-propuesta-servicios-de-infraestructura-ces", codigo: "F.VE.461", nombre: "Propuesta Servicios de Infraestructura CES" },
+        { id: "interna-na-email-con-premisas-comerciales", codigo: "NA", nombre: "Email con Premisas Comerciales" },
+        { id: "interna-na-autorizacion-vicepresidencia-de-servicios-y-operaciones-de-ti-de-inicio-sin-contrato", codigo: "NA", nombre: "Autorización Vicepresidencia de Servicios y Operaciones de TI de inicio sin contrato" },
+        { id: "interna-na-presentacion-del-proyecto", codigo: "NA", nombre: "Presentación del Proyecto" },
+        { id: "interna-na-levantamiento-de-informacion", codigo: "NA", nombre: "Levantamiento de información" },
+        { id: "interna-na-contactos-nombre-cargo-numero-fijo-celular-correo-electronico-y-direccion-exacta-del-cliente", codigo: "NA", nombre: "Contactos (Nombre, cargo, número fijo, celular, correo electrónico y dirección exacta del cliente)" },
+        { id: "interna-na-solicitud-a-la-mis-para-creacion-del-cliente-e-inicio-de-informes-de-gestion", codigo: "NA", nombre: "Solicitud a la MIS para creación del cliente e inicio de informes de gestión" },
+        { id: "interna-na-creacion-del-cliente-en-solution-manager", codigo: "NA", nombre: "Creación del Cliente en Solution Manager" },
+        { id: "interna-na-validacion-capacitacion-al-cliente-mis", codigo: "NA", nombre: "Validación Capacitación al Cliente MIS" },
     ],
 };
 

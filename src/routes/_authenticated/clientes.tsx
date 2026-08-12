@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/page-header";
 import { CLIENTES, CHECKLIST_DOCUMENTACION_CLIENTES } from "@/lib/ces-data";
 import { Building2, Calendar, AlertTriangle, ClipboardCheck, ClipboardList } from "lucide-react";
@@ -35,23 +36,25 @@ function estadoTone(e: string) {
     return "bg-secondary text-secondary-foreground";
 }
 
-function estadoChecklistTone(estado: string) {
-    const n = estado.toLowerCase();
-    if (n.includes("pend")) return "bg-amber-100 text-amber-700";
-    if (n.includes("entreg") || n.includes("complet") || n.includes("list") || n.includes("aprob")) return "bg-brand-soft text-brand";
-    return "bg-secondary text-secondary-foreground";
-}
+type ChecklistItem = { id: string; codigo: string; nombre: string };
 
-type ChecklistItem = { id: string; codigo: string; nombre: string; estado: string };
-
-function ChecklistCard({ titulo, icon: Icon, items }: { titulo: string; icon: typeof ClipboardCheck; items: ChecklistItem[] }) {
+function ChecklistCard({
+    titulo, icon: Icon, items, completados, onToggle,
+}: {
+    titulo: string;
+    icon: typeof ClipboardCheck;
+    items: ChecklistItem[];
+    completados: Record<string, boolean>;
+    onToggle: (id: string, completado: boolean) => void;
+}) {
+    const listos = items.filter((it) => completados[it.id]).length;
     return (
         <Card className="border-border/60">
             <CardContent className="p-0">
                 <div className="flex items-center gap-2 border-b p-4">
                     <Icon className="h-4 w-4 text-brand" />
                     <span className="font-semibold">{titulo}</span>
-                    <Badge variant="secondary" className="ml-auto text-[10px]">{items.length} documento(s)</Badge>
+                    <Badge variant="secondary" className="ml-auto text-[10px]">{listos}/{items.length} listos</Badge>
                 </div>
                 {items.length === 0 ? (
                     <div className="p-4 text-xs text-muted-foreground">Sin documentos sincronizados.</div>
@@ -60,19 +63,24 @@ function ChecklistCard({ titulo, icon: Icon, items }: { titulo: string; icon: ty
                         <table className="w-full text-xs">
                             <thead className="bg-muted/40 text-[10px] uppercase tracking-wide text-muted-foreground">
                                 <tr>
+                                    <th className="w-8 px-4 py-2 text-left">Listo</th>
                                     <th className="px-4 py-2 text-left">Código</th>
                                     <th className="px-4 py-2 text-left">Nombre</th>
-                                    <th className="px-4 py-2 text-left">Estado</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {items.map((it) => (
-                                    <tr key={it.id} className="hover:bg-muted/20">
-                                        <td className="px-4 py-2 font-mono text-muted-foreground">{it.codigo}</td>
-                                        <td className="px-4 py-2 font-medium">{it.nombre}</td>
-                                        <td className="px-4 py-2"><Badge className={estadoChecklistTone(it.estado)}>{it.estado}</Badge></td>
-                                    </tr>
-                                ))}
+                                {items.map((it) => {
+                                    const listo = Boolean(completados[it.id]);
+                                    return (
+                                        <tr key={it.id} className="hover:bg-muted/20">
+                                            <td className="px-4 py-2">
+                                                <Checkbox checked={listo} onCheckedChange={(v) => onToggle(it.id, v === true)} />
+                                            </td>
+                                            <td className="px-4 py-2 font-mono text-muted-foreground">{it.codigo}</td>
+                                            <td className={`px-4 py-2 font-medium ${listo ? "text-muted-foreground line-through" : ""}`}>{it.nombre}</td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -85,6 +93,7 @@ function ChecklistCard({ titulo, icon: Icon, items }: { titulo: string; icon: ty
 function ClientesPage() {
     const [clientes, setClientes] = useState(CLIENTES);
     const [checklist, setChecklist] = useState(CHECKLIST_DOCUMENTACION_CLIENTES);
+    const [completados, setCompletados] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         let mounted = true;
@@ -100,10 +109,30 @@ function ClientesPage() {
             .catch(() => {
                 /* fallback kept */
             });
+        fetch("/api/checklist-clientes-estado")
+            .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
+            .then((data) => mounted && setCompletados(data))
+            .catch(() => {
+                /* queda todo sin marcar si falla */
+            });
         return () => {
             mounted = false;
         };
     }, []);
+
+    // Optimista: se marca de inmediato en pantalla y se persiste en segundo plano; si falla, se revierte.
+    const toggleChecklistItem = (id: string, completado: boolean) => {
+        setCompletados((prev) => ({ ...prev, [id]: completado }));
+        fetch("/api/checklist-clientes-estado", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, completado }),
+        }).then((r) => {
+            if (!r.ok) throw new Error(r.statusText);
+        }).catch(() => {
+            setCompletados((prev) => ({ ...prev, [id]: !completado }));
+        });
+    };
 
     const contratosPorVencer = clientes.flatMap((c) => c.contratos || []).filter((ct) => ct.estado === "Próximo a vencer").length;
 
@@ -127,8 +156,8 @@ function ClientesPage() {
                     Documentos estándar que deben entregarse al cierre de la implementación de un cliente CES (fuente: Control_Entrega_Documentación_Clientes.xlsx).
                 </p>
                 <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    <ChecklistCard titulo="Documentación para el Cliente" icon={ClipboardCheck} items={checklist.cliente} />
-                    <ChecklistCard titulo="Documentación Interna" icon={ClipboardList} items={checklist.interna} />
+                    <ChecklistCard titulo="Documentación para el Cliente" icon={ClipboardCheck} items={checklist.cliente} completados={completados} onToggle={toggleChecklistItem} />
+                    <ChecklistCard titulo="Documentación Interna" icon={ClipboardList} items={checklist.interna} completados={completados} onToggle={toggleChecklistItem} />
                 </div>
             </div>
 
