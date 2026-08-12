@@ -70,4 +70,15 @@ export async function getDocumentacion<T>(): Promise<T | null> {
     return readBlob<T>("documentacion");
 }
 
-export default { saveClientes, getClientes, saveRiesgos, getRiesgos, saveDocumentacion, getDocumentacion };
+export async function saveChecklistClientes(data: unknown) {
+    return writeBlob("checklist-clientes", data);
+}
+
+export async function getChecklistClientes<T>(): Promise<T | null> {
+    return readBlob<T>("checklist-clientes");
+}
+
+export default {
+    saveClientes, getClientes, saveRiesgos, getRiesgos, saveDocumentacion, getDocumentacion,
+    saveChecklistClientes, getChecklistClientes,
+};

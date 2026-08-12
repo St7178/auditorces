@@ -30,6 +30,7 @@ import { Route as AuthenticatedProcesosVulnerabilidadesRouteImport } from './rou
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
+import { Route as ApiSyncChecklistClientesRouteImport } from './routes/api/sync/checklist-clientes'
 import { Route as ApiSyncClientesRouteImport } from './routes/api/sync/clientes'
 import { Route as ApiSyncDocumentacionRouteImport } from './routes/api/sync/documentacion'
 import { Route as ApiSyncRiesgosRouteImport } from './routes/api/sync/riesgos'
@@ -143,6 +144,12 @@ const ApiAuthLogoutRoute = ApiAuthLogoutRouteImport.update({
   path: '/api/auth/logout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSyncChecklistClientesRoute =
+  ApiSyncChecklistClientesRouteImport.update({
+    id: '/api/sync/checklist-clientes',
+    path: '/api/sync/checklist-clientes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSyncClientesRoute = ApiSyncClientesRouteImport.update({
   id: '/api/sync/clientes',
   path: '/api/sync/clientes',
@@ -179,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/sync/checklist-clientes': typeof ApiSyncChecklistClientesRoute
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
@@ -204,6 +212,7 @@ export interface FileRoutesByTo {
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/sync/checklist-clientes': typeof ApiSyncChecklistClientesRoute
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
@@ -231,6 +240,7 @@ export interface FileRoutesById {
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/sync/checklist-clientes': typeof ApiSyncChecklistClientesRoute
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
+    | '/api/sync/checklist-clientes'
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/riesgos'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
+    | '/api/sync/checklist-clientes'
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/riesgos'
@@ -309,6 +321,7 @@ export interface FileRouteTypes {
     | '/api/auth/callback'
     | '/api/auth/login'
     | '/api/auth/logout'
+    | '/api/sync/checklist-clientes'
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/riesgos'
@@ -325,6 +338,7 @@ export interface RootRouteChildren {
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
+  ApiSyncChecklistClientesRoute: typeof ApiSyncChecklistClientesRoute
   ApiSyncClientesRoute: typeof ApiSyncClientesRoute
   ApiSyncDocumentacionRoute: typeof ApiSyncDocumentacionRoute
   ApiSyncRiesgosRoute: typeof ApiSyncRiesgosRoute
@@ -479,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthLogoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/sync/checklist-clientes': {
+      id: '/api/sync/checklist-clientes'
+      path: '/api/sync/checklist-clientes'
+      fullPath: '/api/sync/checklist-clientes'
+      preLoaderRoute: typeof ApiSyncChecklistClientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/sync/clientes': {
       id: '/api/sync/clientes'
       path: '/api/sync/clientes'
@@ -548,6 +569,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
+  ApiSyncChecklistClientesRoute: ApiSyncChecklistClientesRoute,
   ApiSyncClientesRoute: ApiSyncClientesRoute,
   ApiSyncDocumentacionRoute: ApiSyncDocumentacionRoute,
   ApiSyncRiesgosRoute: ApiSyncRiesgosRoute,

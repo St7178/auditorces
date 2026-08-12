@@ -61,6 +61,37 @@ export const CLIENTES = [
     { id: "c8", nombre: "Argos", responsable: "Jonny Marín", servicios: ["Servicios TIC"], estado: "Activo", contratos: [] },
 ];
 
+// Checklist de entrega de documentación por cliente (fallback estático — se sobrescribe por completo
+// cada vez que corre el flujo de n8n contra "Control_Entrega_Documentación_Clientes.xlsx", hoja "CES").
+// No está atado a un cliente específico: es la lista estándar de documentos que debe entregarse en
+// todo cierre de implementación CES, dividida en lo que se entrega al cliente vs. lo interno de CES.
+export const CHECKLIST_DOCUMENTACION_CLIENTES = {
+    cliente: [
+        { id: "cliente-1", codigo: "F.GE.406 - F.GE.407", nombre: "Diagrama de Red Versión Cliente y Versión Cnet", estado: "Pendiente" },
+        { id: "cliente-2", codigo: "F.CS.405", nombre: "Formato Estrategia de Backup", estado: "Pendiente" },
+        { id: "cliente-3", codigo: "F.GE.409", nombre: "Diagrama de Servicios CES", estado: "Pendiente" },
+        { id: "cliente-4", codigo: "Anexo", nombre: "Contactos y Escalamientos Servicios TI", estado: "Pendiente" },
+        { id: "cliente-5", codigo: "M.OS.401", nombre: "Manual Operación del Servicio", estado: "Pendiente" },
+        { id: "cliente-6", codigo: "F.GP.401", nombre: "Acta de Entrega de Servicios", estado: "Pendiente" },
+        { id: "cliente-7", codigo: "I.OS.401", nombre: "Registro de Solicitudes en la Mesa Integral de Servicios SOLMAN 7,2", estado: "Pendiente" },
+        { id: "cliente-8", codigo: "F.VE.011.008", nombre: "Hoja de control", estado: "Pendiente" },
+    ],
+    interna: [
+        { id: "interna-1", codigo: "F.GP.401", nombre: "Acta de entrega del Servicio firmada por el cliente", estado: "Pendiente" },
+        { id: "interna-2", codigo: "F.GP.403", nombre: "Verificación de Instalación de Servicios de Red", estado: "Pendiente" },
+        { id: "interna-3", codigo: "Anexo 1 y 2", nombre: "Anexos del contrato de Servicios (formato no editable)", estado: "Pendiente" },
+        { id: "interna-4", codigo: "F.VE.461", nombre: "Propuesta Servicios de Infraestructura CES", estado: "Pendiente" },
+        { id: "interna-5", codigo: "NA", nombre: "Email con Premisas Comerciales", estado: "Pendiente" },
+        { id: "interna-6", codigo: "NA", nombre: "Autorización Vicepresidencia de Servicios y Operaciones de TI de inicio sin contrato", estado: "Pendiente" },
+        { id: "interna-7", codigo: "NA", nombre: "Presentación del Proyecto", estado: "Pendiente" },
+        { id: "interna-8", codigo: "NA", nombre: "Levantamiento de información", estado: "Pendiente" },
+        { id: "interna-9", codigo: "NA", nombre: "Contactos (Nombre, cargo, número fijo, celular, correo electrónico y dirección exacta del cliente)", estado: "Pendiente" },
+        { id: "interna-10", codigo: "NA", nombre: "Solicitud a la MIS para creación del cliente e inicio de informes de gestión", estado: "Pendiente" },
+        { id: "interna-11", codigo: "NA", nombre: "Creación del Cliente en Solution Manager", estado: "Pendiente" },
+        { id: "interna-12", codigo: "NA", nombre: "Validación Capacitación al Cliente MIS", estado: "Pendiente" },
+    ],
+};
+
 export const PROVEEDORES = [
     { id: "p1", nombre: "AWS", tipo: "Cloud Hyperscaler", estado: "Estratégico", ultimaEvaluacion: "2026-03-01" },
     { id: "p2", nombre: "Microsoft Azure", tipo: "Cloud Hyperscaler", estado: "Estratégico", ultimaEvaluacion: "2026-02-15" },
