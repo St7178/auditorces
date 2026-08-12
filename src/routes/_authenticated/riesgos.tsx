@@ -82,7 +82,27 @@ function RiesgosPage() {
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <PageHeader eyebrow="Administración de Riesgos" title="Riesgos Operacionales" description="Solo se registra la ubicación de la evidencia. No se almacenan matrices ni documentos confidenciales." />
+            <PageHeader
+                eyebrow="Administración de Riesgos"
+                title="Riesgos Operacionales"
+                description="Solo se registra la ubicación de la evidencia. No se almacenan matrices ni documentos confidenciales."
+                actions={
+                    <Card className="w-full border-brand/30 bg-gradient-to-br from-brand-soft to-secondary sm:w-72">
+                        <CardContent className="p-3">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-brand">
+                                <Lightbulb className="h-3.5 w-3.5" /> ¿Sabías qué?
+                            </div>
+                            <ul className="mt-1.5 space-y-1">
+                                {SABIAS_QUE.map((s) => (
+                                    <li key={s} className="flex items-start gap-1.5 text-[11px] leading-snug">
+                                        <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-brand" /> {s}
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
+                }
+            />
 
             <Card className="mt-6 border-border/60">
                 <CardContent className="p-5">
@@ -91,7 +111,7 @@ function RiesgosPage() {
                             <ShieldQuestion className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
-                            <div className="font-semibold">¿Qué son los riesgos operacionales?</div>
+                            <div className="font-semibold">¿Qué son?</div>
                             <p className="mt-1 text-sm text-muted-foreground">
                                 Son eventos o condiciones inciertas que, de materializarse, afectarían la capacidad del área CES para
                                 cumplir sus objetivos, la prestación del servicio a los clientes o los requisitos de las normas que
@@ -329,21 +349,6 @@ function RiesgosPage() {
                                 </AccordionItem>
                             ))}
                         </Accordion>
-                    </CardContent>
-                </Card>
-
-                <Card className="mt-4 border-brand/30 bg-gradient-to-br from-brand-soft to-secondary">
-                    <CardContent className="p-5">
-                        <div className="flex items-center gap-2 font-semibold text-brand">
-                            <Lightbulb className="h-4 w-4" /> ¿Sabías qué?
-                        </div>
-                        <ul className="mt-3 space-y-2">
-                            {SABIAS_QUE.map((s) => (
-                                <li key={s} className="flex items-start gap-2 text-sm">
-                                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand" /> {s}
-                                </li>
-                            ))}
-                        </ul>
                     </CardContent>
                 </Card>
             </div>
