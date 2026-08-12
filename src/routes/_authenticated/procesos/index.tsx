@@ -1,10 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
 import { MAPA_PROCESOS_CES, DOCUMENTOS, CATEGORIA_COLOR } from "@/lib/ces-data";
-import { FileText, Link2, KeyRound, ShieldQuestion, LifeBuoy, GraduationCap, ChevronDown, ShieldAlert, ChevronRight } from "lucide-react";
+import { FileText, Link2, KeyRound, ShieldQuestion, LifeBuoy, GraduationCap, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/procesos/")({
@@ -353,23 +353,6 @@ function ProcesosPage() {
                         </Accordion>
                     </CardContent>
                 </Card>
-            </div>
-
-            <div className="mt-10">
-                <Link to="/procesos/vulnerabilidades" className="block">
-                    <Card className="border-border/60 transition hover:border-brand hover:shadow-lg">
-                        <CardContent className="flex items-center gap-4 p-5">
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                                <ShieldAlert className="h-5 w-5" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <div className="font-semibold">Vulnerabilidades CES</div>
-                                <div className="text-xs text-muted-foreground">Qué es una vulnerabilidad y dónde consultarlas en la Wiki</div>
-                            </div>
-                            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        </CardContent>
-                    </Card>
-                </Link>
             </div>
 
             <div className="mt-10">

@@ -1,4 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useState } from "react";
 import {
     LayoutDashboard,
     Users,
@@ -11,6 +12,7 @@ import {
     Calendar,
     MessagesSquare,
     Settings,
+    ChevronRight,
 } from "lucide-react";
 import {
     Sidebar,
@@ -21,11 +23,23 @@ import {
     SidebarHeader,
     SidebarFooter,
     SidebarMenu,
+    SidebarMenuAction,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 
-const nav = [
+type NavItem = {
+    title: string;
+    url: string;
+    icon: typeof LayoutDashboard;
+    highlight?: boolean;
+    children?: { title: string; url: string }[];
+};
+
+const nav: { section: string; items: NavItem[] }[] = [
     {
         section: "🏠 Inicio", items: [
             { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -35,7 +49,10 @@ const nav = [
     {
         section: "👥 Gestión CES", items: [
             { title: "Equipo CES", url: "/equipo", icon: Users },
-            { title: "Procesos CES", url: "/procesos", icon: Workflow },
+            {
+                title: "Procesos CES", url: "/procesos", icon: Workflow,
+                children: [{ title: "Vulnerabilidades CES", url: "/procesos/vulnerabilidades" }],
+            },
             { title: "Riesgos CES", url: "/riesgos", icon: ShieldAlert },
             { title: "Indicadores CES", url: "/indicadores", icon: Gauge },
             { title: "Clientes CES", url: "/clientes", icon: Building2 },
@@ -58,6 +75,16 @@ const nav = [
 export function AppSidebar({ user }: { user: { name: string; jobTitle?: string | null } }) {
     const currentPath = useRouterState({ select: (r) => r.location.pathname });
     const userInitials = user.name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase();
+    // Ítems expandidos manualmente por el usuario — si el hijo activo cambia, igual se muestra
+    // desplegado aunque no esté en este set (ver `abierto` más abajo).
+    const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
+    const toggleExpandido = (title: string) =>
+        setExpandidos((prev) => {
+            const next = new Set(prev);
+            if (next.has(title)) next.delete(title);
+            else next.add(title);
+            return next;
+        });
 
     return (
         <Sidebar collapsible="icon">
@@ -86,6 +113,8 @@ export function AppSidebar({ user }: { user: { name: string; jobTitle?: string |
                             <SidebarMenu>
                                 {group.items.map((item) => {
                                     const active = currentPath === item.url;
+                                    const hijoActivo = item.children?.some((c) => c.url === currentPath) ?? false;
+                                    const abierto = expandidos.has(item.title) || hijoActivo;
                                     return (
                                         <SidebarMenuItem key={item.title}>
                                             <SidebarMenuButton
@@ -98,6 +127,24 @@ export function AppSidebar({ user }: { user: { name: string; jobTitle?: string |
                                                     <span>{item.title}</span>
                                                 </Link>
                                             </SidebarMenuButton>
+                                            {item.children && (
+                                                <>
+                                                    <SidebarMenuAction onClick={() => toggleExpandido(item.title)} title={abierto ? "Contraer" : "Expandir"}>
+                                                        <ChevronRight className={`transition-transform ${abierto ? "rotate-90" : ""}`} />
+                                                    </SidebarMenuAction>
+                                                    {abierto && (
+                                                        <SidebarMenuSub>
+                                                            {item.children.map((c) => (
+                                                                <SidebarMenuSubItem key={c.url}>
+                                                                    <SidebarMenuSubButton asChild isActive={currentPath === c.url}>
+                                                                        <Link to={c.url}>{c.title}</Link>
+                                                                    </SidebarMenuSubButton>
+                                                                </SidebarMenuSubItem>
+                                                            ))}
+                                                        </SidebarMenuSub>
+                                                    )}
+                                                </>
+                                            )}
                                         </SidebarMenuItem>
                                     );
                                 })}
