@@ -64,108 +64,350 @@ export type IndicadorDisponibilidadCES = {
 };
 
 export const INDICADOR_DISPONIBILIDAD_CES: IndicadorDisponibilidadCES = {
-    "codigo": "ID.AM.001.004",
-    "nombre": "Disponibilidad Servicio CES",
-    "tendencia": "Creciente",
-    "frecuencia": "Mensual",
-    "metaVigente": 718.56,
-    "proposito": "Controlar la disponibilidad de nuestros servicios CES",
-    "fechaPublicacion": "30-05-2026",
-    "tendenciaMensual": [
-        { "mes": "Enero", "valor": 720, "meta": 718.56 },
-        { "mes": "Febrero", "valor": 720, "meta": 718.56 },
-        { "mes": "Marzo", "valor": 720, "meta": 718.56 },
-        { "mes": "Abril", "valor": 720, "meta": 718.56 },
-        { "mes": "Mayo", "valor": 720, "meta": 718.56 },
-        { "mes": "Junio", "valor": 720, "meta": 718.56 },
-        { "mes": "Julio", "valor": 0, "meta": 718.56 },
-        { "mes": "Agosto", "valor": 0, "meta": 718.56 },
-        { "mes": "Septiembre", "valor": 0, "meta": 718.56 },
-        { "mes": "Octubre", "valor": 0, "meta": 718.56 },
-        { "mes": "Noviembre", "valor": 0, "meta": 718.56 },
-        { "mes": "Diciembre", "valor": 0, "meta": 718.56 }
-    ],
-    "detallePorMes": {
-        "Enero": [
-            { "cliente": "Protela", "analisis": "Durante el mes, se realiza constante acompañamiento al cliente referente a las pruebas de NOW virtualizado en datacenter Wave. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Ingenio Risaralda", "analisis": "Durante el mes, se realiza instalacion de VMWareTools, el cual se ejecuta de manera correcta, adicional se realiza acompañamiento al cliente y su proveedor para migracion de los servicios en los servidores actuales a unos nuevos servidores en Wave. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Indupalma", "analisis": "Durante el mes, se realiza instalacion de VMWareTools, el cual se ejecuta de manera correcta. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Levapan", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Incolmotos", "analisis": "Durante el mes, se realiza instalacion de VMWareTools, el cual se ejecuta de manera correcta. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Grupo Recordar", "analisis": "Durante el mes, se finalizo con la configuración e implementación del CRD, los demas servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Conconcreto", "analisis": "Durante el mes, se realiza certificacion del canal por parte del proveedor a solicitud del cliente. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Cobo Medical", "analisis": "Durante el mes, se realiza instalacion de VMWareTools, el cual se ejecuta de manera correcta. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Andes", "analisis": "Durante el mes, se realiza instalacion de VMWareTools, el cual se ejecuta de manera correcta. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." }
+        "codigo": "ID.AM.001.004",
+        "nombre": "Disponibilidad Servicio CES",
+        "tendencia": "Creciente",
+        "frecuencia": "Mensual",
+        "metaVigente": 718.56,
+        "proposito": "Controlar la disponibilidad de nuestros servicios CES",
+        "fechaPublicacion": "30-05-2026",
+        "tendenciaMensual": [
+            {
+                "mes": "Enero",
+                "valor": 720,
+                "meta": 718.56
+            },
+            {
+                "mes": "Febrero",
+                "valor": 720,
+                "meta": 718.56
+            },
+            {
+                "mes": "Marzo",
+                "valor": 720,
+                "meta": 718.56
+            },
+            {
+                "mes": "Abril",
+                "valor": 720,
+                "meta": 718.56
+            },
+            {
+                "mes": "Mayo",
+                "valor": 720,
+                "meta": 718.56
+            },
+            {
+                "mes": "Junio",
+                "valor": 720,
+                "meta": 718.56
+            },
+            {
+                "mes": "Julio",
+                "valor": 0,
+                "meta": 718.56
+            },
+            {
+                "mes": "Agosto",
+                "valor": 0,
+                "meta": 718.56
+            },
+            {
+                "mes": "Septiembre",
+                "valor": 0,
+                "meta": 718.56
+            },
+            {
+                "mes": "Octubre",
+                "valor": 0,
+                "meta": 718.56
+            },
+            {
+                "mes": "Noviembre",
+                "valor": 0,
+                "meta": 718.56
+            },
+            {
+                "mes": "Diciembre",
+                "valor": 0,
+                "meta": 718.56
+            }
         ],
-        "Febrero": [
-            { "cliente": "LUMIRA", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Protela", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Ingenio Risaralda", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Indupalma", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Levapan", "analisis": "Durante el mes se presento afectación de los canales de internet por falla en la última milla, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Incolmotos", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Grupo Recordar", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Conconcreto", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Cobo Medical", "analisis": "Durante el mes, se realiza acompañamiento en la reconfiguracion del HADR NOW, se realiza seguimiento tanto en hardware como en recursos y funcionamiento del servidor PTADBSBOG09, adicional se realiza aumento en modo prestamo sobre el servidor de pruebas de aplicacion en Etix, 24 gb de ramy 10 core adicionales. Los demas servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Andes", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." }
-        ],
-        "Marzo": [
-            { "cliente": "Protela", "analisis": "Durante el mes se presenta afectacion de los canales de comunicación de Claro en Datacenter Triara, el proveedor informa que se realiza conmutación de trafico hacia el RBACKENDTRIARA2, estabilizando servicios. Se esta validando en conjunto con area de COEX, los flapeos presentados sobre la sesión BGP del RBACKENDTRIARA1, dicho incidente se soluciona de manera efectiva. Se realiza constante monitoreo." },
-            { "cliente": "Ingenio Risaralda", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Indupalma", "analisis": "Durante el mes se presento afectación de los canales de internet por falla en la última milla, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Levapan", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Incolmotos", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Grupo Recordar", "analisis": "Durante el mes se finalizan los servicios del cliente por terminacion del contrato. El dia 31 de marzo se ejecuta ultimo backup de la data de los servidores los cuales seran entregados al cliente por medio de una cinta." },
-            { "cliente": "Conconcreto", "analisis": "Durante el mes, se realiza de manera exitosa la migracion de los servicios a los nuevos servidores para solucionar incidente de fuga de datos desde la app SAP Business One. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Cobo Medical", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Andes", "analisis": "Durante el mes, se realiza de manera exitosa la migracion de los servicios a DataCenter WaveDC, en su totalidad son 38 servidores. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "LUMIRA", "analisis": "Durante el mes, se realiza de manera exitosa la migracion de los servicios a DataCenter WaveDC, en su totalidad son 15 servidores. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "ZONAMERICA CLÍNICAS", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "ZONAMERICA ZACO", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." }
-        ],
-        "Abril": [
-            { "cliente": "Protela", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Ingenio Risaralda", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Indupalma", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Levapan", "analisis": "Durante el mes se presento afectacion debido a que la ejecucion del backup genero incidente sobre el servidor navision. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Incolmotos", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Grupo Recordar", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Conconcreto", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Andes", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "LUMIRA", "analisis": "Durante el mes se realizó la ampliación de 4 GB adicionales de memoria RAM al servidor STEWARD-IT-LINK-001. Adicionalmente, se efectuó el reinicio de varios servidores por solicitud del cliente, debido a incidentes de lentitud presentados en los servicios." },
-            { "cliente": "ZONAMERICA CLÍNICAS", "analisis": "De manera interna, se ejecutaron procesos de independización de datastore posteriores a la migración, lo cual permitió solucionar el incidente de lentitud constante en los servidores. Asimismo," },
-            { "cliente": "ZONAMERICA ZACO", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." }
-        ],
-        "Mayo": [
-            { "cliente": "Ingenio Risaralda", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Indupalma", "analisis": "Durante el mes se realiza entrega del servidor ZA-COL-TEC-0009 para pruebas de dominio, el servidor productivo ZA-COL-TEC-0008 fue desconectado ya que estaba presentando inconvenientes de dominio y el servidor 0009 es para solucionar dicho inconveniente. Los demas servidores no presentaron cambios en su configuracion. Se realiza constante monitoreo." },
-            { "cliente": "Levapan", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Incolmotos", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Grupo Recordar", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Conconcreto", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Andes", "analisis": "Durante el mes se presenta bloqueo en servidor PSR, fallo en backup bloquea el servidor. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "LUMIRA", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "ZONAMERICA CLÍNICAS", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "ZONAMERICA ZACO", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Surtialimentos", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Protela", "analisis": "Durante el mes se presenta falla en la base de datos de Prueba BDSWDT, dicho caso es escalado al DBS quien soluciona dicho incidente. Adicional se realiza aumento de 100 GB a la unidad C del servidor STEWARD-001-011 con IP 10.74.23.20 ya que la unidad estaba completamente llena y genero bloqueos sobre el servidor. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." }
-        ],
-        "Junio": [
-            { "cliente": "Ingenio Risaralda", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Indupalma", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Levapan", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Incolmotos", "analisis": "Durante el mes se presenta afectacion en las replicas las cuales bloqueaban el ingreso a los servidores. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Grupo Recordar", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Conconcreto", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Andes", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "LUMIRA", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "ZONAMERICA CLÍNICAS", "analisis": "Durante el mes se realizo un aumento de 200 GB al servidor de base de datos N1-SWD-PCA1. Los demas servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "ZONAMERICA ZACO", "analisis": "Durante el mes se solicito restauracion de informacion del usuario jramirez, la cual se ejecuta de manera exitosa, adicional se realiza eliminacion del servidor ZA-COL-TEC-0008 el cual fue reemplazado por el servidor ZA-COL-TEC-0009. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." },
-            { "cliente": "Surtialimentos", "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios." }
-        ]
-    }
-};
-
+        "detallePorMes": {
+            "Enero": [
+                {
+                    "cliente": "Protela",
+                    "analisis": "Durante el mes, se realiza constante acompañamiento al cliente referente a las pruebas de NOW virtualizado en datacenter Wave. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Ingenio Risaralda",
+                    "analisis": "Durante el mes, se realiza instalacion de VMWareTools, el cual se ejecuta de manera correcta. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Indupalma",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Levapan",
+                    "analisis": "Durante el mes, se realiza instalacion de VMWareTools, el cual se ejecuta de manera correcta. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Incolmotos",
+                    "analisis": "Durante el mes, se finalizo con la configuración e implementación del CRD, los demas servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Grupo Recordar",
+                    "analisis": "Durante el mes, se realiza certificacion del canal por parte del proveedor a solicitud del cliente. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Conconcreto",
+                    "analisis": "Durante el mes, se realiza instalacion de VMWareTools, el cual se ejecuta de manera correcta. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Cobo Medical",
+                    "analisis": "Durante el mes, se realiza instalacion de VMWareTools, el cual se ejecuta de manera correcta. Los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Andes",
+                    "analisis": "Durante el mes, se realiza instalacion de VMWareTools, el cual se ejecuta de manera correcta, adicional se realiza acompañamiento al cliente y su proveedor para migracion de los servicios en los servidores actuales a unos nuevos servidores en Wave. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                }
+            ],
+            "Febrero": [
+                {
+                    "cliente": "LUMIRA",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Protela",
+                    "analisis": "Durante el mes, se realiza acompañamiento en la reconfiguracion del HADR NOW, se realiza seguimiento tanto en hardware como en recursos y funcionamiento del servidor PTADBSBOG09, adicional se realiza aumento en modo prestamo sobre el servidor de pruebas de aplicacion en Etix, 24 gb de ramy 10 core adicionales. Los demas servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Ingenio Risaralda",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Indupalma",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Levapan",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Incolmotos",
+                    "analisis": "Durante el mes se presento afectación de los canales de internet por falla en la última milla, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Grupo Recordar",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Conconcreto",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Cobo Medical",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Andes",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                }
+            ],
+            "Marzo": [
+                {
+                    "cliente": "Protela",
+                    "analisis": "Durante el mes se presenta afectacion de los canales de comunicación de Claro en Datacenter Triara, el proveedor informa que se realiza conmutación de trafico hacia el RBACKENDTRIARA2, estabilizando servicios. Se esta validando en conjunto con area de COEX, los flapeos presentados sobre la sesión BGP del RBACKENDTRIARA1, dicho incidente se soluciona de manera efectiva. Se realiza constante monitoreo."
+                },
+                {
+                    "cliente": "Ingenio Risaralda",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Indupalma",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Levapan",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Incolmotos",
+                    "analisis": "Durante el mes se presento afectación de los canales de internet por falla en la última milla, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Grupo Recordar",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Conconcreto",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Cobo Medical",
+                    "analisis": "Durante el mes se finalizan los servicios del cliente por terminacion del contrato. El dia 31 de marzo se ejecuta ultimo backup de la data de los servidores los cuales seran entregados al cliente por medio de una cinta."
+                },
+                {
+                    "cliente": "Andes",
+                    "analisis": "Durante el mes, se realiza de manera exitosa la migracion de los servicios a los nuevos servidores para solucionar incidente de fuga de datos desde la app SAP Business One. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "LUMIRA",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "ZONAMERICA CLÍNICAS",
+                    "analisis": "Durante el mes, se realiza de manera exitosa la migracion de los servicios a DataCenter WaveDC, en su totalidad son 38 servidores. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "ZONAMERICA ZACO",
+                    "analisis": "Durante el mes, se realiza de manera exitosa la migracion de los servicios a DataCenter WaveDC, en su totalidad son 15 servidores. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                }
+            ],
+            "Abril": [
+                {
+                    "cliente": "Protela",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Ingenio Risaralda",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Indupalma",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Levapan",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Incolmotos",
+                    "analisis": "Durante el mes se presento afectacion debido a que la ejecucion del backup genero incidente sobre el servidor navision. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Grupo Recordar",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Conconcreto",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Andes",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "LUMIRA",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "ZONAMERICA CLÍNICAS",
+                    "analisis": "Durante el mes se realizó la ampliación de 4 GB adicionales de memoria RAM al servidor STEWARD-IT-LINK-001. Adicionalmente, se efectuó el reinicio de varios servidores por solicitud del cliente, debido a incidentes de lentitud presentados en los servicios. De manera interna, se ejecutaron procesos de independización de datastore posteriores a la migración, lo cual permitió solucionar el incidente de lentitud constante en los servidores. Asimismo,"
+                },
+                {
+                    "cliente": "ZONAMERICA ZACO",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                }
+            ],
+            "Mayo": [
+                {
+                    "cliente": "Ingenio Risaralda",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Indupalma",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Levapan",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Incolmotos",
+                    "analisis": "Durante el mes se presenta bloqueo en servidor PSR, fallo en backup bloquea el servidor. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Grupo Recordar",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Conconcreto",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Andes",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "LUMIRA",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "ZONAMERICA CLÍNICAS",
+                    "analisis": "Durante el mes se presenta falla en la base de datos de Prueba BDSWDT, dicho caso es escalado al DBS quien soluciona dicho incidente. Adicional se realiza aumento de 100 GB a la unidad C del servidor STEWARD-001-011 con IP 10.74.23.20 ya que la unidad estaba completamente llena y genero bloqueos sobre el servidor. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "ZONAMERICA ZACO",
+                    "analisis": "Durante el mes se realiza entrega del servidor ZA-COL-TEC-0009 para pruebas de dominio, el servidor productivo ZA-COL-TEC-0008 fue desconectado ya que estaba presentando inconvenientes de dominio y el servidor 0009 es para solucionar dicho inconveniente. Los demas servidores no presentaron cambios en su configuracion. Se realiza constante monitoreo."
+                },
+                {
+                    "cliente": "Surtialimentos",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Protela",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                }
+            ],
+            "Junio": [
+                {
+                    "cliente": "Ingenio Risaralda",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Indupalma",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Levapan",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Incolmotos",
+                    "analisis": "Durante el mes se presenta afectacion en las replicas las cuales bloqueaban el ingreso a los servidores. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Grupo Recordar",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Conconcreto",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Andes",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "LUMIRA",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "ZONAMERICA CLÍNICAS",
+                    "analisis": "Durante el mes se realizo un aumento de 200 GB al servidor de base de datos N1-SWD-PCA1. Los demas servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "ZONAMERICA ZACO",
+                    "analisis": "Durante el mes se solicito restauracion de informacion del usuario jramirez, la cual se ejecuta de manera exitosa, adicional se realiza eliminacion del servidor ZA-COL-TEC-0008 el cual fue reemplazado por el servidor ZA-COL-TEC-0009. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                },
+                {
+                    "cliente": "Surtialimentos",
+                    "analisis": "Durante el mes, los servidores no presentaron cambios en su configuración que afectaran su funcionamiento. Se continúa realizando monitoreo constante para garantizar la estabilidad y disponibilidad de los servicios."
+                }
+            ]
+        }
+    };
 export const INDICADORES = [
     { id: "IND-01", nombre: "Disponibilidad de servicios", meta: 99.5, actual: 99.7, unidad: "%", tendencia: "up", historico: [99.2, 99.4, 99.6, 99.5, 99.7, 99.7] },
     { id: "IND-02", nombre: "Cumplimiento de SLA", meta: 95, actual: 96.8, unidad: "%", tendencia: "up", historico: [93, 94, 95, 96, 96.5, 96.8] },
