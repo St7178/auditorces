@@ -39,6 +39,7 @@ import { Route as ApiMePhotoRouteImport } from './routes/api/me/photo'
 import { Route as ApiSyncChecklistClientesRouteImport } from './routes/api/sync/checklist-clientes'
 import { Route as ApiSyncClientesRouteImport } from './routes/api/sync/clientes'
 import { Route as ApiSyncDocumentacionRouteImport } from './routes/api/sync/documentacion'
+import { Route as ApiSyncIndicadorDisponibilidadRouteImport } from './routes/api/sync/indicador-disponibilidad'
 import { Route as ApiSyncRiesgosRouteImport } from './routes/api/sync/riesgos'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -201,6 +202,12 @@ const ApiSyncDocumentacionRoute = ApiSyncDocumentacionRouteImport.update({
   path: '/api/sync/documentacion',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSyncIndicadorDisponibilidadRoute =
+  ApiSyncIndicadorDisponibilidadRouteImport.update({
+    id: '/api/sync/indicador-disponibilidad',
+    path: '/api/sync/indicador-disponibilidad',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSyncRiesgosRoute = ApiSyncRiesgosRouteImport.update({
   id: '/api/sync/riesgos',
   path: '/api/sync/riesgos',
@@ -235,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/api/sync/checklist-clientes': typeof ApiSyncChecklistClientesRoute
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
+  '/api/sync/indicador-disponibilidad': typeof ApiSyncIndicadorDisponibilidadRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
   '/cultura/': typeof AuthenticatedCulturaIndexRoute
   '/procesos/': typeof AuthenticatedProcesosIndexRoute
@@ -267,6 +275,7 @@ export interface FileRoutesByTo {
   '/api/sync/checklist-clientes': typeof ApiSyncChecklistClientesRoute
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
+  '/api/sync/indicador-disponibilidad': typeof ApiSyncIndicadorDisponibilidadRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
   '/cultura': typeof AuthenticatedCulturaIndexRoute
   '/procesos': typeof AuthenticatedProcesosIndexRoute
@@ -301,6 +310,7 @@ export interface FileRoutesById {
   '/api/sync/checklist-clientes': typeof ApiSyncChecklistClientesRoute
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
+  '/api/sync/indicador-disponibilidad': typeof ApiSyncIndicadorDisponibilidadRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
   '/_authenticated/cultura/': typeof AuthenticatedCulturaIndexRoute
   '/_authenticated/procesos/': typeof AuthenticatedProcesosIndexRoute
@@ -335,6 +345,7 @@ export interface FileRouteTypes {
     | '/api/sync/checklist-clientes'
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
+    | '/api/sync/indicador-disponibilidad'
     | '/api/sync/riesgos'
     | '/cultura/'
     | '/procesos/'
@@ -367,6 +378,7 @@ export interface FileRouteTypes {
     | '/api/sync/checklist-clientes'
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
+    | '/api/sync/indicador-disponibilidad'
     | '/api/sync/riesgos'
     | '/cultura'
     | '/procesos'
@@ -400,6 +412,7 @@ export interface FileRouteTypes {
     | '/api/sync/checklist-clientes'
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
+    | '/api/sync/indicador-disponibilidad'
     | '/api/sync/riesgos'
     | '/_authenticated/cultura/'
     | '/_authenticated/procesos/'
@@ -420,6 +433,7 @@ export interface RootRouteChildren {
   ApiSyncChecklistClientesRoute: typeof ApiSyncChecklistClientesRoute
   ApiSyncClientesRoute: typeof ApiSyncClientesRoute
   ApiSyncDocumentacionRoute: typeof ApiSyncDocumentacionRoute
+  ApiSyncIndicadorDisponibilidadRoute: typeof ApiSyncIndicadorDisponibilidadRoute
   ApiSyncRiesgosRoute: typeof ApiSyncRiesgosRoute
 }
 
@@ -635,6 +649,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSyncDocumentacionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/sync/indicador-disponibilidad': {
+      id: '/api/sync/indicador-disponibilidad'
+      path: '/api/sync/indicador-disponibilidad'
+      fullPath: '/api/sync/indicador-disponibilidad'
+      preLoaderRoute: typeof ApiSyncIndicadorDisponibilidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/sync/riesgos': {
       id: '/api/sync/riesgos'
       path: '/api/sync/riesgos'
@@ -703,6 +724,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSyncChecklistClientesRoute: ApiSyncChecklistClientesRoute,
   ApiSyncClientesRoute: ApiSyncClientesRoute,
   ApiSyncDocumentacionRoute: ApiSyncDocumentacionRoute,
+  ApiSyncIndicadorDisponibilidadRoute: ApiSyncIndicadorDisponibilidadRoute,
   ApiSyncRiesgosRoute: ApiSyncRiesgosRoute,
 }
 export const routeTree = rootRouteImport

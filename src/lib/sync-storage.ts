@@ -78,7 +78,16 @@ export async function getChecklistClientes<T>(): Promise<T | null> {
     return readBlob<T>("checklist-clientes");
 }
 
+export async function saveIndicadorDisponibilidad(data: unknown) {
+    return writeBlob("indicador-disponibilidad", data);
+}
+
+export async function getIndicadorDisponibilidad<T>(): Promise<T | null> {
+    return readBlob<T>("indicador-disponibilidad");
+}
+
 export default {
     saveClientes, getClientes, saveRiesgos, getRiesgos, saveDocumentacion, getDocumentacion,
     saveChecklistClientes, getChecklistClientes,
+    saveIndicadorDisponibilidad, getIndicadorDisponibilidad,
 };
