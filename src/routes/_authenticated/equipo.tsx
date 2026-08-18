@@ -94,13 +94,14 @@ function EquipoPage() {
     });
 
     // Cliente asignado por persona: se cruza el nombre (ya fusionado con Entra) contra el campo
-    // `responsable` de los clientes reales sincronizados. Si no hay coincidencias ahí (porque el
-    // roster estático usa nombres de demo desactualizados), se cae a EQUIPO.clientes con estado
-    // desconocido en vez de dejar la tarjeta vacía.
+    // `responsable` de los clientes reales sincronizados. Solo se cae a EQUIPO.clientes (demo) si la
+    // sincronización todavía no cargó — si ya cargó pero esta persona no es responsable de ningún
+    // cliente real, eso es un dato real ("0 asignados"), no un motivo para mostrar el fallback.
     function clientesDe(m: (typeof equipo)[number]): ClienteAsignado[] {
         if (clientesSync) {
-            const reales = clientesSync.filter((c) => normalizeName(c.responsable) === normalizeName(m.nombre));
-            if (reales.length > 0) return reales.map((c) => ({ nombre: c.nombre, activo: c.estado === "Activo" }));
+            return clientesSync
+                .filter((c) => normalizeName(c.responsable) === normalizeName(m.nombre))
+                .map((c) => ({ nombre: c.nombre, activo: c.estado === "Activo" }));
         }
         return m.clientes.map((nombre) => ({ nombre, activo: null }));
     }
