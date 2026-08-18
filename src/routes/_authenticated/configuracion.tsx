@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { Switch } from "@/components/ui/switch";
-import { Bell, Palette, Shield, User, LogOut } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Bell, Palette, Shield, LogOut } from "lucide-react";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 import { getNotifPrefs, setNotifPref, type NotifTipo } from "@/lib/notification-prefs";
 
@@ -38,9 +39,10 @@ function ConfigPage() {
             <div className="mt-8 space-y-4">
                 <Card className="border-border/60">
                     <CardContent className="flex items-center gap-4 p-5">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand text-sm font-bold">
-                            {user ? initials(user.name) : <User className="h-5 w-5" />}
-                        </div>
+                        <Avatar className="h-11 w-11 rounded-xl">
+                            <AvatarImage src="/api/me/photo" alt={user?.name ?? "Perfil"} className="object-cover" />
+                            <AvatarFallback className="rounded-xl bg-brand-soft text-sm font-bold text-brand">{user ? initials(user.name) : "?"}</AvatarFallback>
+                        </Avatar>
                         <div className="min-w-0 flex-1">
                             <div className="text-sm font-semibold">{user?.name ?? "Perfil"}</div>
                             <div className="text-xs text-muted-foreground">{user?.jobTitle ?? user?.email}</div>

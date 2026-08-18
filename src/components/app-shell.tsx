@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { NotificationBell } from "@/components/notification-bell";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type { AppSession } from "@/lib/auth/session";
 
 function initials(name: string) {
@@ -33,9 +34,10 @@ export function AppShell({ user, children }: { user: AppSession; children: React
                                 title="Cerrar sesión"
                                 className="flex items-center gap-2 rounded-lg border bg-card px-2 py-1 hover:bg-accent"
                             >
-                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
-                                    {initials(user.name)}
-                                </div>
+                                <Avatar className="h-7 w-7">
+                                    <AvatarImage src="/api/me/photo" alt={user.name} className="object-cover" />
+                                    <AvatarFallback className="bg-primary/15 text-xs font-bold text-primary">{initials(user.name)}</AvatarFallback>
+                                </Avatar>
                                 <div className="hidden text-left leading-tight sm:block">
                                     <div className="text-xs font-semibold">{user.name}</div>
                                     <div className="text-[10px] text-muted-foreground">{user.jobTitle ?? user.email}</div>

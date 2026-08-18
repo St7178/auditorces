@@ -31,6 +31,7 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 type NavItem = {
     title: string;
@@ -164,9 +165,10 @@ export function AppSidebar({ user }: { user: { name: string; jobTitle?: string |
             </SidebarContent>
             <SidebarFooter className="border-t border-sidebar-border">
                 <div className="flex items-center gap-2 px-2 py-2 group-data-[collapsible=icon]:hidden">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-primary/20 text-xs font-semibold text-sidebar-primary">
-                        {userInitials}
-                    </div>
+                    <Avatar className="h-8 w-8">
+                        <AvatarImage src="/api/me/photo" alt={user.name} className="object-cover" />
+                        <AvatarFallback className="bg-sidebar-primary/20 text-xs font-semibold text-sidebar-primary">{userInitials}</AvatarFallback>
+                    </Avatar>
                     <div className="flex min-w-0 flex-col leading-tight">
                         <span className="truncate text-xs font-medium text-sidebar-foreground">{user.name}</span>
                         <span className="truncate text-[10px] text-sidebar-foreground/60">{user.jobTitle ?? ""}</span>

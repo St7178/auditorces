@@ -4,6 +4,7 @@ import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalRespons
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, Send, Loader2, ShieldCheck, Search, CheckCircle2, XCircle, CalendarPlus, FileCheck2, ClipboardCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChatMarkdown } from "@/components/chat-markdown";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 import { MAPA_PROCESOS_CES, CATEGORIA_COLOR } from "@/lib/ces-data";
@@ -424,9 +425,16 @@ function GuardianPage() {
                                 const isUser = m.role === "user";
                                 return (
                                     <div key={m.id} className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
-                                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${isUser ? "bg-secondary text-secondary-foreground" : "gradient-brand text-white"}`}>
-                                            {isUser ? userInitials : <Sparkles className="h-4 w-4" />}
-                                        </div>
+                                        {isUser ? (
+                                            <Avatar className="h-9 w-9 shrink-0 rounded-xl">
+                                                <AvatarImage src="/api/me/photo" alt={user?.name ?? "Tú"} className="object-cover" />
+                                                <AvatarFallback className="rounded-xl bg-secondary text-secondary-foreground">{userInitials}</AvatarFallback>
+                                            </Avatar>
+                                        ) : (
+                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-brand text-white">
+                                                <Sparkles className="h-4 w-4" />
+                                            </div>
+                                        )}
                                         <div className={`max-w-[80%] space-y-2 rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-brand text-white" : "bg-muted/60"}`}>
                                             {isUser ? (
                                                 text
