@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/indicadores")({
 
 const trendIcon = { up: TrendingUp, down: TrendingDown, flat: Minus };
 
-const MESES_ORDEN = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const MESES_CON_DATOS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio"];
 
 // Medidor tipo velocímetro (semicírculo + aguja), dibujado a mano en SVG porque Recharts no trae un
 // gauge con aguja nativo. Convención de ángulos: 180° = extremo izquierdo, 90° = arriba, 0° = extremo
@@ -92,14 +92,6 @@ function DisponibilidadCard() {
     const valorActual = filaMes?.valor ?? 0;
     const cumple = filaMes ? valorActual >= meta : null;
     const clientesDelMes = mes !== "Todos" ? data.detallePorMes[mes] ?? [] : [];
-    // Meses seleccionables: cualquier mes con detalle por cliente o con un valor medido (>0) en la
-    // tendencia — así el selector siempre refleja lo que el PDF realmente trae, sin una lista fija que
-    // se desactualiza cada vez que se agrega un mes nuevo.
-    const mesesDisponibles = MESES_ORDEN.filter((m) => {
-        const tieneDetalle = (data.detallePorMes[m]?.length ?? 0) > 0;
-        const valorMedido = data.tendenciaMensual.find((f) => f.mes === m)?.valor ?? 0;
-        return tieneDetalle || valorMedido > 0;
-    });
 
     return (
         <Card className="border-border/60">
@@ -118,7 +110,7 @@ function DisponibilidadCard() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                    {mesesDisponibles.map((m) => (
+                    {MESES_CON_DATOS.map((m) => (
                         <button
                             key={m}
                             onClick={() => setMes(m)}
@@ -151,11 +143,7 @@ function DisponibilidadCard() {
                                 <Bar dataKey="valor" fill="oklch(0.62 0.17 152)" radius={[6, 6, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
-                        {mesesDisponibles.length < 12 && (
-                            <p className="mt-2 text-center text-xs text-muted-foreground">
-                                {MESES_ORDEN.filter((m) => !mesesDisponibles.includes(m)).join(", ")} aún no {mesesDisponibles.length === 11 ? "tiene" : "tienen"} medición registrada en el PDF de origen.
-                            </p>
-                        )}
+                        <p className="mt-2 text-center text-xs text-muted-foreground">Julio–Diciembre aún no tienen medición registrada en el PDF de origen.</p>
                     </div>
                 ) : (
                     <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,240px)_1fr]">
