@@ -25,8 +25,14 @@ function initials(name: string) {
     return name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase();
 }
 
+// Sin quitar tildes, "Andrés Cano" (roster) y "Andres Cano" (displayName real en Entra) no
+// calzaban y el cruce fallaba en silencio — quedaba mostrando el cargo/foto de respaldo.
 function normalizeName(name: string) {
-    return name.trim().toLowerCase();
+    return name
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(new RegExp("[\\u0300-\\u036f]", "g"), "");
 }
 
 // Un cliente se considera "al día" (🟢) si su estado es Activo; cualquier otro estado (En renovación,
