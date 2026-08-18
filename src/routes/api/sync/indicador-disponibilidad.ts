@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getIndicadorDisponibilidad, saveIndicadorDisponibilidad } from "@/lib/sync-storage";
 import { INDICADOR_DISPONIBILIDAD_CES, type IndicadorDisponibilidadCES } from "@/lib/ces-data";
+import { parseIndicadorDisponibilidadFromPdf } from "@/lib/indicador-disponibilidad-parser";
 
 function isIndicadorPayload(body: unknown): body is IndicadorDisponibilidadCES {
     if (!body || typeof body !== "object") return false;
@@ -26,6 +27,18 @@ export const Route = createFileRoute("/api/sync/indicador-disponibilidad")({
                         const provided = request.headers.get("x-sync-secret") || request.headers.get("authorization");
                         if (!provided || provided !== secret) return new Response("Unauthorized", { status: 401 });
                     }
+                    // n8n envía el PDF crudo (Download file -> HTTP Request con el binario tal cual) — el
+                    // parseo (con la posición x/y real de cada palabra) se hace acá, no en n8n, porque el
+                    // orden del texto que entrega pdf-parse para este documento no es estable entre
+                    // distintas exportaciones del mismo Excel y rompía el emparejamiento cliente↔párrafo.
+                    const contentType = request.headers.get("content-type") || "";
+                    if (contentType.includes("pdf") || contentType.includes("octet-stream")) {
+                        const buffer = Buffer.from(await request.arrayBuffer());
+                        const parsed = await parseIndicadorDisponibilidadFromPdf(buffer);
+                        await saveIndicadorDisponibilidad(parsed);
+                        return new Response(JSON.stringify({ ok: true, resumen: Object.fromEntries(Object.entries(parsed.detallePorMes).map(([mes, arr]) => [mes, arr.length])) }), { status: 200, headers: { "Content-Type": "application/json" } });
+                    }
+
                     const body = (await request.json()) as unknown;
                     if (!isIndicadorPayload(body)) {
                         return new Response(JSON.stringify({ error: "Payload inválido: se esperaba { tendenciaMensual: [], detallePorMes: {} }" }), { status: 400, headers: { "Content-Type": "application/json" } });
