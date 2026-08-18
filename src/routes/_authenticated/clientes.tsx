@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { PageHeader } from "@/components/page-header";
 import { CLIENTES, CHECKLIST_DOCUMENTACION_CLIENTES } from "@/lib/ces-data";
 import { Building2, Calendar, AlertTriangle, ClipboardCheck, ClipboardList } from "lucide-react";
@@ -136,6 +137,10 @@ function ClientesPage() {
 
     const contratosPorVencer = clientes.flatMap((c) => c.contratos || []).filter((ct) => ct.estado === "Próximo a vencer").length;
 
+    const todosLosItems = [...checklist.cliente, ...checklist.interna];
+    const totalListos = todosLosItems.filter((it) => completados[it.id]).length;
+    const progreso = todosLosItems.length > 0 ? Math.round((totalListos / todosLosItems.length) * 100) : 0;
+
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader eyebrow="Relacionamiento" title="Clientes" description="Clientes activos con contratos asociados gestionados por el equipo CES." />
@@ -159,6 +164,16 @@ function ClientesPage() {
                     <ChecklistCard titulo="Documentación para el Cliente" icon={ClipboardCheck} items={checklist.cliente} completados={completados} onToggle={toggleChecklistItem} />
                     <ChecklistCard titulo="Documentación Interna" icon={ClipboardList} items={checklist.interna} completados={completados} onToggle={toggleChecklistItem} />
                 </div>
+
+                <Card className="mt-4 border-border/60">
+                    <CardContent className="p-4">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="font-semibold">Progreso general del checklist</span>
+                            <span className="text-muted-foreground">{totalListos}/{todosLosItems.length} documentos listos · {progreso}%</span>
+                        </div>
+                        <Progress value={progreso} className="mt-2 h-2" />
+                    </CardContent>
+                </Card>
             </div>
 
             <h2 className="mt-10 text-lg font-semibold">Clientes</h2>

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import { ShieldAlert, Link2, ArrowLeft, ShieldQuestion, ArrowUpRight } from "lucide-react";
+import { ShieldAlert, Link2, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/procesos/vulnerabilidades")({
     component: VulnerabilidadesPage,
@@ -35,27 +35,6 @@ function VulnerabilidadesPage() {
                                 seguridad de la información, identificar vulnerabilidades es la base de la valoración de riesgos (numeral
                                 6.1.2 de ISO/IEC 27001).
                             </p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card className="mt-4 border-border/60">
-                <CardContent className="p-5">
-                    <div className="flex items-start gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
-                            <ShieldQuestion className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0">
-                            <div className="font-semibold">¿Cómo se relaciona con un riesgo?</div>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Una vulnerabilidad no es lo mismo que un riesgo: es la puerta abierta que una amenaza puede usar para que
-                                ese riesgo se materialice. Corregir vulnerabilidades es una de las formas más directas de reducir la
-                                probabilidad de un riesgo.
-                            </p>
-                            <Link to="/riesgos" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline">
-                                Ver el Centro de Aprendizaje SIG de Riesgos CES <ArrowUpRight className="h-3 w-3" />
-                            </Link>
                         </div>
                     </div>
                 </CardContent>

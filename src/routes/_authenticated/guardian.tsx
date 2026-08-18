@@ -392,7 +392,7 @@ function GuardianPage() {
                             <div className={`rounded-2xl border p-6 transition-colors ${MODO_TARJETA[modo]}`}>
                                 <p className="text-sm leading-relaxed">
                                     Hola <strong>{firstName}</strong> 👋, soy CES Auditor. Estoy aquí para ayudarte en la gestión del área CES.<br /><br />
-                                    Puedo acompañarte en auditorías, resolver dudas sobre los procesos, explicarte los requisitos de ISO 9001 e ISO/IEC 27001, ayudarte a encontrar información y recomendar mejoras.
+                                    Puedo acompañarte en auditorías, resolver dudas sobre los procesos, explicarte los requisitos, ayudarte a encontrar información y recomendar mejoras.
                                 </p>
 
                                 <div className={`mt-4 border-t pt-4 ${MODO_DIVISOR[modo]}`}>
