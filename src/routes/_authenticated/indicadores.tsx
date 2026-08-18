@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { INDICADORES, INDICADOR_DISPONIBILIDAD_CES, type IndicadorDisponibilidadCES } from "@/lib/ces-data";
 import {
     ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
-    RadialBarChart, RadialBar, PolarAngleAxis, BarChart, Bar, ReferenceLine,
+    BarChart, Bar, ReferenceLine,
 } from "recharts";
 import { TrendingUp, TrendingDown, Minus, Radar, Satellite } from "lucide-react";
 
@@ -17,6 +17,58 @@ export const Route = createFileRoute("/_authenticated/indicadores")({
 const trendIcon = { up: TrendingUp, down: TrendingDown, flat: Minus };
 
 const MESES_CON_DATOS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio"];
+
+// Medidor tipo velocímetro (semicírculo + aguja), dibujado a mano en SVG porque Recharts no trae un
+// gauge con aguja nativo. Convención de ángulos: 180° = extremo izquierdo, 90° = arriba, 0° = extremo
+// derecho (coordenadas polares estándar, con "y" restando el seno porque el SVG crece hacia abajo).
+function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+    const rad = (angleDeg * Math.PI) / 180;
+    return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
+}
+
+function arcoBanda(cx: number, cy: number, r: number, desde: number, hasta: number) {
+    const start = polarToCartesian(cx, cy, r, desde);
+    const end = polarToCartesian(cx, cy, r, hasta);
+    return `M ${start.x} ${start.y} A ${r} ${r} 0 0 1 ${end.x} ${end.y}`;
+}
+
+const BANDAS_MEDIDOR = [
+    { desde: 180, hasta: 135, color: "#ef4444" },
+    { desde: 135, hasta: 90, color: "#f97316" },
+    { desde: 90, hasta: 45, color: "#eab308" },
+    { desde: 45, hasta: 0, color: "#22c55e" },
+];
+
+function Medidor({ valorActual, meta, mes, cumple }: { valorActual: number; meta: number; mes: string; cumple: boolean }) {
+    const cx = 100;
+    const cy = 100;
+    const r = 80;
+    const grosor = 22;
+    const porcentaje = meta > 0 ? (valorActual / meta) * 100 : 0;
+    const clamped = Math.max(0, Math.min(100, porcentaje));
+    const anguloAguja = -90 + (clamped / 100) * 180;
+
+    return (
+        <div className="flex flex-col items-center">
+            <svg viewBox="0 0 200 132" className="w-full max-w-[240px]">
+                {BANDAS_MEDIDOR.map((b) => (
+                    <path key={b.color} d={arcoBanda(cx, cy, r, b.desde, b.hasta)} stroke={b.color} strokeWidth={grosor} fill="none" />
+                ))}
+                <g style={{ transform: `rotate(${anguloAguja}deg)`, transformOrigin: `${cx}px ${cy}px`, transition: "transform 0.4s ease" }}>
+                    <polygon points={`${cx - 4},${cy} ${cx + 4},${cy} ${cx},${cy - r + grosor + 8}`} fill="oklch(0.32 0.02 250)" />
+                </g>
+                <circle cx={cx} cy={cy} r={9} fill="oklch(0.32 0.02 250)" />
+            </svg>
+            <div className="-mt-2 text-center">
+                <div className={`text-3xl font-bold ${cumple ? "text-brand" : "text-amber-600"}`}>{valorActual.toFixed(0)}</div>
+                <div className="text-xs text-muted-foreground">de {meta.toFixed(2)} meta · {mes}</div>
+                <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${cumple ? "bg-brand-soft text-brand" : "bg-amber-50 text-amber-700"}`}>
+                    {cumple ? "Cumple" : "Alerta"}
+                </div>
+            </div>
+        </div>
+    );
+}
 
 function DisponibilidadCard() {
     const [data, setData] = useState<IndicadorDisponibilidadCES>(INDICADOR_DISPONIBILIDAD_CES);
@@ -38,7 +90,6 @@ function DisponibilidadCard() {
     const filaMes = mes === "Todos" ? null : data.tendenciaMensual.find((f) => f.mes === mes);
     const meta = data.metaVigente ?? 0;
     const valorActual = filaMes?.valor ?? 0;
-    const porcentaje = meta > 0 ? Math.min(100, (valorActual / meta) * 100) : 0;
     const cumple = filaMes ? valorActual >= meta : null;
     const clientesDelMes = mes !== "Todos" ? data.detallePorMes[mes] ?? [] : [];
 
@@ -95,24 +146,8 @@ function DisponibilidadCard() {
                         <p className="mt-2 text-center text-xs text-muted-foreground">Julio–Diciembre aún no tienen medición registrada en el PDF de origen.</p>
                     </div>
                 ) : (
-                    <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,220px)_1fr]">
-                        <div>
-                            <div className="h-44">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ name: "disponibilidad", value: porcentaje, fill: cumple ? "oklch(0.62 0.17 152)" : "oklch(0.7 0.19 40)" }]} startAngle={90} endAngle={-270}>
-                                        <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-                                        <RadialBar background={{ fill: "oklch(0.94 0.01 220)" }} dataKey="value" cornerRadius={20} />
-                                    </RadialBarChart>
-                                </ResponsiveContainer>
-                            </div>
-                            <div className="-mt-24 text-center">
-                                <div className={`text-3xl font-bold ${cumple ? "text-brand" : "text-amber-600"}`}>{valorActual.toFixed(0)}</div>
-                                <div className="text-xs text-muted-foreground">de {meta.toFixed(2)} meta · {mes}</div>
-                                <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${cumple ? "bg-brand-soft text-brand" : "bg-amber-50 text-amber-700"}`}>
-                                    {cumple ? "Cumple" : "Alerta"}
-                                </div>
-                            </div>
-                        </div>
+                    <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,240px)_1fr]">
+                        <Medidor valorActual={valorActual} meta={meta} mes={mes} cumple={!!cumple} />
 
                         <div>
                             <h4 className="text-sm font-semibold">Análisis por cliente · {mes}</h4>
