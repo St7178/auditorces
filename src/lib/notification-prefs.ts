@@ -1,7 +1,7 @@
-export type NotifTipo = "contrato" | "riesgo" | "documento" | "hallazgo";
+export type NotifTipo = "contrato" | "riesgo" | "documento" | "hallazgo" | "insight";
 
 const STORAGE_KEY = "ces-notif-prefs";
-const DEFAULT_PREFS: Record<NotifTipo, boolean> = { contrato: true, riesgo: true, documento: true, hallazgo: true };
+const DEFAULT_PREFS: Record<NotifTipo, boolean> = { contrato: true, riesgo: true, documento: true, hallazgo: true, insight: true };
 export const PREFS_CHANGED_EVENT = "ces-notif-prefs-changed";
 
 export function getNotifPrefs(): Record<NotifTipo, boolean> {

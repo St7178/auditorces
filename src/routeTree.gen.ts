@@ -26,6 +26,10 @@ import { Route as ApiChecklistClientesEstadoRouteImport } from './routes/api/che
 import { Route as ApiHallazgosRouteImport } from './routes/api/hallazgos'
 import { Route as ApiNotificacionesRouteImport } from './routes/api/notificaciones'
 import { Route as ApiWikiChatRouteImport } from './routes/api/wiki-chat'
+import { Route as AuthenticatedCulturaIndexRouteImport } from './routes/_authenticated/cultura/index'
+import { Route as AuthenticatedCulturaConceptosRouteImport } from './routes/_authenticated/cultura/conceptos'
+import { Route as AuthenticatedCulturaObjetivosRouteImport } from './routes/_authenticated/cultura/objetivos'
+import { Route as AuthenticatedCulturaPoliticasRouteImport } from './routes/_authenticated/cultura/politicas'
 import { Route as AuthenticatedProcesosIndexRouteImport } from './routes/_authenticated/procesos/index'
 import { Route as AuthenticatedProcesosVulnerabilidadesRouteImport } from './routes/_authenticated/procesos/vulnerabilidades'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
@@ -124,6 +128,30 @@ const ApiWikiChatRoute = ApiWikiChatRouteImport.update({
   path: '/api/wiki-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedCulturaIndexRoute =
+  AuthenticatedCulturaIndexRouteImport.update({
+    id: '/cultura/',
+    path: '/cultura/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCulturaConceptosRoute =
+  AuthenticatedCulturaConceptosRouteImport.update({
+    id: '/cultura/conceptos',
+    path: '/cultura/conceptos',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCulturaObjetivosRoute =
+  AuthenticatedCulturaObjetivosRouteImport.update({
+    id: '/cultura/objetivos',
+    path: '/cultura/objetivos',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCulturaPoliticasRoute =
+  AuthenticatedCulturaPoliticasRouteImport.update({
+    id: '/cultura/politicas',
+    path: '/cultura/politicas',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProcesosIndexRoute =
   AuthenticatedProcesosIndexRouteImport.update({
     id: '/procesos/',
@@ -190,6 +218,9 @@ export interface FileRoutesByFullPath {
   '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
+  '/cultura/conceptos': typeof AuthenticatedCulturaConceptosRoute
+  '/cultura/objetivos': typeof AuthenticatedCulturaObjetivosRoute
+  '/cultura/politicas': typeof AuthenticatedCulturaPoliticasRoute
   '/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -198,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
+  '/cultura/': typeof AuthenticatedCulturaIndexRoute
   '/procesos/': typeof AuthenticatedProcesosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -217,6 +249,9 @@ export interface FileRoutesByTo {
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/': typeof AuthenticatedIndexRoute
+  '/cultura/conceptos': typeof AuthenticatedCulturaConceptosRoute
+  '/cultura/objetivos': typeof AuthenticatedCulturaObjetivosRoute
+  '/cultura/politicas': typeof AuthenticatedCulturaPoliticasRoute
   '/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -225,6 +260,7 @@ export interface FileRoutesByTo {
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
+  '/cultura': typeof AuthenticatedCulturaIndexRoute
   '/procesos': typeof AuthenticatedProcesosIndexRoute
 }
 export interface FileRoutesById {
@@ -246,6 +282,9 @@ export interface FileRoutesById {
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/cultura/conceptos': typeof AuthenticatedCulturaConceptosRoute
+  '/_authenticated/cultura/objetivos': typeof AuthenticatedCulturaObjetivosRoute
+  '/_authenticated/cultura/politicas': typeof AuthenticatedCulturaPoliticasRoute
   '/_authenticated/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -254,6 +293,7 @@ export interface FileRoutesById {
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
+  '/_authenticated/cultura/': typeof AuthenticatedCulturaIndexRoute
   '/_authenticated/procesos/': typeof AuthenticatedProcesosIndexRoute
 }
 export interface FileRouteTypes {
@@ -275,6 +315,9 @@ export interface FileRouteTypes {
     | '/api/hallazgos'
     | '/api/notificaciones'
     | '/api/wiki-chat'
+    | '/cultura/conceptos'
+    | '/cultura/objetivos'
+    | '/cultura/politicas'
     | '/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
@@ -283,6 +326,7 @@ export interface FileRouteTypes {
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/riesgos'
+    | '/cultura/'
     | '/procesos/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -302,6 +346,9 @@ export interface FileRouteTypes {
     | '/api/notificaciones'
     | '/api/wiki-chat'
     | '/'
+    | '/cultura/conceptos'
+    | '/cultura/objetivos'
+    | '/cultura/politicas'
     | '/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
@@ -310,6 +357,7 @@ export interface FileRouteTypes {
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/riesgos'
+    | '/cultura'
     | '/procesos'
   id:
     | '__root__'
@@ -330,6 +378,9 @@ export interface FileRouteTypes {
     | '/api/notificaciones'
     | '/api/wiki-chat'
     | '/_authenticated/'
+    | '/_authenticated/cultura/conceptos'
+    | '/_authenticated/cultura/objetivos'
+    | '/_authenticated/cultura/politicas'
     | '/_authenticated/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
@@ -338,6 +389,7 @@ export interface FileRouteTypes {
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/riesgos'
+    | '/_authenticated/cultura/'
     | '/_authenticated/procesos/'
   fileRoutesById: FileRoutesById
 }
@@ -479,6 +531,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWikiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/cultura/': {
+      id: '/_authenticated/cultura/'
+      path: '/cultura'
+      fullPath: '/cultura/'
+      preLoaderRoute: typeof AuthenticatedCulturaIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/cultura/conceptos': {
+      id: '/_authenticated/cultura/conceptos'
+      path: '/cultura/conceptos'
+      fullPath: '/cultura/conceptos'
+      preLoaderRoute: typeof AuthenticatedCulturaConceptosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/cultura/objetivos': {
+      id: '/_authenticated/cultura/objetivos'
+      path: '/cultura/objetivos'
+      fullPath: '/cultura/objetivos'
+      preLoaderRoute: typeof AuthenticatedCulturaObjetivosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/cultura/politicas': {
+      id: '/_authenticated/cultura/politicas'
+      path: '/cultura/politicas'
+      fullPath: '/cultura/politicas'
+      preLoaderRoute: typeof AuthenticatedCulturaPoliticasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/procesos/': {
       id: '/_authenticated/procesos/'
       path: '/procesos'
@@ -556,7 +636,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProveedoresRoute: typeof AuthenticatedProveedoresRoute
   AuthenticatedRiesgosRoute: typeof AuthenticatedRiesgosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedCulturaConceptosRoute: typeof AuthenticatedCulturaConceptosRoute
+  AuthenticatedCulturaObjetivosRoute: typeof AuthenticatedCulturaObjetivosRoute
+  AuthenticatedCulturaPoliticasRoute: typeof AuthenticatedCulturaPoliticasRoute
   AuthenticatedProcesosVulnerabilidadesRoute: typeof AuthenticatedProcesosVulnerabilidadesRoute
+  AuthenticatedCulturaIndexRoute: typeof AuthenticatedCulturaIndexRoute
   AuthenticatedProcesosIndexRoute: typeof AuthenticatedProcesosIndexRoute
 }
 
@@ -571,8 +655,12 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProveedoresRoute: AuthenticatedProveedoresRoute,
   AuthenticatedRiesgosRoute: AuthenticatedRiesgosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedCulturaConceptosRoute: AuthenticatedCulturaConceptosRoute,
+  AuthenticatedCulturaObjetivosRoute: AuthenticatedCulturaObjetivosRoute,
+  AuthenticatedCulturaPoliticasRoute: AuthenticatedCulturaPoliticasRoute,
   AuthenticatedProcesosVulnerabilidadesRoute:
     AuthenticatedProcesosVulnerabilidadesRoute,
+  AuthenticatedCulturaIndexRoute: AuthenticatedCulturaIndexRoute,
   AuthenticatedProcesosIndexRoute: AuthenticatedProcesosIndexRoute,
 }
 

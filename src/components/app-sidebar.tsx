@@ -13,6 +13,7 @@ import {
     MessagesSquare,
     Settings,
     ChevronRight,
+    Landmark,
 } from "lucide-react";
 import {
     Sidebar,
@@ -61,6 +62,14 @@ const nav: { section: string; items: NavItem[] }[] = [
     },
     {
         section: "📚 Conocimiento", items: [
+            {
+                title: "Cultura SIG", url: "/cultura", icon: Landmark,
+                children: [
+                    { title: "📜 Políticas", url: "/cultura/politicas" },
+                    { title: "🎯 Objetivos", url: "/cultura/objetivos" },
+                    { title: "📖 Conceptos", url: "/cultura/conceptos" },
+                ],
+            },
             { title: "Wiki CES", url: "/chat", icon: MessagesSquare },
             { title: "Cronograma", url: "/cronograma", icon: Calendar },
         ]

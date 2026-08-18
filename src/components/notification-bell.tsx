@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, AlertTriangle, FileText, ShieldAlert, ClipboardList } from "lucide-react";
+import { Bell, AlertTriangle, FileText, ShieldAlert, ClipboardList, Lightbulb } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -16,6 +16,7 @@ const TIPO_ICON: Record<Notificacion["tipo"], typeof Bell> = {
     riesgo: ShieldAlert,
     documento: FileText,
     hallazgo: ClipboardList,
+    insight: Lightbulb,
 };
 
 const NIVEL_DOT: Record<Notificacion["nivel"], string> = {

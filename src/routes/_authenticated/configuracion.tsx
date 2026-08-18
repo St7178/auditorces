@@ -17,6 +17,7 @@ const NOTIF_ROWS: { tipo: NotifTipo; label: string; desc: string }[] = [
     { tipo: "riesgo", label: "Riesgos", desc: "Riesgos residuales Altos o Críticos" },
     { tipo: "documento", label: "Documentos", desc: "Documentos que requieren revisión" },
     { tipo: "hallazgo", label: "Hallazgos", desc: "Hallazgos de auditoría abiertos (CES AUDITOR)" },
+    { tipo: "insight", label: "Detección automática", desc: "El sistema detecta patrones por su cuenta (matriz sin actualizar, proveedores sin evaluar, indicadores a la baja, etc.)" },
 ];
 
 function initials(name: string) {
