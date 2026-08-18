@@ -25,6 +25,28 @@ function initials(name: string) {
     return name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase();
 }
 
+const PRESENCE_INFO: Record<string, { label: string; dot: string }> = {
+    Available: { label: "Disponible", dot: "bg-emerald-500" },
+    AvailableIdle: { label: "Disponible (inactivo)", dot: "bg-emerald-500" },
+    Busy: { label: "Ocupado", dot: "bg-red-500" },
+    BusyIdle: { label: "Ocupado (inactivo)", dot: "bg-red-500" },
+    DoNotDisturb: { label: "No molestar", dot: "bg-red-600" },
+    BeRightBack: { label: "Vuelvo enseguida", dot: "bg-amber-500" },
+    Away: { label: "Ausente", dot: "bg-amber-400" },
+    Offline: { label: "Sin conexión", dot: "bg-muted-foreground/50" },
+};
+
+function PresenceDot({ availability }: { availability?: string | null }) {
+    const info = availability ? PRESENCE_INFO[availability] : undefined;
+    if (!info) return null;
+    return (
+        <span
+            title={info.label}
+            className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card ${info.dot}`}
+        />
+    );
+}
+
 // Sin quitar tildes, "Andrés Cano" (roster) y "Andres Cano" (displayName real en Entra) no
 // calzaban y el cruce fallaba en silencio — quedaba mostrando el cargo/foto de respaldo.
 function normalizeName(name: string) {
@@ -89,6 +111,7 @@ function EquipoPage() {
             cargo: match?.jobTitle ?? m.cargo,
             mail: match?.mail ?? match?.userPrincipalName ?? null,
             photoUrl: match?.photoUrl ?? null,
+            availability: match?.availability ?? null,
             enDirectorio: Boolean(match),
         };
     });
@@ -129,16 +152,22 @@ function EquipoPage() {
                 {equipo.map((m) => {
                     const clientes = clientesDe(m);
                     return (
-                        <Card key={m.id} className="group overflow-hidden border-border/60 transition hover:shadow-lg">
-                            <div className="h-20 bg-gradient-to-br from-brand/80 to-[oklch(0.5_0.14_240)]" style={{ filter: `hue-rotate(${parseInt(m.color) - 152}deg)` }} />
-                            <CardContent className="-mt-10 p-5">
-                                <Avatar className="h-16 w-16 rounded-2xl border-4 border-card shadow-lg">
-                                    <AvatarImage src={m.photoUrl ?? undefined} alt={m.nombre} className="object-cover" />
-                                    <AvatarFallback className="rounded-2xl bg-card text-lg font-bold text-brand">{initials(m.nombre)}</AvatarFallback>
-                                </Avatar>
-                                <div className="mt-3 text-base font-semibold">{m.nombre}</div>
-                                <div className="text-xs text-muted-foreground">{m.cargo}</div>
-                                <div className="mt-1 text-xs text-muted-foreground">{m.mail ?? "Correo no disponible"}</div>
+                        <Card key={m.id} className="border-border/60 transition hover:shadow-lg">
+                            <CardContent className="p-5">
+                                <div className="flex items-start gap-3">
+                                    <div className="relative shrink-0">
+                                        <Avatar className="h-14 w-14 rounded-2xl ring-2 ring-offset-2 ring-offset-card" style={{ "--tw-ring-color": `oklch(0.65 0.14 ${m.color})` } as React.CSSProperties}>
+                                            <AvatarImage src={m.photoUrl ?? undefined} alt={m.nombre} className="object-cover" />
+                                            <AvatarFallback className="rounded-2xl bg-brand-soft text-base font-bold text-brand">{initials(m.nombre)}</AvatarFallback>
+                                        </Avatar>
+                                        <PresenceDot availability={m.availability} />
+                                    </div>
+                                    <div className="min-w-0 flex-1 pt-0.5">
+                                        <div className="truncate text-base font-semibold">{m.nombre}</div>
+                                        <div className="truncate text-xs text-muted-foreground">{m.cargo}</div>
+                                    </div>
+                                </div>
+                                <div className="mt-3 text-xs text-muted-foreground">{m.mail ?? "Correo no disponible"}</div>
 
                                 <div className="mt-3 text-[11px] font-semibold text-foreground">{clientes.length} cliente{clientes.length === 1 ? "" : "s"} asignado{clientes.length === 1 ? "" : "s"}</div>
                                 <ClientesTable clientes={clientes} />
@@ -157,16 +186,22 @@ function EquipoPage() {
                 })}
 
                 {entraOnly.map((u) => (
-                    <Card key={u.id} className="group overflow-hidden border-dashed border-border/60 transition hover:shadow-lg">
-                        <div className="h-20 bg-gradient-to-br from-muted to-muted/50" />
-                        <CardContent className="-mt-10 p-5">
-                            <Avatar className="h-16 w-16 rounded-2xl border-4 border-card shadow-lg">
-                                <AvatarImage src={u.photoUrl ?? undefined} alt={u.displayName} className="object-cover" />
-                                <AvatarFallback className="rounded-2xl bg-card text-lg font-bold text-muted-foreground">{initials(u.displayName)}</AvatarFallback>
-                            </Avatar>
-                            <div className="mt-3 text-base font-semibold">{u.displayName}</div>
-                            <div className="text-xs text-muted-foreground">{u.jobTitle}</div>
-                            <div className="mt-1 text-xs text-muted-foreground">{u.mail ?? u.userPrincipalName ?? "Correo no disponible"}</div>
+                    <Card key={u.id} className="border-dashed border-border/60 transition hover:shadow-lg">
+                        <CardContent className="p-5">
+                            <div className="flex items-start gap-3">
+                                <div className="relative shrink-0">
+                                    <Avatar className="h-14 w-14 rounded-2xl">
+                                        <AvatarImage src={u.photoUrl ?? undefined} alt={u.displayName} className="object-cover" />
+                                        <AvatarFallback className="rounded-2xl bg-muted text-base font-bold text-muted-foreground">{initials(u.displayName)}</AvatarFallback>
+                                    </Avatar>
+                                    <PresenceDot availability={u.availability} />
+                                </div>
+                                <div className="min-w-0 flex-1 pt-0.5">
+                                    <div className="truncate text-base font-semibold">{u.displayName}</div>
+                                    <div className="truncate text-xs text-muted-foreground">{u.jobTitle}</div>
+                                </div>
+                            </div>
+                            <div className="mt-3 text-xs text-muted-foreground">{u.mail ?? u.userPrincipalName ?? "Correo no disponible"}</div>
                             <div className="mt-3 text-[11px] font-semibold text-foreground">0 clientes asignados</div>
                             <div className="mt-4 flex gap-2">
                                 <a href={`mailto:${u.mail ?? u.userPrincipalName}`} className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent">
