@@ -1,40 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
+import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
 import { CLIENTES } from "@/lib/ces-data";
 import { clasificarContrato, resumenContratos } from "@/lib/contratos";
-import { Building2, Calendar, AlertTriangle, ClipboardList, ArrowUpRight } from "lucide-react";
+import { Building2, AlertTriangle, ClipboardList, ArrowUpRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/clientes/")({
     component: ClientesPage,
     head: () => ({ meta: [{ title: "Clientes — CES SIG" }] }),
 });
 
-const CLIENTE_LOGO: Record<string, string> = {
-    "CONCONCRETO": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Concocreto.png",
-    "GRUPO RECORDAR": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Grupo%20Recordar.png",
-    "INCOLMOTOS": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Incolmotos.png",
-    "INDUPALMA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/LOGO_INDUPALMA.png",
-    "INGENIO CARMELITA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/carmelita.png",
-    "INGENIO RISARALDA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/INGENIORISARALDALOGO.png",
-    "LEVAPAN": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/LevapanLogo.png",
-    "NUTRESA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/NUTRESALOGO.png",
-    "PROTELA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/PROTELA.png",
-    "SURTIALIMENTOS": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/SURTIALIAMENTOSLOGO.png",
-};
-
-function clienteLogo(nombre: string) {
-    return CLIENTE_LOGO[String(nombre || "").trim().toUpperCase()];
-}
-
-function estadoTone(e: string) {
-    if (e === "Vencido") return "bg-red-100 text-red-700";
-    if (e === "Próximo a vencer") return "bg-amber-100 text-amber-700";
-    if (e === "En renovación") return "bg-amber-100 text-amber-700";
-    if (e === "Vigente") return "bg-brand-soft text-brand";
-    return "bg-secondary text-secondary-foreground";
+// Cara de cada tarjeta del carrusel: sin logos/fotos, solo el fondo oscuro/claro que alterna por
+// tarjeta más un ícono y el badge de estado — el detalle real (responsable, servicios, contratos)
+// vive en el panel de abajo (showCaption), que se actualiza con la tarjeta que quede al centro.
+function ClienteFace({ nombre, badgeLabel, light }: { nombre: string; badgeLabel: string; light: boolean }) {
+    const chip = light ? "bg-slate-900/8" : "bg-white/12";
+    return (
+        <div className="flex flex-col items-center justify-center gap-3 text-center">
+            <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${chip}`}>
+                <Building2 className="h-7 w-7" />
+            </div>
+            <div className="px-2 text-base font-semibold leading-tight">{nombre}</div>
+            <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${chip}`}>{badgeLabel}</span>
+        </div>
+    );
 }
 
 function ClientesPage() {
@@ -67,6 +57,32 @@ function ClientesPage() {
             .map((c) => c.id),
     );
 
+    const slides: CoverflowSlide[] = clientes.map((c, i) => {
+        const todoVencido = clientesConTodoVencido.has(c.id);
+        const algunVencido = clientesConAlgunContratoVencido.has(c.id) && !todoVencido;
+        const badgeLabel = todoVencido ? "Contratos vencidos" : c.estado;
+        const light = i % 2 === 0;
+        const tone: CoverflowSlide["tone"] = todoVencido ? "danger" : light ? "light" : "dark";
+
+        const meta: { label: string; value: string }[] = [
+            { label: "Responsable", value: c.responsable },
+            { label: "Estado", value: badgeLabel },
+        ];
+        if (algunVencido) meta.push({ label: "⚠ Atención", value: "Tiene contrato(s) vencido(s)" });
+        if (c.servicios?.length) meta.push({ label: "Servicios", value: c.servicios.join(", ") });
+        for (const ct of c.contratos ?? []) {
+            meta.push({ label: ct.id, value: `${ct.estado} · ${ct.inicio} → ${ct.fin}` });
+        }
+
+        return {
+            face: <ClienteFace nombre={c.nombre} badgeLabel={badgeLabel} light={light && !todoVencido} />,
+            tone,
+            title: c.nombre,
+            subtitle: `Responsable · ${c.responsable}`,
+            meta,
+        };
+    });
+
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader
@@ -94,75 +110,15 @@ function ClientesPage() {
             )}
 
             <h2 className="mt-10 text-lg font-semibold">Clientes</h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {clientes.map((c) => {
-                    const logo = clienteLogo(c.nombre);
-                    const todoVencido = clientesConTodoVencido.has(c.id);
-                    const algunVencido = clientesConAlgunContratoVencido.has(c.id) && !todoVencido;
-                    return (
-                    <Card key={c.id} className={`transition hover:shadow-lg ${todoVencido || algunVencido ? "border-red-300/70" : "border-border/60"}`}>
-                        <CardContent className="p-5">
-                            <div className="flex items-start justify-between">
-                                {logo ? (
-                                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border bg-white p-1.5">
-                                        <img src={logo} alt={c.nombre} className="h-full w-full object-contain" />
-                                    </div>
-                                ) : (
-                                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-[oklch(0.5_0.14_240)] text-white">
-                                        <Building2 className="h-5 w-5" />
-                                    </div>
-                                )}
-                                {todoVencido ? (
-                                    <Badge className="bg-red-100 text-red-700">Contratos vencidos</Badge>
-                                ) : (
-                                    <Badge className={c.estado === "Activo" ? "bg-brand-soft text-brand" : "bg-amber-50 text-amber-700"}>{c.estado}</Badge>
-                                )}
-                            </div>
-
-                            {algunVencido && (
-                                <div className="mt-3 flex items-center gap-1.5 rounded-md bg-red-50 px-2.5 py-1.5 text-[11px] font-medium text-red-700">
-                                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Figura "Activo" pero tiene contrato(s) vencido(s)
-                                </div>
-                            )}
-
-                            <div className="mt-4 text-base font-semibold">{c.nombre}</div>
-                            <div className="mt-0.5 text-xs text-muted-foreground">Responsable · {c.responsable}</div>
-
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                                {c.servicios.map((s: string) => (
-                                    <span key={s} className="rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{s}</span>
-                                ))}
-                            </div>
-
-                            {c.contratos && c.contratos.length > 0 && (
-                                <div className="mt-4 border-t pt-4">
-                                    <div className="text-xs font-semibold text-muted-foreground mb-2">Contratos ({c.contratos.length})</div>
-                                    <div className="space-y-2">
-                                        {c.contratos.map((ct: any) => (
-                                            <div key={ct.id} className="rounded-md bg-muted/50 p-2.5 text-xs">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <span className="font-mono text-[10px] text-muted-foreground">{ct.id}</span>
-                                                    <Badge className={estadoTone(ct.estado)} style={{ fontSize: "10px", padding: "2px 6px" }}>
-                                                        {ct.estado}
-                                                    </Badge>
-                                                </div>
-                                                <div className="flex items-center gap-4 text-muted-foreground">
-                                                    <div className="flex items-center gap-1">
-                                                        <Calendar className="h-3 w-3" />
-                                                        <span>{ct.inicio}</span>
-                                                    </div>
-                                                    <span>→</span>
-                                                    <span>{ct.fin}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                    );
-                })}
+            <p className="mt-1 text-sm text-muted-foreground">Arrastra o usa las flechas para recorrerlos — el panel de abajo muestra el detalle del que quede al centro.</p>
+            <div className="mt-2">
+                <CoverflowCarousel
+                    slides={slides}
+                    showCaption
+                    showPagination
+                    showNavigation
+                    label="Clientes CES"
+                />
             </div>
         </div>
     );
