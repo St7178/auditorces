@@ -1,16 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
     ShieldAlert, FileText, Truck, Gauge,
-    Sparkles, ArrowUpRight, TrendingUp, Video,
+    Sparkles, ArrowUpRight, TrendingUp,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RECOMENDACIONES_IA, INDICADORES, INDICADORES_REALES } from "@/lib/ces-data";
-import { getMisReuniones } from "@/lib/calendar.functions";
-import type { CalendarEvent } from "@/lib/auth/entra";
+import { INDICADORES_REALES, type IndicadorDisponibilidadCES } from "@/lib/ces-data";
 import {
     ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
     RadialBarChart, RadialBar, PolarAngleAxis,
@@ -28,6 +26,10 @@ type Hallazgo = {
     creadoEn: string;
 };
 
+type ClienteConContratos = { nombre: string; contratos?: Array<{ fin: string; estado: string }> };
+type RiesgoReal = { id: string; descripcion?: string; porcentajeMitigacion?: number; nivelResidual?: { severidad?: string } };
+type Recomendacion = { titulo: string; texto: string; nivel: "alta" | "media" | "baja" };
+
 function nivelTone(n: string | null) {
     if (n === "Crítico") return "bg-red-100 text-red-700";
     if (n === "Alto") return "bg-orange-100 text-orange-700";
@@ -35,17 +37,42 @@ function nivelTone(n: string | null) {
     return "bg-brand-soft text-brand";
 }
 
+// Todas nacen de datos reales ya sincronizados — nada de texto de ejemplo. Un contrato "Próximo a
+// vencer" o un riesgo con mitigación baja son señales reales; si no hay ninguna, no se inventa nada.
+function construirRecomendaciones(clientes: ClienteConContratos[] | null, riesgos: RiesgoReal[] | null, indicador: IndicadorDisponibilidadCES | null): Recomendacion[] {
+    const rec: Recomendacion[] = [];
+
+    for (const c of clientes ?? []) {
+        for (const ct of c.contratos ?? []) {
+            if (ct.estado === "Próximo a vencer") {
+                rec.push({ titulo: `Contrato de ${c.nombre} próximo a vencer`, texto: `Vence el ${ct.fin}.`, nivel: "alta" });
+            }
+        }
+    }
+
+    for (const r of riesgos ?? []) {
+        if (typeof r.porcentajeMitigacion === "number" && r.porcentajeMitigacion < 0.7) {
+            const severidad = r.nivelResidual?.severidad;
+            rec.push({
+                titulo: `Riesgo con mitigación baja (${Math.round(r.porcentajeMitigacion * 100)}%)`,
+                texto: r.descripcion ?? r.id,
+                nivel: severidad === "Alto" || severidad === "Catastrófico" ? "alta" : "media",
+            });
+        }
+    }
+
+    if (indicador) {
+        const medido = [...indicador.tendenciaMensual].reverse().find((f) => f.valor > 0);
+        if (medido && medido.valor < medido.meta) {
+            rec.push({ titulo: `${indicador.nombre} por debajo de meta`, texto: `${medido.mes}: ${medido.valor} vs. meta ${medido.meta}.`, nivel: "alta" });
+        }
+    }
+
+    return rec;
+}
+
 export const Route = createFileRoute("/_authenticated/")({
     component: Dashboard,
-    loader: async (): Promise<{ eventos: CalendarEvent[]; eventosError: string | null }> => {
-        try {
-            return { eventos: await getMisReuniones(), eventosError: null };
-        } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            console.error("No se pudo cargar el calendario desde Microsoft Graph:", err);
-            return { eventos: [], eventosError: message };
-        }
-    },
     head: () => ({
         meta: [
             { title: "Dashboard — CES SIG" },
@@ -61,12 +88,12 @@ const cumplimientoData = [
 
 function Dashboard() {
     const { user } = AuthenticatedRoute.useRouteContext();
-    const { eventos, eventosError } = Route.useLoaderData();
     const firstName = user?.name?.split(" ")[0] ?? "Usuario";
     const [hallazgos, setHallazgos] = useState<Hallazgo[] | null>(null);
-    const [riesgosTotal, setRiesgosTotal] = useState<number | null>(null);
-    const [contratos, setContratos] = useState<{ total: number; porVencer: number } | null>(null);
+    const [clientes, setClientes] = useState<ClienteConContratos[] | null>(null);
+    const [riesgos, setRiesgos] = useState<RiesgoReal[] | null>(null);
     const [proveedoresTotal, setProveedoresTotal] = useState<number | null>(null);
+    const [indicadorDisp, setIndicadorDisp] = useState<IndicadorDisponibilidadCES | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -80,17 +107,13 @@ function Dashboard() {
         // /clientes) — no hay una fuente aparte para "contratos", se derivan de ahí.
         fetch("/api/sync/clientes")
             .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
-            .then((data: Array<{ contratos?: Array<{ estado: string }> }>) => {
-                if (!mounted) return;
-                const todos = data.flatMap((c) => c.contratos ?? []);
-                setContratos({ total: todos.length, porVencer: todos.filter((ct) => ct.estado === "Próximo a vencer").length });
-            })
+            .then((data: ClienteConContratos[]) => mounted && setClientes(data))
             .catch(() => {
                 /* sin fuente real disponible: la tarjeta de Contratos queda en "—" */
             });
         fetch("/api/sync/riesgos")
             .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
-            .then((data: unknown[]) => mounted && setRiesgosTotal(data.length))
+            .then((data: RiesgoReal[]) => mounted && setRiesgos(data))
             .catch(() => {
                 /* sin fuente real disponible: la tarjeta de Riesgos queda en "—" */
             });
@@ -100,20 +123,31 @@ function Dashboard() {
             .catch(() => {
                 /* sin fuente real disponible: la tarjeta de Proveedores queda en "—" */
             });
+        fetch("/api/sync/indicador-disponibilidad")
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+            .then((data: IndicadorDisponibilidadCES) => mounted && setIndicadorDisp(data))
+            .catch(() => {
+                /* sin fuente real disponible: no entra en las recomendaciones */
+            });
         return () => {
             mounted = false;
         };
     }, []);
 
+    const contratosTodos = clientes?.flatMap((c) => c.contratos ?? []) ?? null;
+    const contratosPorVencer = contratosTodos?.filter((ct) => ct.estado === "Próximo a vencer").length ?? 0;
+
     // Las 4 tarjetas principales solo muestran cifras con una fuente real detrás — nada de valores
     // de ejemplo. "Indicadores" cuenta los indicadores con sync real conectado (ver INDICADORES_REALES
     // en ces-data.ts), no los de demostración que aún se ven en /indicadores.
     const kpis = [
-        { label: "Riesgos", icon: ShieldAlert, tone: "warning" as const, value: riesgosTotal, sub: null as string | null },
+        { label: "Riesgos", icon: ShieldAlert, tone: "warning" as const, value: riesgos?.length ?? null, sub: null as string | null },
         { label: "Indicadores", icon: Gauge, tone: "brand" as const, value: INDICADORES_REALES.length, sub: null },
-        { label: "Contratos", icon: FileText, tone: "brand" as const, value: contratos?.total ?? null, sub: contratos ? `${contratos.porVencer} próximo${contratos.porVencer === 1 ? "" : "s"} a vencer` : null },
+        { label: "Contratos", icon: FileText, tone: "brand" as const, value: contratosTodos?.length ?? null, sub: contratosTodos ? `${contratosPorVencer} próximo${contratosPorVencer === 1 ? "" : "s"} a vencer` : null },
         { label: "Proveedores", icon: Truck, tone: "muted" as const, value: proveedoresTotal, sub: null },
     ];
+
+    const recomendaciones = construirRecomendaciones(clientes, riesgos, indicadorDisp);
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -212,9 +246,9 @@ function Dashboard() {
                 </Card>
             </section>
 
-            {/* IA + Cronograma */}
-            <section className="mt-8 grid gap-4 lg:grid-cols-3">
-                <Card className="lg:col-span-2 border-border/60">
+            {/* Recomendaciones */}
+            <section className="mt-8">
+                <Card className="border-border/60">
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -222,14 +256,17 @@ function Dashboard() {
                                     <Sparkles className="h-4 w-4" />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-semibold">Recomendaciones de CES AUDITOR</h2>
-                                    <p className="text-xs text-muted-foreground">Análisis inteligente del estado del área</p>
+                                    <h2 className="text-lg font-semibold">Recomendaciones del área CES</h2>
+                                    <p className="text-xs text-muted-foreground">Señales reales de contratos, riesgos e indicadores sincronizados</p>
                                 </div>
                             </div>
-                            <Button asChild variant="ghost" size="sm"><Link to="/guardian">Abrir <ArrowUpRight className="ml-1 h-3 w-3" /></Link></Button>
+                            <Button asChild variant="ghost" size="sm"><Link to="/guardian">Abrir CES AUDITOR <ArrowUpRight className="ml-1 h-3 w-3" /></Link></Button>
                         </div>
                         <div className="mt-4 space-y-3">
-                            {RECOMENDACIONES_IA.map((r) => (
+                            {recomendaciones.length === 0 && (
+                                <div className="text-sm text-muted-foreground">Sin alertas activas por ahora — contratos, riesgos e indicadores dentro de lo esperado.</div>
+                            )}
+                            {recomendaciones.map((r) => (
                                 <div key={r.titulo} className="flex gap-3 rounded-xl border bg-card p-4 transition hover:border-brand/40 hover:shadow-sm">
                                     <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${r.nivel === "alta" ? "bg-destructive" : r.nivel === "media" ? "bg-amber-500" : "bg-brand"}`} />
                                     <div className="min-w-0">
@@ -238,51 +275,6 @@ function Dashboard() {
                                     </div>
                                 </div>
                             ))}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-border/60">
-                    <CardContent className="p-6">
-                        <h2 className="text-lg font-semibold">Próximos eventos</h2>
-                        <p className="text-xs text-muted-foreground">Calendario de Outlook</p>
-                        <div className="mt-4 space-y-3">
-                            {eventosError && (
-                                <div className="text-xs text-muted-foreground">
-                                    No se pudo cargar tu calendario de Microsoft. Cierra sesión y vuelve a iniciarla para autorizar el acceso.
-                                </div>
-                            )}
-                            {!eventosError && eventos.length === 0 && (
-                                <div className="text-xs text-muted-foreground">No tienes reuniones en los próximos 14 días.</div>
-                            )}
-                            {eventos.slice(0, 5).map((e) => {
-                                const d = new Date(e.start);
-                                return (
-                                    <div key={e.id} className="flex gap-3 rounded-lg border p-3">
-                                        <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-brand-soft text-brand">
-                                            <div className="text-[10px] font-semibold uppercase">{d.toLocaleDateString("es", { month: "short" })}</div>
-                                            <div className="-mt-0.5 text-lg font-bold leading-none">{d.getDate()}</div>
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="truncate text-sm font-semibold">{e.subject}</div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {d.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
-                                                {e.organizer ? ` · ${e.organizer}` : ""}
-                                            </div>
-                                        </div>
-                                        {e.isOnlineMeeting && e.joinUrl && (
-                                            <a
-                                                href={e.joinUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex h-8 shrink-0 items-center gap-1.5 self-center rounded-lg border px-2 text-xs font-medium hover:bg-accent"
-                                            >
-                                                <Video className="h-3.5 w-3.5" />
-                                            </a>
-                                        )}
-                                    </div>
-                                );
-                            })}
                         </div>
                     </CardContent>
                 </Card>
@@ -318,47 +310,6 @@ function Dashboard() {
                     </div>
                 </section>
             )}
-
-            {/* Indicadores mini */}
-            <section className="mt-8">
-                <div className="mb-4 flex items-end justify-between">
-                    <div>
-                        <h2 className="text-lg font-semibold">Indicadores clave</h2>
-                        <p className="text-xs text-muted-foreground">Seguimiento operativo</p>
-                    </div>
-                    <Button asChild variant="ghost" size="sm"><Link to="/indicadores">Ver todos <ArrowUpRight className="ml-1 h-3 w-3" /></Link></Button>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {INDICADORES.slice(0, 6).map((i) => (
-                        <Card key={i.id} className="border-border/60">
-                            <CardContent className="p-5">
-                                <div className="flex items-start justify-between">
-                                    <div>
-                                        <div className="text-xs font-medium text-muted-foreground">{i.nombre}</div>
-                                        <div className="mt-1 text-2xl font-bold">{i.actual}<span className="text-sm font-normal text-muted-foreground">{i.unidad}</span></div>
-                                    </div>
-                                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${i.actual >= i.meta ? "bg-brand-soft text-brand" : "bg-amber-50 text-amber-700"}`}>
-                                        Meta {i.meta}{i.unidad}
-                                    </span>
-                                </div>
-                                <div className="mt-3 h-12">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={i.historico.map((v, idx) => ({ x: idx, v }))}>
-                                            <defs>
-                                                <linearGradient id={`sp${i.id}`} x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="0%" stopColor="oklch(0.62 0.17 152)" stopOpacity={0.5} />
-                                                    <stop offset="100%" stopColor="oklch(0.62 0.17 152)" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <Area type="monotone" dataKey="v" stroke="oklch(0.62 0.17 152)" strokeWidth={2} fill={`url(#sp${i.id})`} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            </section>
         </div>
     );
 }
