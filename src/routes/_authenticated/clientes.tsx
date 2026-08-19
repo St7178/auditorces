@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { PageHeader } from "@/components/page-header";
 import { CLIENTES, CHECKLIST_DOCUMENTACION_CLIENTES } from "@/lib/ces-data";
+import { clasificarContrato, resumenContratos } from "@/lib/contratos";
 import { Building2, Calendar, AlertTriangle, ClipboardCheck, ClipboardList } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -31,6 +32,7 @@ function clienteLogo(nombre: string) {
 }
 
 function estadoTone(e: string) {
+    if (e === "Vencido") return "bg-red-100 text-red-700";
     if (e === "Próximo a vencer") return "bg-amber-100 text-amber-700";
     if (e === "En renovación") return "bg-amber-100 text-amber-700";
     if (e === "Vigente") return "bg-brand-soft text-brand";
@@ -135,7 +137,13 @@ function ClientesPage() {
         });
     };
 
-    const contratosPorVencer = clientes.flatMap((c) => c.contratos || []).filter((ct) => ct.estado === "Próximo a vencer").length;
+    const resumen = resumenContratos(clientes.flatMap((c) => c.contratos || []));
+
+    // Un cliente "Activo" con al menos un contrato vencido es una inconsistencia real de datos que
+    // vale la pena señalar en la tarjeta, no solo en el detalle del contrato.
+    const clientesConContratoVencido = new Set(
+        clientes.filter((c) => c.estado === "Activo" && (c.contratos || []).some((ct) => clasificarContrato(ct) === "vencido")).map((c) => c.id),
+    );
 
     const todosLosItems = [...checklist.cliente, ...checklist.interna];
     const totalListos = todosLosItems.filter((it) => completados[it.id]).length;
@@ -145,12 +153,15 @@ function ClientesPage() {
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader eyebrow="Relacionamiento" title="Clientes" description="Clientes activos con contratos asociados gestionados por el equipo CES." />
 
-            {contratosPorVencer > 0 && (
+            {(resumen.proximos > 0 || resumen.vencidos > 0) && (
                 <div className="mt-6 flex gap-3 rounded-xl border border-amber-300/50 bg-amber-50 p-4">
                     <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
                     <div className="text-sm">
                         <div className="font-semibold text-amber-900">Alerta de contratos</div>
-                        <div className="text-amber-800">{contratosPorVencer} contrato(s) próximo(s) a vencer en los siguientes 60 días.</div>
+                        <div className="text-amber-800">
+                            {resumen.proximos > 0 && <>{resumen.proximos} contrato(s) próximo(s) a vencer en los siguientes 60 días. </>}
+                            {resumen.vencidos > 0 && <>{resumen.vencidos} contrato(s) ya vencido(s).</>}
+                        </div>
                     </div>
                 </div>
             )}
@@ -180,8 +191,9 @@ function ClientesPage() {
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {clientes.map((c) => {
                     const logo = clienteLogo(c.nombre);
+                    const contratoVencidoInconsistente = clientesConContratoVencido.has(c.id);
                     return (
-                    <Card key={c.id} className="border-border/60 transition hover:shadow-lg">
+                    <Card key={c.id} className={`transition hover:shadow-lg ${contratoVencidoInconsistente ? "border-red-300/70" : "border-border/60"}`}>
                         <CardContent className="p-5">
                             <div className="flex items-start justify-between">
                                 {logo ? (
@@ -195,7 +207,13 @@ function ClientesPage() {
                                 )}
                                 <Badge className={c.estado === "Activo" ? "bg-brand-soft text-brand" : "bg-amber-50 text-amber-700"}>{c.estado}</Badge>
                             </div>
-                            
+
+                            {contratoVencidoInconsistente && (
+                                <div className="mt-3 flex items-center gap-1.5 rounded-md bg-red-50 px-2.5 py-1.5 text-[11px] font-medium text-red-700">
+                                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Figura "Activo" pero tiene contrato(s) vencido(s)
+                                </div>
+                            )}
+
                             <div className="mt-4 text-base font-semibold">{c.nombre}</div>
                             <div className="mt-0.5 text-xs text-muted-foreground">Responsable · {c.responsable}</div>
                             
