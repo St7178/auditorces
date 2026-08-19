@@ -45,7 +45,10 @@ const nav: { section: string; items: NavItem[] }[] = [
     {
         section: "🏠 Inicio", items: [
             { title: "Dashboard", url: "/", icon: LayoutDashboard },
-            { title: "CES AUDITOR", url: "/guardian", icon: Sparkles, highlight: true },
+            {
+                title: "CES AUDITOR", url: "/guardian", icon: Sparkles, highlight: true,
+                children: [{ title: "Hallazgos de Auditoría", url: "/guardian/hallazgos" }],
+            },
         ]
     },
     {
@@ -57,7 +60,10 @@ const nav: { section: string; items: NavItem[] }[] = [
             },
             { title: "Riesgos CES", url: "/riesgos", icon: ShieldAlert },
             { title: "Indicadores CES", url: "/indicadores", icon: Gauge },
-            { title: "Clientes CES", url: "/clientes", icon: Building2 },
+            {
+                title: "Clientes CES", url: "/clientes", icon: Building2,
+                children: [{ title: "Documentación", url: "/clientes/documentacion" }],
+            },
             { title: "Proveedores CES", url: "/proveedores", icon: Truck },
         ]
     },

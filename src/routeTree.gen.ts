@@ -13,11 +13,9 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
-import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedConfiguracionRouteImport } from './routes/_authenticated/configuracion'
 import { Route as AuthenticatedCronogramaRouteImport } from './routes/_authenticated/cronograma'
 import { Route as AuthenticatedEquipoRouteImport } from './routes/_authenticated/equipo'
-import { Route as AuthenticatedGuardianRouteImport } from './routes/_authenticated/guardian'
 import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
 import { Route as AuthenticatedProveedoresRouteImport } from './routes/_authenticated/proveedores'
 import { Route as AuthenticatedRiesgosRouteImport } from './routes/_authenticated/riesgos'
@@ -26,10 +24,14 @@ import { Route as ApiChecklistClientesEstadoRouteImport } from './routes/api/che
 import { Route as ApiHallazgosRouteImport } from './routes/api/hallazgos'
 import { Route as ApiNotificacionesRouteImport } from './routes/api/notificaciones'
 import { Route as ApiWikiChatRouteImport } from './routes/api/wiki-chat'
+import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes/index'
+import { Route as AuthenticatedClientesDocumentacionRouteImport } from './routes/_authenticated/clientes/documentacion'
 import { Route as AuthenticatedCulturaIndexRouteImport } from './routes/_authenticated/cultura/index'
 import { Route as AuthenticatedCulturaConceptosRouteImport } from './routes/_authenticated/cultura/conceptos'
 import { Route as AuthenticatedCulturaObjetivosRouteImport } from './routes/_authenticated/cultura/objetivos'
 import { Route as AuthenticatedCulturaPoliticasRouteImport } from './routes/_authenticated/cultura/politicas'
+import { Route as AuthenticatedGuardianIndexRouteImport } from './routes/_authenticated/guardian/index'
+import { Route as AuthenticatedGuardianHallazgosRouteImport } from './routes/_authenticated/guardian/hallazgos'
 import { Route as AuthenticatedProcesosIndexRouteImport } from './routes/_authenticated/procesos/index'
 import { Route as AuthenticatedProcesosVulnerabilidadesRouteImport } from './routes/_authenticated/procesos/vulnerabilidades'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
@@ -62,11 +64,6 @@ const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedConfiguracionRoute =
   AuthenticatedConfiguracionRouteImport.update({
     id: '/configuracion',
@@ -81,11 +78,6 @@ const AuthenticatedCronogramaRoute = AuthenticatedCronogramaRouteImport.update({
 const AuthenticatedEquipoRoute = AuthenticatedEquipoRouteImport.update({
   id: '/equipo',
   path: '/equipo',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedGuardianRoute = AuthenticatedGuardianRouteImport.update({
-  id: '/guardian',
-  path: '/guardian',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedIndicadoresRoute =
@@ -131,6 +123,18 @@ const ApiWikiChatRoute = ApiWikiChatRouteImport.update({
   path: '/api/wiki-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedClientesIndexRoute =
+  AuthenticatedClientesIndexRouteImport.update({
+    id: '/clientes/',
+    path: '/clientes/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedClientesDocumentacionRoute =
+  AuthenticatedClientesDocumentacionRouteImport.update({
+    id: '/clientes/documentacion',
+    path: '/clientes/documentacion',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCulturaIndexRoute =
   AuthenticatedCulturaIndexRouteImport.update({
     id: '/cultura/',
@@ -153,6 +157,18 @@ const AuthenticatedCulturaPoliticasRoute =
   AuthenticatedCulturaPoliticasRouteImport.update({
     id: '/cultura/politicas',
     path: '/cultura/politicas',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedGuardianIndexRoute =
+  AuthenticatedGuardianIndexRouteImport.update({
+    id: '/guardian/',
+    path: '/guardian/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedGuardianHallazgosRoute =
+  AuthenticatedGuardianHallazgosRouteImport.update({
+    id: '/guardian/hallazgos',
+    path: '/guardian/hallazgos',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedProcesosIndexRoute =
@@ -224,11 +240,9 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/chat': typeof AuthenticatedChatRoute
-  '/clientes': typeof AuthenticatedClientesRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
   '/cronograma': typeof AuthenticatedCronogramaRoute
   '/equipo': typeof AuthenticatedEquipoRoute
-  '/guardian': typeof AuthenticatedGuardianRoute
   '/indicadores': typeof AuthenticatedIndicadoresRoute
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
@@ -237,9 +251,11 @@ export interface FileRoutesByFullPath {
   '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
+  '/clientes/documentacion': typeof AuthenticatedClientesDocumentacionRoute
   '/cultura/conceptos': typeof AuthenticatedCulturaConceptosRoute
   '/cultura/objetivos': typeof AuthenticatedCulturaObjetivosRoute
   '/cultura/politicas': typeof AuthenticatedCulturaPoliticasRoute
+  '/guardian/hallazgos': typeof AuthenticatedGuardianHallazgosRoute
   '/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -251,17 +267,17 @@ export interface FileRoutesByFullPath {
   '/api/sync/indicador-disponibilidad': typeof ApiSyncIndicadorDisponibilidadRoute
   '/api/sync/proveedores': typeof ApiSyncProveedoresRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
+  '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/cultura/': typeof AuthenticatedCulturaIndexRoute
+  '/guardian/': typeof AuthenticatedGuardianIndexRoute
   '/procesos/': typeof AuthenticatedProcesosIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/chat': typeof AuthenticatedChatRoute
-  '/clientes': typeof AuthenticatedClientesRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
   '/cronograma': typeof AuthenticatedCronogramaRoute
   '/equipo': typeof AuthenticatedEquipoRoute
-  '/guardian': typeof AuthenticatedGuardianRoute
   '/indicadores': typeof AuthenticatedIndicadoresRoute
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
@@ -271,9 +287,11 @@ export interface FileRoutesByTo {
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/': typeof AuthenticatedIndexRoute
+  '/clientes/documentacion': typeof AuthenticatedClientesDocumentacionRoute
   '/cultura/conceptos': typeof AuthenticatedCulturaConceptosRoute
   '/cultura/objetivos': typeof AuthenticatedCulturaObjetivosRoute
   '/cultura/politicas': typeof AuthenticatedCulturaPoliticasRoute
+  '/guardian/hallazgos': typeof AuthenticatedGuardianHallazgosRoute
   '/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -285,7 +303,9 @@ export interface FileRoutesByTo {
   '/api/sync/indicador-disponibilidad': typeof ApiSyncIndicadorDisponibilidadRoute
   '/api/sync/proveedores': typeof ApiSyncProveedoresRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
+  '/clientes': typeof AuthenticatedClientesIndexRoute
   '/cultura': typeof AuthenticatedCulturaIndexRoute
+  '/guardian': typeof AuthenticatedGuardianIndexRoute
   '/procesos': typeof AuthenticatedProcesosIndexRoute
 }
 export interface FileRoutesById {
@@ -293,11 +313,9 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
-  '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/configuracion': typeof AuthenticatedConfiguracionRoute
   '/_authenticated/cronograma': typeof AuthenticatedCronogramaRoute
   '/_authenticated/equipo': typeof AuthenticatedEquipoRoute
-  '/_authenticated/guardian': typeof AuthenticatedGuardianRoute
   '/_authenticated/indicadores': typeof AuthenticatedIndicadoresRoute
   '/_authenticated/proveedores': typeof AuthenticatedProveedoresRoute
   '/_authenticated/riesgos': typeof AuthenticatedRiesgosRoute
@@ -307,9 +325,11 @@ export interface FileRoutesById {
   '/api/notificaciones': typeof ApiNotificacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/clientes/documentacion': typeof AuthenticatedClientesDocumentacionRoute
   '/_authenticated/cultura/conceptos': typeof AuthenticatedCulturaConceptosRoute
   '/_authenticated/cultura/objetivos': typeof AuthenticatedCulturaObjetivosRoute
   '/_authenticated/cultura/politicas': typeof AuthenticatedCulturaPoliticasRoute
+  '/_authenticated/guardian/hallazgos': typeof AuthenticatedGuardianHallazgosRoute
   '/_authenticated/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -321,7 +341,9 @@ export interface FileRoutesById {
   '/api/sync/indicador-disponibilidad': typeof ApiSyncIndicadorDisponibilidadRoute
   '/api/sync/proveedores': typeof ApiSyncProveedoresRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
+  '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/cultura/': typeof AuthenticatedCulturaIndexRoute
+  '/_authenticated/guardian/': typeof AuthenticatedGuardianIndexRoute
   '/_authenticated/procesos/': typeof AuthenticatedProcesosIndexRoute
 }
 export interface FileRouteTypes {
@@ -330,11 +352,9 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/chat'
-    | '/clientes'
     | '/configuracion'
     | '/cronograma'
     | '/equipo'
-    | '/guardian'
     | '/indicadores'
     | '/proveedores'
     | '/riesgos'
@@ -343,9 +363,11 @@ export interface FileRouteTypes {
     | '/api/hallazgos'
     | '/api/notificaciones'
     | '/api/wiki-chat'
+    | '/clientes/documentacion'
     | '/cultura/conceptos'
     | '/cultura/objetivos'
     | '/cultura/politicas'
+    | '/guardian/hallazgos'
     | '/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
@@ -357,17 +379,17 @@ export interface FileRouteTypes {
     | '/api/sync/indicador-disponibilidad'
     | '/api/sync/proveedores'
     | '/api/sync/riesgos'
+    | '/clientes/'
     | '/cultura/'
+    | '/guardian/'
     | '/procesos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
     | '/chat'
-    | '/clientes'
     | '/configuracion'
     | '/cronograma'
     | '/equipo'
-    | '/guardian'
     | '/indicadores'
     | '/proveedores'
     | '/riesgos'
@@ -377,9 +399,11 @@ export interface FileRouteTypes {
     | '/api/notificaciones'
     | '/api/wiki-chat'
     | '/'
+    | '/clientes/documentacion'
     | '/cultura/conceptos'
     | '/cultura/objetivos'
     | '/cultura/politicas'
+    | '/guardian/hallazgos'
     | '/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
@@ -391,18 +415,18 @@ export interface FileRouteTypes {
     | '/api/sync/indicador-disponibilidad'
     | '/api/sync/proveedores'
     | '/api/sync/riesgos'
+    | '/clientes'
     | '/cultura'
+    | '/guardian'
     | '/procesos'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
     | '/_authenticated/chat'
-    | '/_authenticated/clientes'
     | '/_authenticated/configuracion'
     | '/_authenticated/cronograma'
     | '/_authenticated/equipo'
-    | '/_authenticated/guardian'
     | '/_authenticated/indicadores'
     | '/_authenticated/proveedores'
     | '/_authenticated/riesgos'
@@ -412,9 +436,11 @@ export interface FileRouteTypes {
     | '/api/notificaciones'
     | '/api/wiki-chat'
     | '/_authenticated/'
+    | '/_authenticated/clientes/documentacion'
     | '/_authenticated/cultura/conceptos'
     | '/_authenticated/cultura/objetivos'
     | '/_authenticated/cultura/politicas'
+    | '/_authenticated/guardian/hallazgos'
     | '/_authenticated/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
@@ -426,7 +452,9 @@ export interface FileRouteTypes {
     | '/api/sync/indicador-disponibilidad'
     | '/api/sync/proveedores'
     | '/api/sync/riesgos'
+    | '/_authenticated/clientes/'
     | '/_authenticated/cultura/'
+    | '/_authenticated/guardian/'
     | '/_authenticated/procesos/'
   fileRoutesById: FileRoutesById
 }
@@ -480,13 +508,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/clientes': {
-      id: '/_authenticated/clientes'
-      path: '/clientes'
-      fullPath: '/clientes'
-      preLoaderRoute: typeof AuthenticatedClientesRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/configuracion': {
       id: '/_authenticated/configuracion'
       path: '/configuracion'
@@ -506,13 +527,6 @@ declare module '@tanstack/react-router' {
       path: '/equipo'
       fullPath: '/equipo'
       preLoaderRoute: typeof AuthenticatedEquipoRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/guardian': {
-      id: '/_authenticated/guardian'
-      path: '/guardian'
-      fullPath: '/guardian'
-      preLoaderRoute: typeof AuthenticatedGuardianRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/indicadores': {
@@ -571,6 +585,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWikiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/clientes/': {
+      id: '/_authenticated/clientes/'
+      path: '/clientes'
+      fullPath: '/clientes/'
+      preLoaderRoute: typeof AuthenticatedClientesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/clientes/documentacion': {
+      id: '/_authenticated/clientes/documentacion'
+      path: '/clientes/documentacion'
+      fullPath: '/clientes/documentacion'
+      preLoaderRoute: typeof AuthenticatedClientesDocumentacionRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/cultura/': {
       id: '/_authenticated/cultura/'
       path: '/cultura'
@@ -597,6 +625,20 @@ declare module '@tanstack/react-router' {
       path: '/cultura/politicas'
       fullPath: '/cultura/politicas'
       preLoaderRoute: typeof AuthenticatedCulturaPoliticasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/guardian/': {
+      id: '/_authenticated/guardian/'
+      path: '/guardian'
+      fullPath: '/guardian/'
+      preLoaderRoute: typeof AuthenticatedGuardianIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/guardian/hallazgos': {
+      id: '/_authenticated/guardian/hallazgos'
+      path: '/guardian/hallazgos'
+      fullPath: '/guardian/hallazgos'
+      preLoaderRoute: typeof AuthenticatedGuardianHallazgosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/procesos/': {
@@ -688,40 +730,45 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
-  AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedConfiguracionRoute: typeof AuthenticatedConfiguracionRoute
   AuthenticatedCronogramaRoute: typeof AuthenticatedCronogramaRoute
   AuthenticatedEquipoRoute: typeof AuthenticatedEquipoRoute
-  AuthenticatedGuardianRoute: typeof AuthenticatedGuardianRoute
   AuthenticatedIndicadoresRoute: typeof AuthenticatedIndicadoresRoute
   AuthenticatedProveedoresRoute: typeof AuthenticatedProveedoresRoute
   AuthenticatedRiesgosRoute: typeof AuthenticatedRiesgosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedClientesDocumentacionRoute: typeof AuthenticatedClientesDocumentacionRoute
   AuthenticatedCulturaConceptosRoute: typeof AuthenticatedCulturaConceptosRoute
   AuthenticatedCulturaObjetivosRoute: typeof AuthenticatedCulturaObjetivosRoute
   AuthenticatedCulturaPoliticasRoute: typeof AuthenticatedCulturaPoliticasRoute
+  AuthenticatedGuardianHallazgosRoute: typeof AuthenticatedGuardianHallazgosRoute
   AuthenticatedProcesosVulnerabilidadesRoute: typeof AuthenticatedProcesosVulnerabilidadesRoute
+  AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
   AuthenticatedCulturaIndexRoute: typeof AuthenticatedCulturaIndexRoute
+  AuthenticatedGuardianIndexRoute: typeof AuthenticatedGuardianIndexRoute
   AuthenticatedProcesosIndexRoute: typeof AuthenticatedProcesosIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
-  AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedConfiguracionRoute: AuthenticatedConfiguracionRoute,
   AuthenticatedCronogramaRoute: AuthenticatedCronogramaRoute,
   AuthenticatedEquipoRoute: AuthenticatedEquipoRoute,
-  AuthenticatedGuardianRoute: AuthenticatedGuardianRoute,
   AuthenticatedIndicadoresRoute: AuthenticatedIndicadoresRoute,
   AuthenticatedProveedoresRoute: AuthenticatedProveedoresRoute,
   AuthenticatedRiesgosRoute: AuthenticatedRiesgosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedClientesDocumentacionRoute:
+    AuthenticatedClientesDocumentacionRoute,
   AuthenticatedCulturaConceptosRoute: AuthenticatedCulturaConceptosRoute,
   AuthenticatedCulturaObjetivosRoute: AuthenticatedCulturaObjetivosRoute,
   AuthenticatedCulturaPoliticasRoute: AuthenticatedCulturaPoliticasRoute,
+  AuthenticatedGuardianHallazgosRoute: AuthenticatedGuardianHallazgosRoute,
   AuthenticatedProcesosVulnerabilidadesRoute:
     AuthenticatedProcesosVulnerabilidadesRoute,
+  AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
   AuthenticatedCulturaIndexRoute: AuthenticatedCulturaIndexRoute,
+  AuthenticatedGuardianIndexRoute: AuthenticatedGuardianIndexRoute,
   AuthenticatedProcesosIndexRoute: AuthenticatedProcesosIndexRoute,
 }
 

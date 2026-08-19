@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, Loader2, ShieldCheck, Search, CheckCircle2, XCircle, CalendarPlus, FileCheck2, ClipboardCheck } from "lucide-react";
+import { Sparkles, Send, Loader2, ShieldCheck, Search, CheckCircle2, XCircle, CalendarPlus, FileCheck2, ClipboardCheck, ClipboardList } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChatMarkdown } from "@/components/chat-markdown";
@@ -161,7 +161,7 @@ function ToolPart({ part, onApprove }: { part: any; onApprove: (id: string, appr
     return null;
 }
 
-export const Route = createFileRoute("/_authenticated/guardian")({
+export const Route = createFileRoute("/_authenticated/guardian/")({
     component: GuardianPage,
     head: () => ({
         meta: [
@@ -348,6 +348,12 @@ function GuardianPage() {
                 </div>
 
                 <div className="ml-auto flex flex-wrap items-center gap-2">
+                    <Link
+                        to="/guardian/hallazgos"
+                        className="flex shrink-0 items-center gap-1.5 rounded-xl border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-accent"
+                    >
+                        <ClipboardList className="h-3.5 w-3.5" /> Hallazgos de Auditoría
+                    </Link>
                     <div className="flex shrink-0 items-center gap-1.5 rounded-xl border bg-card p-1">
                         {(
                             [
