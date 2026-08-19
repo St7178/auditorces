@@ -83,16 +83,21 @@ function ClientesTable({ clientes }: { clientes: ClienteAsignado[] }) {
     );
 }
 
-// Organigrama: "Gerencia"/"Coordinadores"/"Analistas" son niveles jerárquicos; "Nutresa" es el equipo
-// dedicado a esa cuenta (el título de la sección, no que todos sus integrantes tengan a Nutresa como
-// cliente). El orden acá define el orden de arriba hacia abajo en la página.
-const GRUPO_ORDEN = ["Gerencia", "Coordinadores", "Analistas", "Nutresa"] as const;
+// Organigrama: "Vicepresidente"/"Gerentes"/"Coordinadores"/"Analistas" son niveles jerárquicos;
+// "Nutresa" es el equipo dedicado a esa cuenta (el título de la sección, no que todos sus integrantes
+// tengan a Nutresa como cliente). El orden acá define el orden de arriba hacia abajo en la página.
+const GRUPO_ORDEN = ["Vicepresidente", "Gerentes", "Coordinadores", "Analistas", "Nutresa"] as const;
 const GRUPO_INFO: Record<string, { label: string; nota?: string; dot: string }> = {
-    Gerencia: { label: "Gerencia", dot: "bg-violet-500" },
-    Coordinadores: { label: "Coordinadores", nota: "Clientes actuales tomados del archivo sincronizado", dot: "bg-sky-500" },
+    Vicepresidente: { label: "Vicepresidente", dot: "bg-fuchsia-500" },
+    Gerentes: { label: "Gerentes", dot: "bg-violet-500" },
+    Coordinadores: { label: "Coordinadores", dot: "bg-sky-500" },
     Analistas: { label: "Analistas · Colaboradores", dot: "bg-teal-500" },
-    Nutresa: { label: "Nutresa", nota: "Equipo dedicado a esta cuenta — no todos sus integrantes tienen a Nutresa como cliente", dot: "bg-amber-500" },
+    Nutresa: { label: "Nutresa", dot: "bg-amber-500" },
 };
+
+// Vicepresidente y Gerentes muestran siempre "Todos los clientes" (no se limitan a los que aparecen
+// como responsables en el archivo sincronizado).
+const GRUPOS_TODOS_LOS_CLIENTES = new Set(["Vicepresidente", "Gerentes"]);
 
 type DisplayMode = "todos" | "no-aplica" | "clientes";
 
@@ -257,7 +262,7 @@ function EquipoPage() {
                                 availability={m.availability}
                                 colorRing={m.color}
                                 clientes={clientesDe(m)}
-                                mode={grupo === "Gerencia" ? "todos" : grupo === "Analistas" ? "no-aplica" : "clientes"}
+                                mode={GRUPOS_TODOS_LOS_CLIENTES.has(grupo) ? "todos" : grupo === "Analistas" ? "no-aplica" : "clientes"}
                             />
                         ))}
                     </OrgSection>
