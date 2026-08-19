@@ -4,7 +4,6 @@ import {
     Sparkles, ArrowUpRight,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +28,7 @@ type Hallazgo = {
 
 type ClienteConContratos = { nombre: string; contratos?: Contrato[] };
 type RiesgoReal = { id: string; descripcion?: string; porcentajeMitigacion?: number; nivelResidual?: { severidad?: string } };
-type Recomendacion = { titulo: string; texto: string; nivel: "alta" | "media" | "baja" };
+type Recomendacion = { titulo: string; texto: string; nivel: "alta" | "media" | "baja"; to: "/clientes" | "/riesgos" | "/indicadores" };
 type ChecklistItem = { id: string; codigo: string; nombre: string };
 type ChecklistDef = { cliente: ChecklistItem[]; interna: ChecklistItem[] };
 
@@ -48,7 +47,7 @@ function construirRecomendaciones(clientes: ClienteConContratos[] | null, riesgo
     for (const c of clientes ?? []) {
         for (const ct of c.contratos ?? []) {
             if (clasificarContrato(ct) === "proximo") {
-                rec.push({ titulo: `Contrato de ${c.nombre} próximo a vencer`, texto: `Vence el ${ct.fin}.`, nivel: "alta" });
+                rec.push({ titulo: `Contrato de ${c.nombre} próximo a vencer`, texto: `Vence el ${ct.fin}.`, nivel: "alta", to: "/clientes" });
             }
         }
     }
@@ -60,6 +59,7 @@ function construirRecomendaciones(clientes: ClienteConContratos[] | null, riesgo
                 titulo: `Riesgo con mitigación baja (${Math.round(r.porcentajeMitigacion * 100)}%)`,
                 texto: r.descripcion ?? r.id,
                 nivel: severidad === "Alto" || severidad === "Catastrófico" ? "alta" : "media",
+                to: "/riesgos",
             });
         }
     }
@@ -67,7 +67,7 @@ function construirRecomendaciones(clientes: ClienteConContratos[] | null, riesgo
     if (indicador) {
         const medido = [...indicador.tendenciaMensual].reverse().find((f) => f.valor > 0);
         if (medido && medido.valor < medido.meta) {
-            rec.push({ titulo: `${indicador.nombre} por debajo de meta`, texto: `${medido.mes}: ${medido.valor} vs. meta ${medido.meta}.`, nivel: "alta" });
+            rec.push({ titulo: `${indicador.nombre} por debajo de meta`, texto: `${medido.mes}: ${medido.valor} vs. meta ${medido.meta}.`, nivel: "alta", to: "/indicadores" });
         }
     }
 
@@ -85,8 +85,6 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 function Dashboard() {
-    const { user } = AuthenticatedRoute.useRouteContext();
-    const firstName = user?.name?.split(" ")[0] ?? "Usuario";
     const [hallazgos, setHallazgos] = useState<Hallazgo[] | null>(null);
     const [clientes, setClientes] = useState<ClienteConContratos[] | null>(null);
     const [riesgos, setRiesgos] = useState<RiesgoReal[] | null>(null);
@@ -201,17 +199,9 @@ function Dashboard() {
                 <div className="pointer-events-none absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-[oklch(0.5_0.14_240)]/30 blur-3xl" />
                 <div className="relative">
                     <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium backdrop-blur">
-                        <Sparkles className="h-3.5 w-3.5" /> {firstName}
+                        <Sparkles className="h-3.5 w-3.5" /> Área CES
                     </div>
                     <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Informe General SIG</h1>
-                    <div className="mt-6 flex flex-wrap gap-3">
-                        <Button asChild size="lg" className="rounded-xl bg-white text-slate-900 hover:bg-white/90">
-                            <Link to="/guardian"><Sparkles className="mr-2 h-4 w-4" /> Hablar con CES AUDITOR</Link>
-                        </Button>
-                        <Button asChild size="lg" variant="secondary" className="rounded-xl bg-white/10 text-white hover:bg-white/20 border-white/20 border">
-                            <Link to="/cronograma">Ver cronograma</Link>
-                        </Button>
-                    </div>
                 </div>
             </section>
 
@@ -306,30 +296,32 @@ function Dashboard() {
             <section className="mt-8">
                 <Card className="border-border/60">
                     <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-[oklch(0.5_0.14_200)] text-white">
-                                    <Sparkles className="h-4 w-4" />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-semibold">Recomendaciones del área CES</h2>
-                                    <p className="text-xs text-muted-foreground">Señales reales de contratos, riesgos e indicadores sincronizados</p>
-                                </div>
+                        <div className="flex items-center gap-2">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-[oklch(0.5_0.14_200)] text-white">
+                                <Sparkles className="h-4 w-4" />
                             </div>
-                            <Button asChild variant="ghost" size="sm"><Link to="/guardian">Abrir CES AUDITOR <ArrowUpRight className="ml-1 h-3 w-3" /></Link></Button>
+                            <div>
+                                <h2 className="text-lg font-semibold">Recomendaciones del área CES</h2>
+                                <p className="text-xs text-muted-foreground">Señales reales de contratos, riesgos e indicadores sincronizados</p>
+                            </div>
                         </div>
                         <div className="mt-4 space-y-3">
                             {recomendaciones.length === 0 && (
                                 <div className="text-sm text-muted-foreground">Sin alertas activas por ahora — contratos, riesgos e indicadores dentro de lo esperado.</div>
                             )}
                             {recomendaciones.map((r) => (
-                                <div key={r.titulo} className="flex gap-3 rounded-xl border bg-card p-4 transition hover:border-brand/40 hover:shadow-sm">
-                                    <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${r.nivel === "alta" ? "bg-destructive" : r.nivel === "media" ? "bg-amber-500" : "bg-brand"}`} />
-                                    <div className="min-w-0">
+                                <Link
+                                    key={r.titulo}
+                                    to={r.to}
+                                    className="flex items-center gap-3 rounded-xl border bg-card p-4 transition hover:border-brand/40 hover:shadow-sm"
+                                >
+                                    <div className={`mt-0.5 h-2 w-2 shrink-0 self-start rounded-full ${r.nivel === "alta" ? "bg-destructive" : r.nivel === "media" ? "bg-amber-500" : "bg-brand"}`} />
+                                    <div className="min-w-0 flex-1">
                                         <div className="text-sm font-semibold">{r.titulo}</div>
                                         <div className="mt-0.5 text-xs text-muted-foreground">{r.texto}</div>
                                     </div>
-                                </div>
+                                    <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                </Link>
                             ))}
                         </div>
                     </CardContent>
