@@ -10,6 +10,8 @@ export type Hallazgo = {
     evidenciaUbicacion: string | null;
     estado: string;
     creadoEn: string;
+    mitigado: boolean | null;
+    comentarioMitigacion: string | null;
 };
 
 function sql() {
@@ -35,7 +37,12 @@ async function ensureSchema() {
                 estado TEXT NOT NULL DEFAULT 'Abierto',
                 creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
             )
-        `.then(() => undefined)
+        `
+            // Tabla ya existente en producción con hallazgos reales — ADD COLUMN IF NOT EXISTS en vez de
+            // recrear, para no perder lo que ya hay.
+            .then(() => db`ALTER TABLE hallazgos_auditoria ADD COLUMN IF NOT EXISTS mitigado BOOLEAN`)
+            .then(() => db`ALTER TABLE hallazgos_auditoria ADD COLUMN IF NOT EXISTS comentario_mitigacion TEXT`)
+            .then(() => undefined)
             .catch((err) => {
                 ready = null;
                 throw err;
@@ -59,7 +66,8 @@ export async function saveHallazgo(input: {
         INSERT INTO hallazgos_auditoria (id, proceso, titulo, descripcion, nivel_riesgo, recomendacion, evidencia_ubicacion)
         VALUES (${id}, ${input.proceso}, ${input.titulo}, ${input.descripcion}, ${input.nivelRiesgo ?? null}, ${input.recomendacion}, ${input.evidenciaUbicacion ?? null})
         RETURNING id, proceso, titulo, descripcion, nivel_riesgo AS "nivelRiesgo", recomendacion,
-                  evidencia_ubicacion AS "evidenciaUbicacion", estado, creado_en AS "creadoEn"
+                  evidencia_ubicacion AS "evidenciaUbicacion", estado, creado_en AS "creadoEn",
+                  mitigado, comentario_mitigacion AS "comentarioMitigacion"
     `;
     return rows[0] as unknown as Hallazgo;
 }
@@ -69,9 +77,30 @@ export async function getHallazgos(): Promise<Hallazgo[]> {
     const db = sql();
     const rows = await db`
         SELECT id, proceso, titulo, descripcion, nivel_riesgo AS "nivelRiesgo", recomendacion,
-               evidencia_ubicacion AS "evidenciaUbicacion", estado, creado_en AS "creadoEn"
+               evidencia_ubicacion AS "evidenciaUbicacion", estado, creado_en AS "creadoEn",
+               mitigado, comentario_mitigacion AS "comentarioMitigacion"
         FROM hallazgos_auditoria
         ORDER BY creado_en DESC
     `;
     return rows as unknown as Hallazgo[];
+}
+
+// Un hallazgo marcado "mitigado: true" siempre debe traer un comentario explicando cómo — se exige
+// acá también (no solo en el frontend) para que la regla se cumpla sin importar quién llame al endpoint.
+export async function setMitigacion(id: string, mitigado: boolean, comentario: string | null): Promise<Hallazgo> {
+    if (mitigado && !comentario?.trim()) {
+        throw new Error("Se requiere un comentario para marcar un hallazgo como mitigado");
+    }
+    await ensureSchema();
+    const db = sql();
+    const rows = await db`
+        UPDATE hallazgos_auditoria
+        SET mitigado = ${mitigado}, comentario_mitigacion = ${mitigado ? comentario : null}
+        WHERE id = ${id}
+        RETURNING id, proceso, titulo, descripcion, nivel_riesgo AS "nivelRiesgo", recomendacion,
+                  evidencia_ubicacion AS "evidenciaUbicacion", estado, creado_en AS "creadoEn",
+                  mitigado, comentario_mitigacion AS "comentarioMitigacion"
+    `;
+    if (!rows.length) throw new Error("Hallazgo no encontrado");
+    return rows[0] as unknown as Hallazgo;
 }

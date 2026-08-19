@@ -248,17 +248,21 @@ function Dashboard() {
                     <CardContent className="p-6">
                         <h2 className="text-lg font-semibold">Nivel de madurez</h2>
                         <p className="text-xs text-muted-foreground">Promedio de riesgos, indicadores y documentación</p>
-                        <div className="mt-2 h-56">
+                        <div className="relative mt-2 h-40">
                             <ResponsiveContainer width="100%" height="100%">
                                 <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ name: "madurez", value: nivelMadurez ?? 0, fill: "oklch(0.62 0.17 152)" }]} startAngle={90} endAngle={-270}>
                                     <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
                                     <RadialBar background={{ fill: "oklch(0.94 0.01 220)" }} dataKey="value" cornerRadius={20} />
                                 </RadialBarChart>
                             </ResponsiveContainer>
+                            {/* El % se dibuja centrado sobre el hueco del donut (posición absoluta, no
+                                margin negativo) para que nunca se solape con el texto de abajo. */}
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                <span className="text-3xl font-bold text-brand">{nivelMadurez === null ? "—" : `${nivelMadurez}%`}</span>
+                            </div>
                         </div>
-                        <div className="-mt-32 text-center">
-                            <div className="text-4xl font-bold text-brand">{nivelMadurez === null ? "—" : `${nivelMadurez}%`}</div>
-                            <div className="text-xs text-muted-foreground">{metricasConDato.length} de {metricasCumplimiento.length} métricas con dato real</div>
+                        <div className="mt-3 text-center text-xs text-muted-foreground">
+                            {metricasConDato.length} de {metricasCumplimiento.length} métricas con dato real
                         </div>
                     </CardContent>
                 </Card>

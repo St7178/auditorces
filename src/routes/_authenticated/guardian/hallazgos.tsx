@@ -20,6 +20,8 @@ type Hallazgo = {
     evidenciaUbicacion: string | null;
     estado: string;
     creadoEn: string;
+    mitigado: boolean | null;
+    comentarioMitigacion: string | null;
 };
 
 function nivelTone(n: string | null) {
@@ -27,6 +29,122 @@ function nivelTone(n: string | null) {
     if (n === "Alto") return "bg-orange-100 text-orange-700";
     if (n === "Medio") return "bg-amber-100 text-amber-700";
     return "bg-brand-soft text-brand";
+}
+
+// El botón "Sí" siempre exige un comentario antes de guardar (obligatorio, verificado también en el
+// servidor) — "No" se guarda directo, ya que no hay nada que explicar.
+function MitigacionControl({
+    hallazgo, onUpdate,
+}: {
+    hallazgo: Hallazgo;
+    onUpdate: (id: string, mitigado: boolean, comentario: string | null) => Promise<void>;
+}) {
+    const [editando, setEditando] = useState(false);
+    const [borrador, setBorrador] = useState(hallazgo.comentarioMitigacion ?? "");
+    const [guardando, setGuardando] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const marcarNo = async () => {
+        setGuardando(true);
+        setError(null);
+        try {
+            await onUpdate(hallazgo.id, false, null);
+            setEditando(false);
+        } catch {
+            setError("No se pudo guardar. Intenta de nuevo.");
+        } finally {
+            setGuardando(false);
+        }
+    };
+
+    const iniciarSi = () => {
+        setBorrador(hallazgo.comentarioMitigacion ?? "");
+        setError(null);
+        setEditando(true);
+    };
+
+    const guardarSi = async () => {
+        if (!borrador.trim()) {
+            setError("Cuéntanos cómo se mitigó antes de guardar — es obligatorio.");
+            return;
+        }
+        setGuardando(true);
+        setError(null);
+        try {
+            await onUpdate(hallazgo.id, true, borrador.trim());
+            setEditando(false);
+        } catch {
+            setError("No se pudo guardar. Intenta de nuevo.");
+        } finally {
+            setGuardando(false);
+        }
+    };
+
+    return (
+        <div className="mt-3 border-t pt-3">
+            <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-muted-foreground">¿Se mitigó?</span>
+                <div className="flex gap-1.5">
+                    <button
+                        onClick={iniciarSi}
+                        disabled={guardando}
+                        className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
+                            hallazgo.mitigado === true ? "bg-brand text-white" : "border text-muted-foreground hover:bg-accent"
+                        }`}
+                    >
+                        Sí
+                    </button>
+                    <button
+                        onClick={marcarNo}
+                        disabled={guardando}
+                        className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
+                            hallazgo.mitigado === false ? "bg-destructive text-white" : "border text-muted-foreground hover:bg-accent"
+                        }`}
+                    >
+                        No
+                    </button>
+                </div>
+            </div>
+
+            {hallazgo.mitigado === true && !editando && (
+                <div className="mt-2 rounded-lg bg-brand-soft/60 p-2.5 text-xs text-brand">
+                    <div className="font-semibold">Cómo se mitigó</div>
+                    <p className="mt-0.5 whitespace-pre-wrap">{hallazgo.comentarioMitigacion}</p>
+                    <button onClick={iniciarSi} className="mt-1.5 text-[11px] font-medium underline">Editar</button>
+                </div>
+            )}
+
+            {editando && (
+                <div className="mt-2">
+                    <textarea
+                        value={borrador}
+                        onChange={(e) => setBorrador(e.target.value)}
+                        placeholder="Describe cómo se mitigó este hallazgo (obligatorio)…"
+                        rows={3}
+                        className="w-full rounded-lg border p-2 text-xs outline-none focus:border-brand"
+                    />
+                    <div className="mt-1.5 flex items-center justify-between gap-2">
+                        {error ? <span className="text-[11px] text-destructive">{error}</span> : <span />}
+                        <div className="ml-auto flex shrink-0 gap-1.5">
+                            <button
+                                onClick={() => { setEditando(false); setError(null); }}
+                                className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={guardarSi}
+                                disabled={guardando}
+                                className="rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-brand/90 disabled:opacity-50"
+                            >
+                                {guardando ? "Guardando…" : "Guardar"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }
 
 function HallazgosPage() {
@@ -44,6 +162,21 @@ function HallazgosPage() {
             mounted = false;
         };
     }, []);
+
+    // Optimista: se refleja de inmediato en pantalla; si el servidor rechaza el cambio, se revierte.
+    const actualizarMitigacion = async (id: string, mitigado: boolean, comentario: string | null) => {
+        const anteriores = hallazgos;
+        setHallazgos((prev) => prev?.map((h) => (h.id === id ? { ...h, mitigado, comentarioMitigacion: comentario } : h)) ?? prev);
+        const res = await fetch("/api/hallazgos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, mitigado, comentario }),
+        });
+        if (!res.ok) {
+            setHallazgos(anteriores);
+            throw new Error("No se pudo actualizar la mitigación");
+        }
+    };
 
     return (
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -94,10 +227,12 @@ function HallazgosPage() {
                                     </div>
                                 )}
 
-                                <div className="mt-3 flex items-center justify-between border-t pt-3 text-[11px] text-muted-foreground">
+                                <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
                                     <span>{h.estado}</span>
                                     <span>{new Date(h.creadoEn).toLocaleDateString("es")}</span>
                                 </div>
+
+                                <MitigacionControl hallazgo={h} onUpdate={actualizarMitigacion} />
                             </CardContent>
                         </Card>
                     ))}

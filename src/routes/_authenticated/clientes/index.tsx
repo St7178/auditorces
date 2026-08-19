@@ -55,10 +55,16 @@ function ClientesPage() {
 
     const resumen = resumenContratos(clientes.flatMap((c) => c.contratos || []));
 
-    // Un cliente "Activo" con al menos un contrato vencido es una inconsistencia real de datos que
-    // vale la pena señalar en la tarjeta, no solo en el detalle del contrato.
-    const clientesConContratoVencido = new Set(
+    // Un cliente "Activo" con al menos un contrato vencido es una inconsistencia que vale la pena
+    // señalar; si TODOS sus contratos están vencidos, "Activo" ya ni siquiera describe la realidad —
+    // en ese caso se reemplaza el badge en vez de solo advertir debajo.
+    const clientesConAlgunContratoVencido = new Set(
         clientes.filter((c) => c.estado === "Activo" && (c.contratos || []).some((ct) => clasificarContrato(ct) === "vencido")).map((c) => c.id),
+    );
+    const clientesConTodoVencido = new Set(
+        clientes
+            .filter((c) => c.estado === "Activo" && (c.contratos || []).length > 0 && (c.contratos || []).every((ct) => clasificarContrato(ct) === "vencido"))
+            .map((c) => c.id),
     );
 
     return (
@@ -91,9 +97,10 @@ function ClientesPage() {
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {clientes.map((c) => {
                     const logo = clienteLogo(c.nombre);
-                    const contratoVencidoInconsistente = clientesConContratoVencido.has(c.id);
+                    const todoVencido = clientesConTodoVencido.has(c.id);
+                    const algunVencido = clientesConAlgunContratoVencido.has(c.id) && !todoVencido;
                     return (
-                    <Card key={c.id} className={`transition hover:shadow-lg ${contratoVencidoInconsistente ? "border-red-300/70" : "border-border/60"}`}>
+                    <Card key={c.id} className={`transition hover:shadow-lg ${todoVencido || algunVencido ? "border-red-300/70" : "border-border/60"}`}>
                         <CardContent className="p-5">
                             <div className="flex items-start justify-between">
                                 {logo ? (
@@ -105,10 +112,14 @@ function ClientesPage() {
                                         <Building2 className="h-5 w-5" />
                                     </div>
                                 )}
-                                <Badge className={c.estado === "Activo" ? "bg-brand-soft text-brand" : "bg-amber-50 text-amber-700"}>{c.estado}</Badge>
+                                {todoVencido ? (
+                                    <Badge className="bg-red-100 text-red-700">Contratos vencidos</Badge>
+                                ) : (
+                                    <Badge className={c.estado === "Activo" ? "bg-brand-soft text-brand" : "bg-amber-50 text-amber-700"}>{c.estado}</Badge>
+                                )}
                             </div>
 
-                            {contratoVencidoInconsistente && (
+                            {algunVencido && (
                                 <div className="mt-3 flex items-center gap-1.5 rounded-md bg-red-50 px-2.5 py-1.5 text-[11px] font-medium text-red-700">
                                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Figura "Activo" pero tiene contrato(s) vencido(s)
                                 </div>
