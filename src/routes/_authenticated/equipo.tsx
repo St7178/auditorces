@@ -95,6 +95,9 @@ const GRUPO_INFO: Record<string, { label: string; nota?: string; dot: string }> 
 // como responsables en el archivo sincronizado).
 const GRUPOS_TODOS_LOS_CLIENTES = new Set(["Vicepresidente", "Gerentes"]);
 
+// El equipo de Nutresa siempre tiene ese cliente asignado, además de lo que traiga el archivo.
+const CLIENTE_FIJO: Record<string, string> = { david: "Nutresa", jonny: "Nutresa", robinson: "Nutresa" };
+
 type DisplayMode = "todos" | "clientes";
 
 function MemberCard({
@@ -213,12 +216,19 @@ function EquipoPage() {
     // sincronización todavía no cargó — si ya cargó pero esta persona no es responsable de ningún
     // cliente real, eso es un dato real ("0 asignados"), no un motivo para mostrar el fallback.
     function clientesDe(m: (typeof equipo)[number]): ClienteAsignado[] {
-        if (clientesSync) {
-            return clientesSync
-                .filter((c) => normalizeName(c.responsable) === normalizeName(m.nombre))
-                .map((c) => ({ nombre: c.nombre, activo: c.estado === "Activo" }));
+        const real = clientesSync
+            ? clientesSync
+                  .filter((c) => normalizeName(c.responsable) === normalizeName(m.nombre))
+                  .map((c) => ({ nombre: c.nombre, activo: c.estado === "Activo" }))
+            : m.clientes.map((nombre) => ({ nombre, activo: null as boolean | null }));
+
+        // El equipo de Nutresa (David, Jonny, Robinson) siempre pertenece a Nutresa, la aparezca o no
+        // como responsable en el archivo sincronizado — se agrega aparte, sin duplicar si ya está.
+        const fijo = CLIENTE_FIJO[m.id];
+        if (fijo && !real.some((c) => normalizeName(c.nombre) === normalizeName(fijo))) {
+            return [{ nombre: fijo, activo: null }, ...real];
         }
-        return m.clientes.map((nombre) => ({ nombre, activo: null }));
+        return real;
     }
 
     const knownNames = new Set(EQUIPO.map((m) => normalizeName(m.nombre)));
