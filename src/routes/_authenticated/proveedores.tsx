@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
@@ -11,11 +12,26 @@ export const Route = createFileRoute("/_authenticated/proveedores")({
 });
 
 function ProveedoresPage() {
+    const [proveedores, setProveedores] = useState(PROVEEDORES);
+
+    useEffect(() => {
+        let mounted = true;
+        fetch("/api/sync/proveedores")
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+            .then((data) => mounted && setProveedores(data))
+            .catch(() => {
+                /* fallback: se mantiene la lista estática */
+            });
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader eyebrow="Ecosistema" title="Proveedores" description="Proveedores tecnológicos estratégicos del área CES." />
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {PROVEEDORES.map((p) => (
+                {proveedores.map((p) => (
                     <Card key={p.id} className="border-border/60 transition hover:shadow-lg">
                         <CardContent className="p-5">
                             <div className="flex items-start justify-between">

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-    ClipboardList, ShieldAlert, Users, FileText, Truck, Gauge, ListChecks, AlertTriangle,
+    ShieldAlert, FileText, Truck, Gauge,
     Sparkles, ArrowUpRight, TrendingUp, Video,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -8,7 +8,7 @@ import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { KPIS_DASHBOARD, RECOMENDACIONES_IA, INDICADORES } from "@/lib/ces-data";
+import { RECOMENDACIONES_IA, INDICADORES, INDICADORES_REALES } from "@/lib/ces-data";
 import { getMisReuniones } from "@/lib/calendar.functions";
 import type { CalendarEvent } from "@/lib/auth/entra";
 import {
@@ -54,11 +54,6 @@ export const Route = createFileRoute("/_authenticated/")({
     }),
 });
 
-const iconMap: Record<string, typeof ClipboardList> = {
-    clipboard: ClipboardList, shield: ShieldAlert, users: Users, file: FileText,
-    truck: Truck, gauge: Gauge, list: ListChecks, alert: AlertTriangle,
-};
-
 const cumplimientoData = [
     { mes: "Ene", valor: 84 }, { mes: "Feb", valor: 86 }, { mes: "Mar", valor: 88 },
     { mes: "Abr", valor: 89 }, { mes: "May", valor: 91 }, { mes: "Jun", valor: 93 },
@@ -69,8 +64,9 @@ function Dashboard() {
     const { eventos, eventosError } = Route.useLoaderData();
     const firstName = user?.name?.split(" ")[0] ?? "Usuario";
     const [hallazgos, setHallazgos] = useState<Hallazgo[] | null>(null);
-    const [clientesCount, setClientesCount] = useState<number | null>(null);
-    const [riesgosCount, setRiesgosCount] = useState<number | null>(null);
+    const [riesgosTotal, setRiesgosTotal] = useState<number | null>(null);
+    const [contratos, setContratos] = useState<{ total: number; porVencer: number } | null>(null);
+    const [proveedoresTotal, setProveedoresTotal] = useState<number | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -78,39 +74,46 @@ function Dashboard() {
             .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
             .then((data) => mounted && setHallazgos(data))
             .catch(() => {
-                /* fallback: KPI estático se mantiene */
+                /* se deja sin datos: la sección de hallazgos más abajo simplemente no aparece */
             });
-        // Mismas fuentes reales que consumen /clientes y /riesgos — así el KPI del dashboard
-        // nunca queda desincronizado de lo que esas páginas muestran.
+        // Los contratos viven dentro de cada cliente sincronizado (mismo archivo real que usa
+        // /clientes) — no hay una fuente aparte para "contratos", se derivan de ahí.
         fetch("/api/sync/clientes")
             .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
-            .then((data: Array<{ estado: string }>) => mounted && setClientesCount(data.filter((c) => c.estado === "Activo").length))
+            .then((data: Array<{ contratos?: Array<{ estado: string }> }>) => {
+                if (!mounted) return;
+                const todos = data.flatMap((c) => c.contratos ?? []);
+                setContratos({ total: todos.length, porVencer: todos.filter((ct) => ct.estado === "Próximo a vencer").length });
+            })
             .catch(() => {
-                /* fallback: KPI estático se mantiene */
+                /* sin fuente real disponible: la tarjeta de Contratos queda en "—" */
             });
         fetch("/api/sync/riesgos")
             .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
-            .then((data: unknown[]) => mounted && setRiesgosCount(data.length))
+            .then((data: unknown[]) => mounted && setRiesgosTotal(data.length))
             .catch(() => {
-                /* fallback: KPI estático se mantiene */
+                /* sin fuente real disponible: la tarjeta de Riesgos queda en "—" */
+            });
+        fetch("/api/sync/proveedores")
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+            .then((data: unknown[]) => mounted && setProveedoresTotal(data.length))
+            .catch(() => {
+                /* sin fuente real disponible: la tarjeta de Proveedores queda en "—" */
             });
         return () => {
             mounted = false;
         };
     }, []);
 
-    // "Hallazgos pendientes" y "Hallazgos abiertos" salen de lo que CES AUDITOR registra en el chat
-    // (tabla hallazgos_auditoria) — no hay todavía un flujo de cierre, así que ambos coinciden hasta
-    // que exista esa distinción; se calculan por separado para que no dependan uno del otro.
-    const hallazgosAbiertos = hallazgos?.filter((h) => h.estado === "Abierto").length;
-    const hallazgosPendientes = hallazgos?.length;
-    const kpis = KPIS_DASHBOARD.map((k) => {
-        if (k.label === "Hallazgos abiertos" && hallazgosAbiertos !== undefined) return { ...k, value: hallazgosAbiertos, delta: "vivo" };
-        if (k.label === "Hallazgos pendientes" && hallazgosPendientes !== undefined) return { ...k, value: hallazgosPendientes, delta: "vivo" };
-        if (k.label === "Clientes activos" && clientesCount !== null) return { ...k, value: clientesCount, delta: "vivo" };
-        if (k.label === "Riesgos en seguimiento" && riesgosCount !== null) return { ...k, value: riesgosCount, delta: "vivo" };
-        return k;
-    });
+    // Las 4 tarjetas principales solo muestran cifras con una fuente real detrás — nada de valores
+    // de ejemplo. "Indicadores" cuenta los indicadores con sync real conectado (ver INDICADORES_REALES
+    // en ces-data.ts), no los de demostración que aún se ven en /indicadores.
+    const kpis = [
+        { label: "Riesgos", icon: ShieldAlert, tone: "warning" as const, value: riesgosTotal, sub: null as string | null },
+        { label: "Indicadores", icon: Gauge, tone: "brand" as const, value: INDICADORES_REALES.length, sub: null },
+        { label: "Contratos", icon: FileText, tone: "brand" as const, value: contratos?.total ?? null, sub: contratos ? `${contratos.porVencer} próximo${contratos.porVencer === 1 ? "" : "s"} a vencer` : null },
+        { label: "Proveedores", icon: Truck, tone: "muted" as const, value: proveedoresTotal, sub: null },
+    ];
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -137,22 +140,19 @@ function Dashboard() {
                 </div>
             </section>
 
-            {/* KPI grid */}
+            {/* Indicadores principales */}
             <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {kpis.map((k) => {
-                    const Icon = iconMap[k.icon];
                     const toneBg = k.tone === "warning" ? "bg-amber-50 text-amber-700" : k.tone === "brand" ? "bg-brand-soft text-brand" : "bg-muted text-muted-foreground";
                     return (
                         <Card key={k.label} className="overflow-hidden border-border/60 transition hover:shadow-lg">
                             <CardContent className="p-5">
-                                <div className="flex items-start justify-between">
-                                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${toneBg}`}>
-                                        <Icon className="h-5 w-5" />
-                                    </div>
-                                    <span className="text-[11px] font-semibold text-muted-foreground">{k.delta}</span>
+                                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${toneBg}`}>
+                                    <k.icon className="h-5 w-5" />
                                 </div>
                                 <div className="mt-4 text-3xl font-bold tracking-tight">{k.value === null || k.value === undefined ? "—" : k.value}</div>
                                 <div className="mt-1 text-xs text-muted-foreground">{k.label}</div>
+                                {k.sub && <div className="mt-1 text-[11px] font-medium text-amber-700">{k.sub}</div>}
                             </CardContent>
                         </Card>
                     );

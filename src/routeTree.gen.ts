@@ -40,6 +40,7 @@ import { Route as ApiSyncChecklistClientesRouteImport } from './routes/api/sync/
 import { Route as ApiSyncClientesRouteImport } from './routes/api/sync/clientes'
 import { Route as ApiSyncDocumentacionRouteImport } from './routes/api/sync/documentacion'
 import { Route as ApiSyncIndicadorDisponibilidadRouteImport } from './routes/api/sync/indicador-disponibilidad'
+import { Route as ApiSyncProveedoresRouteImport } from './routes/api/sync/proveedores'
 import { Route as ApiSyncRiesgosRouteImport } from './routes/api/sync/riesgos'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -208,6 +209,11 @@ const ApiSyncIndicadorDisponibilidadRoute =
     path: '/api/sync/indicador-disponibilidad',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiSyncProveedoresRoute = ApiSyncProveedoresRouteImport.update({
+  id: '/api/sync/proveedores',
+  path: '/api/sync/proveedores',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSyncRiesgosRoute = ApiSyncRiesgosRouteImport.update({
   id: '/api/sync/riesgos',
   path: '/api/sync/riesgos',
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/indicador-disponibilidad': typeof ApiSyncIndicadorDisponibilidadRoute
+  '/api/sync/proveedores': typeof ApiSyncProveedoresRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
   '/cultura/': typeof AuthenticatedCulturaIndexRoute
   '/procesos/': typeof AuthenticatedProcesosIndexRoute
@@ -276,6 +283,7 @@ export interface FileRoutesByTo {
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/indicador-disponibilidad': typeof ApiSyncIndicadorDisponibilidadRoute
+  '/api/sync/proveedores': typeof ApiSyncProveedoresRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
   '/cultura': typeof AuthenticatedCulturaIndexRoute
   '/procesos': typeof AuthenticatedProcesosIndexRoute
@@ -311,6 +319,7 @@ export interface FileRoutesById {
   '/api/sync/clientes': typeof ApiSyncClientesRoute
   '/api/sync/documentacion': typeof ApiSyncDocumentacionRoute
   '/api/sync/indicador-disponibilidad': typeof ApiSyncIndicadorDisponibilidadRoute
+  '/api/sync/proveedores': typeof ApiSyncProveedoresRoute
   '/api/sync/riesgos': typeof ApiSyncRiesgosRoute
   '/_authenticated/cultura/': typeof AuthenticatedCulturaIndexRoute
   '/_authenticated/procesos/': typeof AuthenticatedProcesosIndexRoute
@@ -346,6 +355,7 @@ export interface FileRouteTypes {
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/indicador-disponibilidad'
+    | '/api/sync/proveedores'
     | '/api/sync/riesgos'
     | '/cultura/'
     | '/procesos/'
@@ -379,6 +389,7 @@ export interface FileRouteTypes {
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/indicador-disponibilidad'
+    | '/api/sync/proveedores'
     | '/api/sync/riesgos'
     | '/cultura'
     | '/procesos'
@@ -413,6 +424,7 @@ export interface FileRouteTypes {
     | '/api/sync/clientes'
     | '/api/sync/documentacion'
     | '/api/sync/indicador-disponibilidad'
+    | '/api/sync/proveedores'
     | '/api/sync/riesgos'
     | '/_authenticated/cultura/'
     | '/_authenticated/procesos/'
@@ -434,6 +446,7 @@ export interface RootRouteChildren {
   ApiSyncClientesRoute: typeof ApiSyncClientesRoute
   ApiSyncDocumentacionRoute: typeof ApiSyncDocumentacionRoute
   ApiSyncIndicadorDisponibilidadRoute: typeof ApiSyncIndicadorDisponibilidadRoute
+  ApiSyncProveedoresRoute: typeof ApiSyncProveedoresRoute
   ApiSyncRiesgosRoute: typeof ApiSyncRiesgosRoute
 }
 
@@ -656,6 +669,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSyncIndicadorDisponibilidadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/sync/proveedores': {
+      id: '/api/sync/proveedores'
+      path: '/api/sync/proveedores'
+      fullPath: '/api/sync/proveedores'
+      preLoaderRoute: typeof ApiSyncProveedoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/sync/riesgos': {
       id: '/api/sync/riesgos'
       path: '/api/sync/riesgos'
@@ -725,6 +745,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSyncClientesRoute: ApiSyncClientesRoute,
   ApiSyncDocumentacionRoute: ApiSyncDocumentacionRoute,
   ApiSyncIndicadorDisponibilidadRoute: ApiSyncIndicadorDisponibilidadRoute,
+  ApiSyncProveedoresRoute: ApiSyncProveedoresRoute,
   ApiSyncRiesgosRoute: ApiSyncRiesgosRoute,
 }
 export const routeTree = rootRouteImport

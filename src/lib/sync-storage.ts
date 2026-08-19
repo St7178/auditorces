@@ -86,8 +86,17 @@ export async function getIndicadorDisponibilidad<T>(): Promise<T | null> {
     return readBlob<T>("indicador-disponibilidad");
 }
 
+export async function saveProveedores(data: unknown) {
+    return writeBlob("proveedores", data);
+}
+
+export async function getProveedores<T>(): Promise<T | null> {
+    return readBlob<T>("proveedores");
+}
+
 export default {
     saveClientes, getClientes, saveRiesgos, getRiesgos, saveDocumentacion, getDocumentacion,
     saveChecklistClientes, getChecklistClientes,
     saveIndicadorDisponibilidad, getIndicadorDisponibilidad,
+    saveProveedores, getProveedores,
 };

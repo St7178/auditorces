@@ -412,6 +412,12 @@ export const INDICADOR_DISPONIBILIDAD_CES: IndicadorDisponibilidadCES = {
             ]
         }
     };
+
+// Indicadores con sync real conectado (a diferencia de los "demo" en INDICADORES, que son ejemplo
+// hasta que se conecten a su propia fuente) — cuenta el KPI "Indicadores" del dashboard. Agregar el id
+// acá cuando se conecte un indicador nuevo del mismo modo que Disponibilidad Servicio CES.
+export const INDICADORES_REALES = ["disponibilidad-servicio-ces"];
+
 export const INDICADORES = [
     { id: "IND-01", nombre: "Disponibilidad de servicios", meta: 99.5, actual: 99.7, unidad: "%", tendencia: "up", historico: [99.2, 99.4, 99.6, 99.5, 99.7, 99.7] },
     { id: "IND-02", nombre: "Cumplimiento de SLA", meta: 95, actual: 96.8, unidad: "%", tendencia: "up", historico: [93, 94, 95, 96, 96.5, 96.8] },
