@@ -11,15 +11,36 @@ export const Route = createFileRoute("/_authenticated/clientes/")({
     head: () => ({ meta: [{ title: "Clientes — CES SIG" }] }),
 });
 
-// Cara de cada tarjeta del carrusel: sin logos/fotos, solo el fondo oscuro/claro que alterna por
-// tarjeta más un ícono y el badge de estado — el detalle real (responsable, servicios, contratos)
-// vive en el panel de abajo (showCaption), que se actualiza con la tarjeta que quede al centro.
-function ClienteFace({ nombre, badgeLabel, light }: { nombre: string; badgeLabel: string; light: boolean }) {
+const CLIENTE_LOGO: Record<string, string> = {
+    "CONCONCRETO": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Concocreto.png",
+    "GRUPO RECORDAR": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Grupo%20Recordar.png",
+    "INCOLMOTOS": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Incolmotos.png",
+    "INDUPALMA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/LOGO_INDUPALMA.png",
+    "INGENIO CARMELITA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/carmelita.png",
+    "INGENIO RISARALDA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/INGENIORISARALDALOGO.png",
+    "LEVAPAN": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/LevapanLogo.png",
+    "NUTRESA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/NUTRESALOGO.png",
+    "PROTELA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/PROTELA.png",
+    "SURTIALIMENTOS": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/SURTIALIAMENTOSLOGO.png",
+};
+
+function clienteLogo(nombre: string) {
+    return CLIENTE_LOGO[String(nombre || "").trim().toUpperCase()];
+}
+
+// Cara de cada tarjeta del carrusel: el fondo sigue siendo sólido oscuro/claro (nada de fotos de
+// stock), pero el logo real del cliente sí se muestra — en una placa clara para que se lea igual de
+// bien sobre cualquiera de los dos tonos — con el ícono genérico como respaldo si no hay logo.
+function ClienteFace({ nombre, badgeLabel, logo, light }: { nombre: string; badgeLabel: string; logo?: string; light: boolean }) {
     const chip = light ? "bg-slate-900/8" : "bg-white/12";
     return (
         <div className="flex flex-col items-center justify-center gap-3 text-center">
-            <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${chip}`}>
-                <Building2 className="h-7 w-7" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-sm">
+                {logo ? (
+                    <img src={logo} alt={nombre} className="h-full w-full object-contain" />
+                ) : (
+                    <Building2 className="h-7 w-7 text-slate-900" />
+                )}
             </div>
             <div className="px-2 text-base font-semibold leading-tight">{nombre}</div>
             <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${chip}`}>{badgeLabel}</span>
@@ -75,7 +96,7 @@ function ClientesPage() {
         }
 
         return {
-            face: <ClienteFace nombre={c.nombre} badgeLabel={badgeLabel} light={light && !todoVencido} />,
+            face: <ClienteFace nombre={c.nombre} badgeLabel={badgeLabel} logo={clienteLogo(c.nombre)} light={light && !todoVencido} />,
             tone,
             title: c.nombre,
             subtitle: `Responsable · ${c.responsable}`,
