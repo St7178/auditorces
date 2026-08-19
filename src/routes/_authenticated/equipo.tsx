@@ -163,7 +163,11 @@ function MemberCard({
     );
 }
 
-function OrgSection({ grupo, children }: { grupo: string; children: React.ReactNode }) {
+// `rows` son sub-filas dentro de la misma sección que nunca se mezclan entre sí en la cuadrícula
+// (p.ej. dentro de "Analistas", el equipo de Nutresa siempre queda en su propia fila, separado de
+// los demás), a diferencia de pasar todas las tarjetas juntas a un único grid que las reacomoda
+// libremente según el ancho de pantalla.
+function OrgSection({ grupo, rows }: { grupo: string; rows: React.ReactNode[][] }) {
     const info = GRUPO_INFO[grupo] ?? { label: grupo, dot: "bg-muted-foreground" };
     return (
         <section className="relative mt-10 first:mt-8">
@@ -173,7 +177,11 @@ function OrgSection({ grupo, children }: { grupo: string; children: React.ReactN
                 <span className="h-px flex-1 bg-border" />
             </div>
             {info.nota && <p className="mb-3 -mt-1 text-xs text-muted-foreground">{info.nota}</p>}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{children}</div>
+            {rows.map((row, i) => (
+                <div key={i} className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${i > 0 ? "mt-4" : ""}`}>
+                    {row}
+                </div>
+            ))}
         </section>
     );
 }
@@ -188,8 +196,10 @@ function EquipoPage() {
         fetch("/api/sync/clientes")
             .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
             .then((data) => mounted && setClientesSync(data))
-            .catch(() => {
-                /* fallback: se usa la lista estática de EQUIPO.clientes */
+            .catch((err) => {
+                // Si esto sale en consola, /equipo se quedó mostrando los clientes de respaldo
+                // (EQUIPO.clientes) en vez de los reales del archivo sincronizado.
+                console.error("No se pudo cargar /api/sync/clientes para /equipo:", err);
             });
         return () => {
             mounted = false;
@@ -253,41 +263,52 @@ function EquipoPage() {
             {GRUPO_ORDEN.map((grupo) => {
                 const miembros = equipo.filter((m) => m.grupo === grupo);
                 if (miembros.length === 0) return null;
+
+                const card = (m: (typeof miembros)[number]) => (
+                    <MemberCard
+                        key={m.id}
+                        nombre={m.nombre}
+                        cargo={m.cargo}
+                        mail={m.mail}
+                        photoUrl={m.photoUrl}
+                        availability={m.availability}
+                        colorRing={m.color}
+                        clientes={clientesDe(m)}
+                        mode={GRUPOS_TODOS_LOS_CLIENTES.has(grupo) ? "todos" : "clientes"}
+                    />
+                );
+
+                // Dentro de "Analistas", el equipo de Nutresa (David/Jonny/Robinson) siempre va en su
+                // propia fila, arriba, separado del resto — no se mezclan en un mismo grid.
+                const rows: (typeof miembros)[] =
+                    grupo === "Analistas"
+                        ? [miembros.filter((m) => CLIENTE_FIJO[m.id]), miembros.filter((m) => !CLIENTE_FIJO[m.id])].filter((r) => r.length > 0)
+                        : [miembros];
+
                 return (
-                    <OrgSection key={grupo} grupo={grupo}>
-                        {miembros.map((m) => (
-                            <MemberCard
-                                key={m.id}
-                                nombre={m.nombre}
-                                cargo={m.cargo}
-                                mail={m.mail}
-                                photoUrl={m.photoUrl}
-                                availability={m.availability}
-                                colorRing={m.color}
-                                clientes={clientesDe(m)}
-                                mode={GRUPOS_TODOS_LOS_CLIENTES.has(grupo) ? "todos" : "clientes"}
-                            />
-                        ))}
-                    </OrgSection>
+                    <OrgSection key={grupo} grupo={grupo} rows={rows.map((row) => row.map(card))} />
                 );
             })}
 
             {entraOnly.length > 0 && (
-                <OrgSection grupo="Otros">
-                    {entraOnly.map((u) => (
-                        <MemberCard
-                            key={u.id}
-                            nombre={u.displayName}
-                            cargo={u.jobTitle ?? ""}
-                            mail={u.mail ?? u.userPrincipalName ?? null}
-                            photoUrl={u.photoUrl ?? null}
-                            availability={u.availability}
-                            clientes={[]}
-                            mode="clientes"
-                            dashed
-                        />
-                    ))}
-                </OrgSection>
+                <OrgSection
+                    grupo="Otros"
+                    rows={[
+                        entraOnly.map((u) => (
+                            <MemberCard
+                                key={u.id}
+                                nombre={u.displayName}
+                                cargo={u.jobTitle ?? ""}
+                                mail={u.mail ?? u.userPrincipalName ?? null}
+                                photoUrl={u.photoUrl ?? null}
+                                availability={u.availability}
+                                clientes={[]}
+                                mode="clientes"
+                                dashed
+                            />
+                        )),
+                    ]}
+                />
             )}
         </div>
     );

@@ -19,8 +19,8 @@ export const EQUIPO = [
     { id: "david", nombre: "David Alejandro Oliveros", cargo: "Analista CES", clientes: ["Nutresa"], procesos: ["Gestión de Servicios TIC"], color: "260", grupo: "Analistas" },
     { id: "jonny", nombre: "Jonny Marin", cargo: "Analista de Servicios Iaas en Sitio", clientes: ["Nutresa"], procesos: ["Gestión de Servicios TIC"], color: "180", grupo: "Analistas" },
     { id: "robinson", nombre: "Robinson Stiven Ramirez Herrera", cargo: "Analista CES", clientes: ["Nutresa"], procesos: ["Gestión de Servicios TIC"], color: "70", grupo: "Analistas" },
-    { id: "natalia", nombre: "Natalia Gallego Gomez", cargo: "Analista CES", clientes: ["Suramericana"], procesos: ["Gestión de Proyectos"], color: "300", grupo: "Analistas" },
-    { id: "johann", nombre: "Johann Steven Toro Aguirre", cargo: "Analista Servicios Cloud", clientes: ["Nutresa"], procesos: ["Administración de Riesgos"], color: "10", grupo: "Analistas" },
+    { id: "natalia", nombre: "Natalia Gallego Gomez", cargo: "Analista CES", clientes: [], procesos: ["Gestión de Proyectos"], color: "300", grupo: "Analistas" },
+    { id: "johann", nombre: "Johann Steven Toro Aguirre", cargo: "Analista Servicios Cloud", clientes: [], procesos: ["Administración de Riesgos"], color: "10", grupo: "Analistas" },
     { id: "laura", nombre: "Laura Estefania Jaramillo Muñoz", cargo: "Analista de Gestion CES", clientes: [], procesos: ["Todos"], color: "152", grupo: "Analistas" },
 ];
 
