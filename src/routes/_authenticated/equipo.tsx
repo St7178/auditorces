@@ -62,9 +62,7 @@ function normalizeName(name: string) {
 type ClienteAsignado = { nombre: string; activo: boolean | null };
 
 function ClientesTable({ clientes }: { clientes: ClienteAsignado[] }) {
-    if (clientes.length === 0) {
-        return <div className="mt-2 text-[11px] text-muted-foreground">Sin clientes asignados.</div>;
-    }
+    if (clientes.length === 0) return null;
     return (
         <div className="mt-2 overflow-hidden rounded-lg border">
             <table className="w-full text-[11px]">
@@ -83,23 +81,21 @@ function ClientesTable({ clientes }: { clientes: ClienteAsignado[] }) {
     );
 }
 
-// Organigrama: "Vicepresidente"/"Gerentes"/"Coordinadores"/"Analistas" son niveles jerárquicos;
-// "Nutresa" es el equipo dedicado a esa cuenta (el título de la sección, no que todos sus integrantes
-// tengan a Nutresa como cliente). El orden acá define el orden de arriba hacia abajo en la página.
-const GRUPO_ORDEN = ["Vicepresidente", "Gerentes", "Coordinadores", "Analistas", "Nutresa"] as const;
+// Organigrama: "Vicepresidente"/"Gerentes"/"Coordinadores"/"Analistas" son niveles jerárquicos. El
+// orden acá define el orden de arriba hacia abajo en la página.
+const GRUPO_ORDEN = ["Vicepresidente", "Gerentes", "Coordinadores", "Analistas"] as const;
 const GRUPO_INFO: Record<string, { label: string; nota?: string; dot: string }> = {
     Vicepresidente: { label: "Vicepresidente", dot: "bg-fuchsia-500" },
     Gerentes: { label: "Gerentes", dot: "bg-violet-500" },
     Coordinadores: { label: "Coordinadores", dot: "bg-sky-500" },
     Analistas: { label: "Analistas · Colaboradores", dot: "bg-teal-500" },
-    Nutresa: { label: "Nutresa", dot: "bg-amber-500" },
 };
 
 // Vicepresidente y Gerentes muestran siempre "Todos los clientes" (no se limitan a los que aparecen
 // como responsables en el archivo sincronizado).
 const GRUPOS_TODOS_LOS_CLIENTES = new Set(["Vicepresidente", "Gerentes"]);
 
-type DisplayMode = "todos" | "no-aplica" | "clientes";
+type DisplayMode = "todos" | "clientes";
 
 function MemberCard({
     nombre, cargo, mail, photoUrl, availability, colorRing, clientes, mode, dashed,
@@ -138,10 +134,7 @@ function MemberCard({
                 {mode === "todos" && (
                     <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand">Todos los clientes</div>
                 )}
-                {mode === "no-aplica" && (
-                    <div className="mt-3 text-[11px] text-muted-foreground">Clientes: no aplica</div>
-                )}
-                {mode === "clientes" && (
+                {mode === "clientes" && clientes.length > 0 && (
                     <>
                         <div className="mt-3 text-[11px] font-semibold text-foreground">
                             {clientes.length} cliente{clientes.length === 1 ? "" : "s"} asignado{clientes.length === 1 ? "" : "s"}
@@ -262,7 +255,7 @@ function EquipoPage() {
                                 availability={m.availability}
                                 colorRing={m.color}
                                 clientes={clientesDe(m)}
-                                mode={GRUPOS_TODOS_LOS_CLIENTES.has(grupo) ? "todos" : grupo === "Analistas" ? "no-aplica" : "clientes"}
+                                mode={GRUPOS_TODOS_LOS_CLIENTES.has(grupo) ? "todos" : "clientes"}
                             />
                         ))}
                     </OrgSection>
