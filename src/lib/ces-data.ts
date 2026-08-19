@@ -4,20 +4,23 @@ export const CURRENT_USER = { nombre: "Laura", nombreCompleto: "Laura Jaramillo"
 // displayName real en Entra ID — si no calza, el cruce en /equipo falla en silencio y muestra el
 // cargo/foto de respaldo en vez de los datos reales. Verificado contra el directorio real el 2026-08-18.
 // `cargo` queda como el jobTitle real de Entra (solo se usa si Entra no responde).
+// `grupo` organiza /equipo en formato organigrama: "Gerencia"/"Coordinadores"/"Analistas" son niveles
+// jerárquicos; "Nutresa" es el equipo dedicado a esa cuenta — no implica que todos sus integrantes
+// tengan a Nutresa como cliente, es solo el título de la sección (ver GRUPO_ORDEN en equipo.tsx).
 export const EQUIPO = [
-    { id: "andres", nombre: "Andres Cano", cargo: "Coordinador Servicios CES", clientes: ["Ecopetrol", "Bancolombia"], procesos: ["Gestión de Servicios TIC"], color: "152" },
-    { id: "cristian", nombre: "Cristian Rua Sierra", cargo: "Gerente de Operaciones TI", clientes: ["Grupo Éxito"], procesos: ["Arquitectura de Soluciones"], color: "200" },
-    { id: "david", nombre: "David Alejandro Oliveros", cargo: "Analista CES", clientes: ["ISA", "EPM"], procesos: ["Gestión de Servicios TIC"], color: "260" },
-    { id: "elkin", nombre: "Elkin Borja", cargo: "Coordinador Servicios CES", clientes: ["Todos"], procesos: ["Todos"], color: "40" },
-    { id: "natalia", nombre: "Natalia Gallego Gomez", cargo: "Analista CES", clientes: ["Suramericana"], procesos: ["Gestión de Proyectos"], color: "300" },
-    { id: "johann", nombre: "Johann Steven Toro Aguirre", cargo: "Analista Servicios Cloud", clientes: ["Nutresa"], procesos: ["Administración de Riesgos"], color: "10" },
-    { id: "jonny", nombre: "Jonny Marin", cargo: "Analista de Servicios Iaas en Sitio", clientes: ["Argos"], procesos: ["Gestión de Servicios TIC"], color: "180" },
-    { id: "juan", nombre: "Juan Camilo Galeano Velez", cargo: "Vicepresidente de Operaciones TI", clientes: ["Bancolombia"], procesos: ["Arquitectura de Soluciones"], color: "220" },
-    { id: "julio", nombre: "Julio Cesar Calle Zarate", cargo: "Gerente de Plataformas TI", clientes: ["Nuevos negocios"], procesos: ["Gestión del Servicio al Cliente"], color: "90" },
-    { id: "laura", nombre: "Laura Estefania Jaramillo Muñoz", cargo: "Analista de Gestion CES", clientes: ["Todos"], procesos: ["Todos"], color: "152" },
-    { id: "lina", nombre: "Lina Maria Castañeda De Los Rios", cargo: "Coordinadora Servicios Iaas en Sitio", clientes: ["Legal & Compras"], procesos: ["Gestión Jurídica"], color: "330" },
-    { id: "robinson", nombre: "Robinson Stiven Ramirez Herrera", cargo: "Analista CES", clientes: ["EPM"], procesos: ["Gestión de Servicios TIC"], color: "70" },
-    { id: "yuliana", nombre: "Yuliana Arbelaez", cargo: "Coordinador de Servicios IaaS", clientes: ["Reportería"], procesos: ["Gestión de Servicios TIC"], color: "280" },
+    { id: "andres", nombre: "Andres Cano", cargo: "Coordinador Servicios CES", clientes: ["Ecopetrol", "Bancolombia"], procesos: ["Gestión de Servicios TIC"], color: "152", grupo: "Coordinadores" },
+    { id: "cristian", nombre: "Cristian Rua Sierra", cargo: "Gerente de Operaciones TI", clientes: ["Todos"], procesos: ["Arquitectura de Soluciones"], color: "200", grupo: "Gerencia" },
+    { id: "david", nombre: "David Alejandro Oliveros", cargo: "Analista CES", clientes: ["ISA", "EPM"], procesos: ["Gestión de Servicios TIC"], color: "260", grupo: "Nutresa" },
+    { id: "elkin", nombre: "Elkin Borja", cargo: "Coordinador Servicios CES", clientes: ["Todos"], procesos: ["Todos"], color: "40", grupo: "Coordinadores" },
+    { id: "natalia", nombre: "Natalia Gallego Gomez", cargo: "Analista CES", clientes: ["Suramericana"], procesos: ["Gestión de Proyectos"], color: "300", grupo: "Analistas" },
+    { id: "johann", nombre: "Johann Steven Toro Aguirre", cargo: "Analista Servicios Cloud", clientes: ["Nutresa"], procesos: ["Administración de Riesgos"], color: "10", grupo: "Analistas" },
+    { id: "jonny", nombre: "Jonny Marin", cargo: "Analista de Servicios Iaas en Sitio", clientes: ["Argos"], procesos: ["Gestión de Servicios TIC"], color: "180", grupo: "Nutresa" },
+    { id: "juan", nombre: "Juan Camilo Galeano Velez", cargo: "Vicepresidente de Operaciones TI", clientes: ["Todos"], procesos: ["Arquitectura de Soluciones"], color: "220", grupo: "Gerencia" },
+    { id: "julio", nombre: "Julio Cesar Calle Zarate", cargo: "Gerente de Plataformas TI", clientes: ["Todos"], procesos: ["Gestión del Servicio al Cliente"], color: "90", grupo: "Gerencia" },
+    { id: "laura", nombre: "Laura Estefania Jaramillo Muñoz", cargo: "Analista de Gestion CES", clientes: ["Todos"], procesos: ["Todos"], color: "152", grupo: "Analistas" },
+    { id: "lina", nombre: "Lina Maria Castañeda De Los Rios", cargo: "Coordinadora Servicios Iaas en Sitio", clientes: ["Legal & Compras"], procesos: ["Gestión Jurídica"], color: "330", grupo: "Coordinadores" },
+    { id: "robinson", nombre: "Robinson Stiven Ramirez Herrera", cargo: "Analista CES", clientes: ["EPM"], procesos: ["Gestión de Servicios TIC"], color: "70", grupo: "Nutresa" },
+    { id: "yuliana", nombre: "Yuliana Arbelaez", cargo: "Coordinador de Servicios IaaS", clientes: ["Reportería"], procesos: ["Gestión de Servicios TIC"], color: "280", grupo: "Coordinadores" },
 ];
 
 // Mapa oficial de procesos del SIG. Se usa para agrupar la documentación sincronizada

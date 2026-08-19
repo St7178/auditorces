@@ -83,6 +83,100 @@ function ClientesTable({ clientes }: { clientes: ClienteAsignado[] }) {
     );
 }
 
+// Organigrama: "Gerencia"/"Coordinadores"/"Analistas" son niveles jerárquicos; "Nutresa" es el equipo
+// dedicado a esa cuenta (el título de la sección, no que todos sus integrantes tengan a Nutresa como
+// cliente). El orden acá define el orden de arriba hacia abajo en la página.
+const GRUPO_ORDEN = ["Gerencia", "Coordinadores", "Analistas", "Nutresa"] as const;
+const GRUPO_INFO: Record<string, { label: string; nota?: string; dot: string }> = {
+    Gerencia: { label: "Gerencia", dot: "bg-violet-500" },
+    Coordinadores: { label: "Coordinadores", nota: "Clientes actuales tomados del archivo sincronizado", dot: "bg-sky-500" },
+    Analistas: { label: "Analistas · Colaboradores", dot: "bg-teal-500" },
+    Nutresa: { label: "Nutresa", nota: "Equipo dedicado a esta cuenta — no todos sus integrantes tienen a Nutresa como cliente", dot: "bg-amber-500" },
+};
+
+type DisplayMode = "todos" | "no-aplica" | "clientes";
+
+function MemberCard({
+    nombre, cargo, mail, photoUrl, availability, colorRing, clientes, mode, dashed,
+}: {
+    nombre: string;
+    cargo: string;
+    mail: string | null;
+    photoUrl: string | null;
+    availability?: string | null;
+    colorRing?: string;
+    clientes: ClienteAsignado[];
+    mode: DisplayMode;
+    dashed?: boolean;
+}) {
+    return (
+        <Card className={`${dashed ? "border-dashed" : "border-border/60"} transition hover:shadow-lg`}>
+            <CardContent className="p-5">
+                <div className="flex items-start gap-3">
+                    <div className="relative shrink-0">
+                        <Avatar
+                            className="h-14 w-14 rounded-2xl ring-2 ring-offset-2 ring-offset-card"
+                            style={colorRing ? ({ "--tw-ring-color": `oklch(0.65 0.14 ${colorRing})` } as React.CSSProperties) : undefined}
+                        >
+                            <AvatarImage src={photoUrl ?? undefined} alt={nombre} className="object-cover" />
+                            <AvatarFallback className="rounded-2xl bg-brand-soft text-base font-bold text-brand">{initials(nombre)}</AvatarFallback>
+                        </Avatar>
+                        <PresenceDot availability={availability} />
+                    </div>
+                    <div className="min-w-0 flex-1 pt-0.5">
+                        <div className="truncate text-base font-semibold">{nombre}</div>
+                        <div className="truncate text-xs text-muted-foreground">{cargo}</div>
+                    </div>
+                </div>
+                <div className="mt-3 text-xs text-muted-foreground">{mail ?? "Correo no disponible"}</div>
+
+                {mode === "todos" && (
+                    <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand">Todos los clientes</div>
+                )}
+                {mode === "no-aplica" && (
+                    <div className="mt-3 text-[11px] text-muted-foreground">Clientes: no aplica</div>
+                )}
+                {mode === "clientes" && (
+                    <>
+                        <div className="mt-3 text-[11px] font-semibold text-foreground">
+                            {clientes.length} cliente{clientes.length === 1 ? "" : "s"} asignado{clientes.length === 1 ? "" : "s"}
+                        </div>
+                        <ClientesTable clientes={clientes} />
+                    </>
+                )}
+
+                <div className="mt-4 flex gap-2">
+                    <a
+                        href={mail ? `mailto:${mail}` : undefined}
+                        className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                        aria-disabled={!mail}
+                    >
+                        <Mail className="h-3 w-3" /> Email
+                    </a>
+                    <Link to="/clientes" className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent">
+                        Ir al Cliente <ArrowRight className="h-3 w-3" />
+                    </Link>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function OrgSection({ grupo, children }: { grupo: string; children: React.ReactNode }) {
+    const info = GRUPO_INFO[grupo] ?? { label: grupo, dot: "bg-muted-foreground" };
+    return (
+        <section className="relative mt-10 first:mt-8">
+            <div className="mb-3 flex items-center gap-3">
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${info.dot}`} />
+                <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">{info.label}</h2>
+                <span className="h-px flex-1 bg-border" />
+            </div>
+            {info.nota && <p className="mb-3 -mt-1 text-xs text-muted-foreground">{info.nota}</p>}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{children}</div>
+        </section>
+    );
+}
+
 function EquipoPage() {
     const { entraUsers, error } = Route.useLoaderData();
     const entraByName = new Map(entraUsers.map((u) => [normalizeName(u.displayName), u]));
@@ -148,73 +242,45 @@ function EquipoPage() {
                 </div>
             )}
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {equipo.map((m) => {
-                    const clientes = clientesDe(m);
-                    return (
-                        <Card key={m.id} className="border-border/60 transition hover:shadow-lg">
-                            <CardContent className="p-5">
-                                <div className="flex items-start gap-3">
-                                    <div className="relative shrink-0">
-                                        <Avatar className="h-14 w-14 rounded-2xl ring-2 ring-offset-2 ring-offset-card" style={{ "--tw-ring-color": `oklch(0.65 0.14 ${m.color})` } as React.CSSProperties}>
-                                            <AvatarImage src={m.photoUrl ?? undefined} alt={m.nombre} className="object-cover" />
-                                            <AvatarFallback className="rounded-2xl bg-brand-soft text-base font-bold text-brand">{initials(m.nombre)}</AvatarFallback>
-                                        </Avatar>
-                                        <PresenceDot availability={m.availability} />
-                                    </div>
-                                    <div className="min-w-0 flex-1 pt-0.5">
-                                        <div className="truncate text-base font-semibold">{m.nombre}</div>
-                                        <div className="truncate text-xs text-muted-foreground">{m.cargo}</div>
-                                    </div>
-                                </div>
-                                <div className="mt-3 text-xs text-muted-foreground">{m.mail ?? "Correo no disponible"}</div>
+            {GRUPO_ORDEN.map((grupo) => {
+                const miembros = equipo.filter((m) => m.grupo === grupo);
+                if (miembros.length === 0) return null;
+                return (
+                    <OrgSection key={grupo} grupo={grupo}>
+                        {miembros.map((m) => (
+                            <MemberCard
+                                key={m.id}
+                                nombre={m.nombre}
+                                cargo={m.cargo}
+                                mail={m.mail}
+                                photoUrl={m.photoUrl}
+                                availability={m.availability}
+                                colorRing={m.color}
+                                clientes={clientesDe(m)}
+                                mode={grupo === "Gerencia" ? "todos" : grupo === "Analistas" ? "no-aplica" : "clientes"}
+                            />
+                        ))}
+                    </OrgSection>
+                );
+            })}
 
-                                <div className="mt-3 text-[11px] font-semibold text-foreground">{clientes.length} cliente{clientes.length === 1 ? "" : "s"} asignado{clientes.length === 1 ? "" : "s"}</div>
-                                <ClientesTable clientes={clientes} />
-
-                                <div className="mt-4 flex gap-2">
-                                    <a href={m.mail ? `mailto:${m.mail}` : undefined} className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent aria-disabled:pointer-events-none aria-disabled:opacity-50" aria-disabled={!m.mail}>
-                                        <Mail className="h-3 w-3" /> Email
-                                    </a>
-                                    <Link to="/clientes" className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent">
-                                        Ir al Cliente <ArrowRight className="h-3 w-3" />
-                                    </Link>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
-
-                {entraOnly.map((u) => (
-                    <Card key={u.id} className="border-dashed border-border/60 transition hover:shadow-lg">
-                        <CardContent className="p-5">
-                            <div className="flex items-start gap-3">
-                                <div className="relative shrink-0">
-                                    <Avatar className="h-14 w-14 rounded-2xl">
-                                        <AvatarImage src={u.photoUrl ?? undefined} alt={u.displayName} className="object-cover" />
-                                        <AvatarFallback className="rounded-2xl bg-muted text-base font-bold text-muted-foreground">{initials(u.displayName)}</AvatarFallback>
-                                    </Avatar>
-                                    <PresenceDot availability={u.availability} />
-                                </div>
-                                <div className="min-w-0 flex-1 pt-0.5">
-                                    <div className="truncate text-base font-semibold">{u.displayName}</div>
-                                    <div className="truncate text-xs text-muted-foreground">{u.jobTitle}</div>
-                                </div>
-                            </div>
-                            <div className="mt-3 text-xs text-muted-foreground">{u.mail ?? u.userPrincipalName ?? "Correo no disponible"}</div>
-                            <div className="mt-3 text-[11px] font-semibold text-foreground">0 clientes asignados</div>
-                            <div className="mt-4 flex gap-2">
-                                <a href={`mailto:${u.mail ?? u.userPrincipalName}`} className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent">
-                                    <Mail className="h-3 w-3" /> Email
-                                </a>
-                                <Link to="/clientes" className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent">
-                                    Ir al Cliente <ArrowRight className="h-3 w-3" />
-                                </Link>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+            {entraOnly.length > 0 && (
+                <OrgSection grupo="Otros">
+                    {entraOnly.map((u) => (
+                        <MemberCard
+                            key={u.id}
+                            nombre={u.displayName}
+                            cargo={u.jobTitle ?? ""}
+                            mail={u.mail ?? u.userPrincipalName ?? null}
+                            photoUrl={u.photoUrl ?? null}
+                            availability={u.availability}
+                            clientes={[]}
+                            mode="clientes"
+                            dashed
+                        />
+                    ))}
+                </OrgSection>
+            )}
         </div>
     );
 }
