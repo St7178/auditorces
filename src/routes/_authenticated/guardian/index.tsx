@@ -9,7 +9,6 @@ import {
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChatMarkdown } from "@/components/chat-markdown";
-import { CesAuditorAvatar, type AvatarEstado } from "@/components/ces-auditor-avatar";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 
 const TOOL_LABELS: Record<string, string> = {
@@ -398,9 +397,6 @@ function GuardianPage() {
     });
     const endRef = useRef<HTMLDivElement>(null);
     const loading = status === "submitted" || status === "streaming";
-    // "submitted" = ya se envió el mensaje y se espera la primera respuesta (pensando); "streaming" =
-    // ya está escribiendo la respuesta (hablando); cualquier otro momento, está a la espera (escuchando).
-    const avatarEstado: AvatarEstado = status === "submitted" ? "thinking" : status === "streaming" ? "talking" : "listening";
 
     const handleApprove = (approvalId: string, approved: boolean) => {
         void addToolApprovalResponse({ id: approvalId, approved });
@@ -466,17 +462,7 @@ function GuardianPage() {
         lastMessage.parts.some((p: any) => p.type === "tool-generarInformeAuditoria" && p.state === "output-available");
 
     return (
-        <>
-            {/* El personaje ocupa toda la pantalla como fondo fijo, detrás de todo lo demás. OJO: sin
-                z-index negativo — un z-index negativo en un elemento fixed lo manda detrás del fondo
-                opaco de TODA la app (bg-background en AppShell), no solo detrás del chat, y queda
-                invisible. Al dejarlo en el orden natural del DOM (sin z-index), pinta encima del fondo
-                de la app pero debajo del resto del contenido de esta página, que viene después en el
-                árbol. Con cámara en perspectiva, agrandar el lienzo no agranda al personaje, solo
-                revela más escena a su alrededor, así que su tamaño se mantiene igual que antes. */}
-            <CesAuditorAvatar estado={avatarEstado} className="pointer-events-none fixed inset-0 h-screen w-screen" />
-
-            <div className="relative mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
+        <div className="relative mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
                 {/* Header */}
                 <div className="mb-4 flex flex-wrap items-start gap-4">
                     <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-brand shadow-sm shadow-slate-200 border border-slate-200">
@@ -699,6 +685,5 @@ function GuardianPage() {
                 </div>
             </Card>
         </div>
-        </>
     );
 }
