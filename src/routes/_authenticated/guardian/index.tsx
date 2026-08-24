@@ -9,6 +9,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChatMarkdown } from "@/components/chat-markdown";
+import { CesAuditorAvatar } from "@/components/ces-auditor-avatar";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 
 const TOOL_LABELS: Record<string, string> = {
@@ -559,6 +560,7 @@ function GuardianPage() {
                 <div className="flex-1 overflow-y-auto px-6 py-6">
                     {empty ? (
                         <div className="mx-auto max-w-2xl">
+                            <CesAuditorAvatar className="mx-auto mb-2 h-56 w-56" />
                             <div className={`rounded-2xl border p-6 transition-colors ${MODO_TARJETA[modo]}`}>
                                 <p className="text-sm leading-relaxed">
                                     Hola <strong>{firstName}</strong> 👋, soy CES Auditor. Estoy aquí para ayudarte en la gestión del área CES.<br /><br />
