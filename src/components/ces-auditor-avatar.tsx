@@ -1,12 +1,7 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
-import type { Application } from "@splinetool/runtime";
-
-// Spline usa WebGL/canvas — no existe en el servidor. ClientOnly evita que SSR intente renderizarlo, y
-// el import perezoso hace que el runtime de Spline (pesado) solo se descargue en el navegador, cuando
-// esta tarjeta realmente se muestra, no como parte del bundle general de la app.
-const Spline = lazy(() => import("@splinetool/react-spline"));
+import type { Application as SplineApplication } from "@splinetool/runtime";
 
 const SCENE_URL = "https://prod.spline.design/EfiehPHlTt3AM6G7/scene.splinecode";
 
@@ -21,20 +16,62 @@ function AvatarFallback() {
 }
 
 // Nombres de objeto conocidos para el watermark/fondo que Spline hornea DENTRO de la escena exportada
-// (no hay una prop oficial para quitarlos vía SDK) — se buscan por nombre y se ocultan si existen. Si
-// el nombre real del proyecto no calza con ninguno de estos, simplemente no se oculta nada, no rompe.
-// El fondo específicamente puede no ser un objeto sino el color de fondo de la escena — eso solo se
+// (no hay una prop oficial para quitarlos vía SDK) — se buscan por nombre y se ocultan si existen. El
+// fondo específicamente puede no ser un objeto sino el color de fondo de la escena — eso solo se
 // quita desde el editor de Spline (Project Settings → Background → Transparent), no por código.
 const OBJETOS_A_OCULTAR = ["Built with Spline", "Watermark", "watermark", "Badge", "Background", "Fondo", "Background Color"];
 
-export function CesAuditorAvatar({ estado, className }: { estado: AvatarEstado; className?: string }) {
-    const [app, setApp] = useState<Application | null>(null);
+function SplineCanvas({ estado, className }: { estado: AvatarEstado; className?: string }) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const appRef = useRef<SplineApplication | null>(null);
+    const [ready, setReady] = useState(false);
+
+    useEffect(() => {
+        let disposed = false;
+        let app: SplineApplication | null = null;
+
+        (async () => {
+            const { Application } = await import("@splinetool/runtime");
+            if (disposed || !canvasRef.current) return;
+
+            // El runtime auto-selecciona WebGPU cuando el navegador lo soporta, pero en Windows/Chrome
+            // esa vía tiene un bug conocido: el tiempo por frame crece sin parar (ver consola:
+            // "requestAnimationFrame handler took Nms y sigue subiendo") hasta colgar la escena sin
+            // lanzar ningún error — nunca llega a disparar onLoad. Se fuerza "webgl", el pipeline
+            // clásico y estable, para evitar esa vía por completo.
+            app = new Application(canvasRef.current, { renderer: "webgl" });
+            appRef.current = app;
+
+            await app.load(SCENE_URL);
+            if (disposed) return;
+
+            // Diagnóstico: la única forma de saber los nombres reales de los objetos de esta escena en
+            // particular es listarlos, ya que findObjectByName exige el nombre exacto.
+            console.info("[CesAuditorAvatar] Objetos en la escena:", app.getAllObjects().map((o) => o.name));
+
+            for (const nombre of OBJETOS_A_OCULTAR) {
+                const obj = app.findObjectByName(nombre);
+                if (obj) obj.visible = false;
+            }
+
+            setReady(true);
+        })().catch((err) => {
+            console.error("[CesAuditorAvatar] Error cargando la escena de Spline:", err);
+        });
+
+        return () => {
+            disposed = true;
+            app?.dispose();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Las variables booleanas isListening/isThinking/isTalking ya vienen definidas en la escena (las
     // usa su propia lógica de estados para decidir qué animación mostrar) — acá solo se actualizan
     // según lo que esté haciendo el chat en cada momento.
     useEffect(() => {
-        if (!app) return;
+        const app = appRef.current;
+        if (!app || !ready) return;
         try {
             app.setVariable("isListening", estado === "listening");
             app.setVariable("isThinking", estado === "thinking");
@@ -42,35 +79,24 @@ export function CesAuditorAvatar({ estado, className }: { estado: AvatarEstado; 
         } catch {
             // La escena podría no tener estas variables definidas — no debe romper el chat si falla.
         }
-    }, [app, estado]);
+    }, [estado, ready]);
 
     return (
+        <div className={className}>
+            <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block", background: "transparent" }} />
+            {!ready && (
+                <div className="absolute inset-0">
+                    <AvatarFallback />
+                </div>
+            )}
+        </div>
+    );
+}
+
+export function CesAuditorAvatar({ estado, className }: { estado: AvatarEstado; className?: string }) {
+    return (
         <ClientOnly fallback={<div className={className}><AvatarFallback /></div>}>
-            <Suspense fallback={<div className={className}><AvatarFallback /></div>}>
-                <Spline
-                    scene={SCENE_URL}
-                    className={className}
-                    style={{ background: "transparent" }}
-                    onLoad={(loadedApp) => {
-                        // Log de diagnóstico: la API de Spline no permite listar los objetos de la escena,
-                        // solo buscarlos por nombre exacto — así que si el watermark/fondo sigue apareciendo,
-                        // esto dice en la consola cuáles de los nombres conocidos SÍ existen en esta escena
-                        // en particular, para poder agregar el nombre real si no está en la lista.
-                        const encontrados = OBJETOS_A_OCULTAR.filter((nombre) => {
-                            const obj = loadedApp.findObjectByName(nombre);
-                            if (!obj) return false;
-                            obj.visible = false;
-                            return true;
-                        });
-                        if (encontrados.length > 0) {
-                            console.info("[CesAuditorAvatar] Objetos ocultados:", encontrados);
-                        } else {
-                            console.warn("[CesAuditorAvatar] Ningún objeto conocido de watermark/fondo se encontró en la escena. Revisa los nombres reales en el editor de Spline y agrégalos a OBJETOS_A_OCULTAR.");
-                        }
-                        setApp(loadedApp);
-                    }}
-                />
-            </Suspense>
+            <SplineCanvas estado={estado} className={className} />
         </ClientOnly>
     );
 }
