@@ -9,6 +9,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChatMarkdown } from "@/components/chat-markdown";
+import { CesAuditorAvatar, type AvatarEstado } from "@/components/ces-auditor-avatar";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 
 const TOOL_LABELS: Record<string, string> = {
@@ -379,6 +380,52 @@ const MODO_INFO: Record<(typeof MODOS)[number]["id"], { titulo: string; ideal: s
 // preguntarOpciones (ver SYSTEM_PROMPT en api/chat.ts) — reemplaza al selector fijo de procesos.
 const MENSAJE_PREPARAR_AUDITORIA = "Quiero prepararme para una auditoría. Ayúdame a elegir qué proceso auditar.";
 
+// El backend no emite una señal explícita de "en qué fase va la auditoría" — se infiere del lado del
+// cliente con señales ya disponibles (si hay conversación, si ya se guardó algún hallazgo, si ya se
+// generó el informe final). Es aproximado a propósito: sirve como indicador visual de progreso, no
+// como una máquina de estados que gobierne el flujo real de la conversación.
+const PASOS = [
+    { id: "proceso", label: "Proceso" },
+    { id: "preguntas", label: "Preguntas" },
+    { id: "hallazgos", label: "Hallazgos" },
+    { id: "informe", label: "Informe" },
+] as const;
+
+function Stepper({ pasoActualIndex, onStepClick }: { pasoActualIndex: number; onStepClick: (idx: number) => void }) {
+    return (
+        <div className="mb-5 flex items-center gap-1.5">
+            {PASOS.map((p, i) => {
+                const alcanzado = i <= pasoActualIndex;
+                const actual = i === pasoActualIndex;
+                const completado = alcanzado && i < pasoActualIndex;
+                return (
+                    <div key={p.id} className="flex flex-1 items-center gap-1.5 last:flex-none">
+                        <button
+                            onClick={() => alcanzado && onStepClick(i)}
+                            disabled={!alcanzado}
+                            className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                                actual
+                                    ? "border-brand bg-brand text-white shadow-sm"
+                                    : alcanzado
+                                    ? "cursor-pointer border-brand/40 bg-brand-soft text-brand hover:bg-brand/10"
+                                    : "cursor-default border-border bg-muted/30 text-muted-foreground"
+                            }`}
+                        >
+                            {completado ? (
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                            ) : (
+                                <span className={`h-1.5 w-1.5 rounded-full ${actual ? "animate-pulse bg-white" : alcanzado ? "bg-brand" : "bg-muted-foreground/40"}`} />
+                            )}
+                            {p.label}
+                        </button>
+                        {i < PASOS.length - 1 && <div className={`h-0.5 flex-1 rounded ${i < pasoActualIndex ? "bg-brand/40" : "bg-border"}`} />}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 function GuardianPage() {
     const { user } = AuthenticatedRoute.useRouteContext();
     const firstName = user?.name?.split(" ")[0] ?? "Usuario";
@@ -396,7 +443,13 @@ function GuardianPage() {
         sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     });
     const endRef = useRef<HTMLDivElement>(null);
+    const historialRef = useRef<HTMLDivElement>(null);
+    const primerHallazgoRef = useRef<HTMLDivElement | null>(null);
+    const [historialAbierto, setHistorialAbierto] = useState(false);
     const loading = status === "submitted" || status === "streaming";
+    // "submitted" = ya se envió el mensaje y se espera la primera respuesta (pensando); "streaming" =
+    // ya está escribiendo la respuesta (hablando); cualquier otro momento, está a la espera (escuchando).
+    const avatarEstado: AvatarEstado = status === "submitted" ? "thinking" : status === "streaming" ? "talking" : "listening";
 
     const handleApprove = (approvalId: string, approved: boolean) => {
         void addToolApprovalResponse({ id: approvalId, approved });
@@ -412,6 +465,8 @@ function GuardianPage() {
         }
         setMessages([]);
         setInput("");
+        setHistorialAbierto(false);
+        primerHallazgoRef.current = null;
     };
 
     // Vuelve a mostrar una conversación anterior de esta sesión (la quita de la lista para no
@@ -461,13 +516,34 @@ function GuardianPage() {
         lastMessage?.role === "assistant" &&
         lastMessage.parts.some((p: any) => p.type === "tool-generarInformeAuditoria" && p.state === "output-available");
 
+    // Progreso aproximado de la auditoría, solo para el stepper visual (ver comentario junto a PASOS).
+    const hallazgosCount = messages.reduce(
+        (acc, m) => acc + m.parts.filter((p: any) => p.type === "tool-proponerHallazgo" && p.state === "output-available").length,
+        0,
+    );
+    let pasoActualIndex = 0;
+    if (!empty) pasoActualIndex = 1;
+    if (hallazgosCount > 0) pasoActualIndex = 2;
+    if (auditoriaFinalizada) pasoActualIndex = 3;
+
+    const irAPaso = (idx: number) => {
+        setHistorialAbierto(true);
+        setTimeout(() => {
+            const destino = idx === 2 && primerHallazgoRef.current ? primerHallazgoRef.current : historialRef.current;
+            destino?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+    };
+
     return (
         <div className="relative mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
                 {/* Header */}
                 <div className="mb-4 flex flex-wrap items-start gap-4">
-                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-brand shadow-sm shadow-slate-200 border border-slate-200">
-                        <Sparkles className="h-7 w-7" />
-                        <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-brand shadow-sm shadow-slate-200">
+                    <div className="relative h-14 w-14 shrink-0">
+                        <CesAuditorAvatar
+                            estado={avatarEstado}
+                            className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white/90 text-brand shadow-sm shadow-slate-200 border border-slate-200"
+                        />
+                        <span className="absolute -bottom-1 -right-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-white text-brand shadow-sm shadow-slate-200">
                             <ShieldCheck className="h-3 w-3" />
                         </span>
                     </div>
@@ -592,28 +668,46 @@ function GuardianPage() {
                             </div>
                         </div>
                     ) : (
-                        <div className="mx-auto max-w-3xl space-y-5">
-                            {messages.map((m, mIdx) => {
-                                const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
-                                const isUser = m.role === "user";
-                                const esUltimoMensaje = mIdx === messages.length - 1;
+                        <div className="mx-auto max-w-3xl">
+                            <Stepper pasoActualIndex={pasoActualIndex} onStepClick={irAPaso} />
+
+                            {/* Tarjeta del paso actual: el turno más reciente, grande y al centro, en vez
+                                de un feed que crece sin fin — el historial completo sigue disponible abajo. */}
+                            {(() => {
+                                if (loading && lastMessage?.role === "user") {
+                                    return (
+                                        <div className="rounded-2xl border border-brand/30 bg-card p-6 shadow-sm">
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-brand text-white">
+                                                    <Sparkles className="h-4 w-4" />
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Pensando…
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                if (!lastMessage || lastMessage.role !== "assistant") return null;
+                                const ultimoAsistente = lastMessage;
+                                const ultimoUsuario = [...messages].reverse().find((m) => m.role === "user");
+                                const textoUltimoUsuario = ultimoUsuario?.parts.map((p) => (p.type === "text" ? p.text : "")).join("") ?? "";
                                 return (
-                                    <div key={m.id} className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
-                                        {isUser ? (
-                                            <Avatar className="h-9 w-9 shrink-0 rounded-xl">
-                                                <AvatarImage src="/api/me/photo" alt={user?.name ?? "Tú"} className="object-cover" />
-                                                <AvatarFallback className="rounded-xl bg-secondary text-secondary-foreground">{userInitials}</AvatarFallback>
-                                            </Avatar>
-                                        ) : (
-                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-brand text-white">
-                                                <Sparkles className="h-4 w-4" />
+                                    <>
+                                        {textoUltimoUsuario && (
+                                            <div className="mb-2 truncate text-xs font-medium text-muted-foreground">
+                                                Tu respuesta: <span className="text-foreground">{textoUltimoUsuario}</span>
                                             </div>
                                         )}
-                                        <div className={`max-w-[80%] space-y-2 rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-brand text-white" : "bg-muted/60"}`}>
-                                            {isUser ? (
-                                                text
-                                            ) : (
-                                                m.parts.map((p, idx) => {
+                                        <div className="rounded-2xl border border-brand/30 bg-card p-5 shadow-sm sm:p-6">
+                                            <div className="mb-3 flex items-center gap-2">
+                                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl gradient-brand text-white">
+                                                    <Sparkles className="h-4 w-4" />
+                                                </div>
+                                                <span className="text-xs font-semibold text-muted-foreground">CES Auditor</span>
+                                            </div>
+                                            <div className="space-y-3 text-sm leading-relaxed">
+                                                {ultimoAsistente.parts.map((p, idx) => {
                                                     if (p.type === "text") return p.text ? <ChatMarkdown key={idx} text={p.text} /> : null;
                                                     if (String(p.type).startsWith("tool-")) {
                                                         return (
@@ -622,37 +716,96 @@ function GuardianPage() {
                                                                 part={p}
                                                                 onApprove={handleApprove}
                                                                 onOption={(t) => submit(t)}
-                                                                interactive={esUltimoMensaje && !loading}
+                                                                interactive={!loading}
                                                             />
                                                         );
                                                     }
                                                     return null;
-                                                })
-                                            )}
+                                                })}
+                                                {loading && (
+                                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                        <Loader2 className="h-3 w-3 animate-spin" /> Escribiendo…
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
+                                        {auditoriaFinalizada && (
+                                            <div className="mt-4 flex justify-center">
+                                                <button
+                                                    onClick={() => submit(MENSAJE_PREPARAR_AUDITORIA)}
+                                                    className="flex items-center gap-2 rounded-xl border border-brand/40 bg-brand-soft px-5 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white"
+                                                >
+                                                    <Sparkles className="h-4 w-4" /> Auditar otro proceso
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
                                 );
-                            })}
-                            {loading && (
-                                <div className="flex gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-brand text-white">
-                                        <Sparkles className="h-4 w-4" />
+                            })()}
+
+                            {/* Historial completo — nada se pierde, solo se colapsa por defecto para que
+                                el paso actual sea lo protagonista en vez de un feed interminable. */}
+                            <div className="mt-6">
+                                <button
+                                    onClick={() => setHistorialAbierto((v) => !v)}
+                                    className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+                                >
+                                    <MessagesSquare className="h-3.5 w-3.5" />
+                                    {historialAbierto ? "Ocultar conversación completa" : `Ver conversación completa (${messages.length})`}
+                                </button>
+
+                                {historialAbierto && (
+                                    <div ref={historialRef} className="mt-3 space-y-5 border-t pt-4">
+                                        {messages.map((m, mIdx) => {
+                                            const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+                                            const isUser = m.role === "user";
+                                            const esUltimoMensaje = mIdx === messages.length - 1;
+                                            const tieneHallazgo = m.parts.some((p: any) => p.type === "tool-proponerHallazgo" && p.state === "output-available");
+                                            return (
+                                                <div
+                                                    key={m.id}
+                                                    ref={(el) => {
+                                                        if (tieneHallazgo && el && !primerHallazgoRef.current) primerHallazgoRef.current = el;
+                                                    }}
+                                                    className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}
+                                                >
+                                                    {isUser ? (
+                                                        <Avatar className="h-9 w-9 shrink-0 rounded-xl">
+                                                            <AvatarImage src="/api/me/photo" alt={user?.name ?? "Tú"} className="object-cover" />
+                                                            <AvatarFallback className="rounded-xl bg-secondary text-secondary-foreground">{userInitials}</AvatarFallback>
+                                                        </Avatar>
+                                                    ) : (
+                                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-brand text-white">
+                                                            <Sparkles className="h-4 w-4" />
+                                                        </div>
+                                                    )}
+                                                    <div className={`max-w-[80%] space-y-2 rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "bg-brand text-white" : "bg-muted/60"}`}>
+                                                        {isUser ? (
+                                                            text
+                                                        ) : (
+                                                            m.parts.map((p, idx) => {
+                                                                if (p.type === "text") return p.text ? <ChatMarkdown key={idx} text={p.text} /> : null;
+                                                                if (String(p.type).startsWith("tool-")) {
+                                                                    return (
+                                                                        <ToolPart
+                                                                            key={idx}
+                                                                            part={p}
+                                                                            onApprove={handleApprove}
+                                                                            onOption={(t) => submit(t)}
+                                                                            interactive={esUltimoMensaje && !loading}
+                                                                        />
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            })
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                    <div className="rounded-2xl bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
-                                        <Loader2 className="inline h-3 w-3 animate-spin" /> Analizando…
-                                    </div>
-                                </div>
-                            )}
-                            {auditoriaFinalizada && (
-                                <div className="flex justify-center">
-                                    <button
-                                        onClick={() => submit(MENSAJE_PREPARAR_AUDITORIA)}
-                                        className="flex items-center gap-2 rounded-xl border border-brand/40 bg-brand-soft px-5 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white"
-                                    >
-                                        <Sparkles className="h-4 w-4" /> Auditar otro proceso
-                                    </button>
-                                </div>
-                            )}
+                                )}
+                            </div>
                             <div ref={endRef} />
                         </div>
                     )}
