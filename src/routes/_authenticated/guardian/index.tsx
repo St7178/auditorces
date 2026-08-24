@@ -9,7 +9,6 @@ import {
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChatMarkdown } from "@/components/chat-markdown";
-import { CesAuditorAvatar, type AvatarEstado } from "@/components/ces-auditor-avatar";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 
 const TOOL_LABELS: Record<string, string> = {
@@ -447,9 +446,6 @@ function GuardianPage() {
     const primerHallazgoRef = useRef<HTMLDivElement | null>(null);
     const [historialAbierto, setHistorialAbierto] = useState(false);
     const loading = status === "submitted" || status === "streaming";
-    // "submitted" = ya se envió el mensaje y se espera la primera respuesta (pensando); "streaming" =
-    // ya está escribiendo la respuesta (hablando); cualquier otro momento, está a la espera (escuchando).
-    const avatarEstado: AvatarEstado = status === "submitted" ? "thinking" : status === "streaming" ? "talking" : "listening";
 
     const handleApprove = (approvalId: string, approved: boolean) => {
         void addToolApprovalResponse({ id: approvalId, approved });
@@ -536,15 +532,6 @@ function GuardianPage() {
 
     return (
         <div className="relative mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
-                {/* Personaje flotante en la esquina — se probó a 56px y a 112px en el header y en ambos
-                    casos la cámara de esta escena reencuadraba mal en una caja tan chica y cuadrada
-                    (terminaba mostrando un piso reflectante negro con el watermark reflejado en vez del
-                    personaje). En el visor propio de Spline, con más espacio, se ve bien — por eso este
-                    panel es bastante más grande. Oculto en pantallas chicas para no tapar el composer. */}
-                <div className="fixed bottom-6 right-6 z-40 hidden h-80 w-60 overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xl sm:block">
-                    <CesAuditorAvatar estado={avatarEstado} className="relative h-full w-full" />
-                </div>
-
                 {/* Header */}
                 <div className="mb-4 flex flex-wrap items-start gap-4">
                     <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-brand shadow-sm shadow-slate-200 border border-slate-200">
