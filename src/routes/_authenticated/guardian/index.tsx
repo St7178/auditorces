@@ -466,15 +466,21 @@ function GuardianPage() {
         lastMessage.parts.some((p: any) => p.type === "tool-generarInformeAuditoria" && p.state === "output-available");
 
     return (
-        <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
-            {/* Header */}
-            <div className="mb-4 flex flex-wrap items-start gap-4">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden">
-                    <CesAuditorAvatar estado={avatarEstado} className="h-full w-full" />
-                    <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-brand shadow-sm shadow-slate-200">
-                        <ShieldCheck className="h-3 w-3" />
-                    </span>
-                </div>
+        <>
+            {/* El personaje ocupa toda la pantalla como fondo fijo, detrás de todo lo demás — con una
+                cámara en perspectiva, agrandar el lienzo no agranda al personaje, solo revela más
+                escena a su alrededor, así que su tamaño se mantiene igual que antes. */}
+            <CesAuditorAvatar estado={avatarEstado} className="pointer-events-none fixed inset-0 -z-10 h-screen w-screen" />
+
+            <div className="relative mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
+                {/* Header */}
+                <div className="mb-4 flex flex-wrap items-start gap-4">
+                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-brand shadow-sm shadow-slate-200 border border-slate-200">
+                        <Sparkles className="h-7 w-7" />
+                        <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-brand shadow-sm shadow-slate-200">
+                            <ShieldCheck className="h-3 w-3" />
+                        </span>
+                    </div>
                 <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                         <h1 className="truncate text-2xl font-bold">CES AUDITOR</h1>
@@ -689,5 +695,6 @@ function GuardianPage() {
                 </div>
             </Card>
         </div>
+        </>
     );
 }
