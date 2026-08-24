@@ -1,23 +1,79 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses, type UIMessage } from "ai";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, Loader2, ShieldCheck, Search, CheckCircle2, XCircle, CalendarPlus, FileCheck2, ClipboardCheck, ClipboardList } from "lucide-react";
+import {
+    Sparkles, Send, Loader2, ShieldCheck, Search, CheckCircle2, XCircle, CalendarPlus, FileCheck2,
+    ClipboardCheck, ClipboardList, MessageSquarePlus, MessagesSquare, FileText, ListChecks,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChatMarkdown } from "@/components/chat-markdown";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
-import { MAPA_PROCESOS_CES, CATEGORIA_COLOR } from "@/lib/ces-data";
 
 const TOOL_LABELS: Record<string, string> = {
     consultarRiesgos: "Riesgos CES",
     consultarIndicadores: "Indicadores CES",
     consultarClientes: "Clientes CES",
     consultarProcesos: "Procesos CES",
-    consultarDocumentacion: "Documentación",
 };
 
-function ToolPart({ part, onApprove }: { part: any; onApprove: (id: string, approved: boolean) => void }) {
+// Campo de respuesta libre bajo las opciones de preguntarOpciones — colapsado hasta que se necesita,
+// para que el caso común (elegir un botón) no compita visualmente con un input de texto.
+function OtraRespuesta({ onSubmit, disabled }: { onSubmit: (text: string) => void; disabled: boolean }) {
+    const [abierto, setAbierto] = useState(false);
+    const [texto, setTexto] = useState("");
+
+    if (!abierto) {
+        return (
+            <button
+                disabled={disabled}
+                onClick={() => setAbierto(true)}
+                className="mt-2 text-[11px] font-medium text-muted-foreground underline decoration-dotted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+                Escribir otra respuesta
+            </button>
+        );
+    }
+
+    const enviar = () => {
+        const t = texto.trim();
+        if (!t) return;
+        onSubmit(t);
+        setTexto("");
+        setAbierto(false);
+    };
+
+    return (
+        <div className="mt-2 flex items-center gap-1.5">
+            <input
+                autoFocus
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") enviar(); }}
+                disabled={disabled}
+                placeholder="Escribe tu respuesta…"
+                className="min-w-0 flex-1 rounded-lg border bg-background px-2.5 py-1.5 text-xs outline-none focus:border-brand disabled:opacity-50"
+            />
+            <button
+                onClick={enviar}
+                disabled={disabled || !texto.trim()}
+                className="rounded-lg bg-brand px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+            >
+                Enviar
+            </button>
+        </div>
+    );
+}
+
+function ToolPart({
+    part, onApprove, onOption, interactive,
+}: {
+    part: any;
+    onApprove: (id: string, approved: boolean) => void;
+    onOption: (text: string) => void;
+    interactive: boolean;
+}) {
     const toolName = String(part.type).replace(/^tool-/, "");
 
     if (toolName === "proponerHallazgo") {
@@ -142,6 +198,88 @@ function ToolPart({ part, onApprove }: { part: any; onApprove: (id: string, appr
         return null;
     }
 
+    if (toolName === "preguntarOpciones") {
+        const input = part.input || {};
+        if (part.state !== "output-available" && part.state !== "input-available") {
+            return (
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Preparando pregunta…
+                </div>
+            );
+        }
+        const opciones: string[] = Array.isArray(input.opciones) ? input.opciones : [];
+        return (
+            <div className="rounded-xl border border-brand/30 bg-card p-3.5 text-sm">
+                <div className="flex items-start gap-1.5 font-medium text-foreground">
+                    <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-brand" /> {input.pregunta}
+                </div>
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {opciones.map((op: string) => (
+                        <button
+                            key={op}
+                            disabled={!interactive}
+                            onClick={() => onOption(op)}
+                            className="rounded-lg border border-brand/40 bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand transition hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-brand-soft disabled:hover:text-brand"
+                        >
+                            {op}
+                        </button>
+                    ))}
+                </div>
+                {input.permiteOtro !== false && (
+                    <OtraRespuesta onSubmit={onOption} disabled={!interactive} />
+                )}
+            </div>
+        );
+    }
+
+    if (toolName === "consultarDocumentacion") {
+        if (part.state === "input-streaming" || part.state === "input-available") {
+            return (
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Consultando Documentación…
+                </div>
+            );
+        }
+        if (part.state !== "output-available") return null;
+        const documentos: any[] = Array.isArray(part.output?.documentos) ? part.output.documentos : [];
+        if (documentos.length === 0) {
+            return (
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <FileText className="h-3 w-3" /> Documentación consultada — sin documentos{part.output?.proceso ? ` para ${part.output.proceso}` : ""}.
+                </div>
+            );
+        }
+        return (
+            <div className="overflow-hidden rounded-xl border">
+                <div className="flex items-center gap-1.5 border-b bg-muted/40 px-3 py-2 text-[11px] font-semibold text-muted-foreground">
+                    <FileText className="h-3.5 w-3.5" /> Documentos encontrados{part.output?.proceso ? ` · ${part.output.proceso}` : ""} ({documentos.length})
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-[11px]">
+                        <thead className="bg-muted/20 text-[10px] uppercase tracking-wide text-muted-foreground">
+                            <tr>
+                                <th className="px-3 py-1.5 text-left">Código</th>
+                                <th className="px-3 py-1.5 text-left">Nombre</th>
+                                <th className="px-3 py-1.5 text-left">Actualización</th>
+                                <th className="px-3 py-1.5 text-left">Ubicación</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                            {documentos.map((d, i) => (
+                                <tr key={d.codigo ?? i}>
+                                    <td className="whitespace-nowrap px-3 py-1.5 font-mono text-muted-foreground">{d.codigo ?? "—"}</td>
+                                    <td className="px-3 py-1.5 font-medium">{d.nombre ?? "—"}</td>
+                                    <td className="whitespace-nowrap px-3 py-1.5 text-muted-foreground">{d.actualizacion ?? "—"}</td>
+                                    <td className="px-3 py-1.5 text-muted-foreground">{d.ubicacion ?? "—"}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+    }
+
     // Herramientas de solo lectura: un indicador mínimo, sin volcar el JSON crudo al chat.
     const label = TOOL_LABELS[toolName] || toolName;
     if (part.state === "output-available") {
@@ -237,40 +375,9 @@ const MODO_INFO: Record<(typeof MODOS)[number]["id"], { titulo: string; ideal: s
     },
 };
 
-// Selector de proceso a auditar, agrupado por categoría igual que en /procesos — se toma directo de
-// MAPA_PROCESOS_CES para que nunca quede desincronizado del filtro real que usa el backend. Se usa tanto
-// en el estado vacío inicial como al terminar una auditoría (botón "¿Quieres auditar otro proceso?").
-function ProcesoPicker({ onPick }: { onPick: (proceso: string) => void }) {
-    return (
-        <div className="space-y-4">
-            {MAPA_PROCESOS_CES.map((cat) => {
-                const color = CATEGORIA_COLOR[cat.categoria];
-                return (
-                    <div key={cat.categoria}>
-                        <div
-                            className="mb-1.5 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                            style={color ? { backgroundColor: color.bg, color: color.fg } : undefined}
-                        >
-                            {cat.categoria}
-                        </div>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            {cat.procesos.map((p) => (
-                                <button
-                                    key={p}
-                                    onClick={() => onPick(p)}
-                                    className="rounded-xl border bg-card p-3 text-left text-sm transition hover:border-brand hover:bg-brand-soft/40"
-                                >
-                                    <div className="font-medium">{p}</div>
-                                    <div className="text-[11px] text-muted-foreground">Iniciar auditoría conversacional</div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                );
-            })}
-        </div>
-    );
-}
+// Frase que dispara, del lado del backend, el flujo de elegir proceso vía consultarProcesos +
+// preguntarOpciones (ver SYSTEM_PROMPT en api/chat.ts) — reemplaza al selector fijo de procesos.
+const MENSAJE_PREPARAR_AUDITORIA = "Quiero prepararme para una auditoría. Ayúdame a elegir qué proceso auditar.";
 
 function GuardianPage() {
     const { user } = AuthenticatedRoute.useRouteContext();
@@ -281,6 +388,9 @@ function GuardianPage() {
     const [input, setInput] = useState("");
     const [norma, setNorma] = useState<"iso9001" | "iso27001">("iso9001");
     const [modo, setModo] = useState<"principiante" | "intermedio" | "avanzado">("intermedio");
+    // Historial de chats de esta sesión (no se persiste — solo para poder ver/volver a conversaciones
+    // anteriores mientras la pestaña siga abierta; se pierde al recargar, y eso está bien por ahora).
+    const [chats, setChats] = useState<{ id: string; title: string; messages: UIMessage[] }[]>([]);
     const { messages, sendMessage, addToolApprovalResponse, status, setMessages, stop } = useChat({
         transport: new DefaultChatTransport({ api: "/api/chat", body: { norm: norma, modo } }),
         sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
@@ -292,15 +402,42 @@ function GuardianPage() {
         void addToolApprovalResponse({ id: approvalId, approved });
     };
 
-    // Cambiar de modo a mitad de una auditoría cambia por completo cómo debe preguntar el asistente —
-    // seguir la conversación vieja con reglas nuevas quedaría inconsistente, así que se reinicia el chat.
+    // Reinicia la conversación activa, guardándola primero en el historial de la sesión si tenía algo.
+    const reiniciarChat = () => {
+        if (loading) void stop();
+        if (messages.length > 0) {
+            const primerMensaje = messages.find((m) => m.role === "user");
+            const texto = primerMensaje?.parts.find((p): p is { type: "text"; text: string } => p.type === "text")?.text ?? "Conversación";
+            setChats((prev) => [...prev, { id: crypto.randomUUID(), title: texto.length > 42 ? `${texto.slice(0, 42)}…` : texto, messages }]);
+        }
+        setMessages([]);
+        setInput("");
+    };
+
+    // Vuelve a mostrar una conversación anterior de esta sesión (la quita de la lista para no
+    // duplicarla mientras está activa — si se inicia otro chat nuevo, vuelve a archivarse).
+    const abrirChatAnterior = (id: string) => {
+        const chat = chats.find((c) => c.id === id);
+        if (!chat) return;
+        if (loading) void stop();
+        if (messages.length > 0) reiniciarChat();
+        setChats((prev) => prev.filter((c) => c.id !== id));
+        setMessages(chat.messages);
+    };
+
+    // Cambiar de modo o de norma a mitad de una auditoría cambia por completo cómo debe preguntar el
+    // asistente y bajo qué norma — seguir la conversación vieja con reglas nuevas quedaría
+    // inconsistente (las respuestas ya dadas no se re-evalúan), así que se reinicia el chat.
     const handleModoChange = (nuevo: typeof modo) => {
         if (nuevo === modo) return;
-        if (messages.length > 0) {
-            if (loading) void stop();
-            setMessages([]);
-        }
+        if (messages.length > 0) reiniciarChat();
         setModo(nuevo);
+    };
+
+    const handleNormaChange = (nueva: typeof norma) => {
+        if (nueva === norma) return;
+        if (messages.length > 0) reiniciarChat();
+        setNorma(nueva);
     };
 
     useEffect(() => {
@@ -348,6 +485,13 @@ function GuardianPage() {
                 </div>
 
                 <div className="ml-auto flex flex-wrap items-center gap-2">
+                    <button
+                        onClick={reiniciarChat}
+                        disabled={empty}
+                        className="flex shrink-0 items-center gap-1.5 rounded-xl border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <MessageSquarePlus className="h-3.5 w-3.5" /> Nuevo chat
+                    </button>
                     <Link
                         to="/guardian/hallazgos"
                         className="flex shrink-0 items-center gap-1.5 rounded-xl border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-accent"
@@ -363,7 +507,7 @@ function GuardianPage() {
                         ).map((n) => (
                             <button
                                 key={n.id}
-                                onClick={() => setNorma(n.id)}
+                                onClick={() => handleNormaChange(n.id)}
                                 className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                                     norma === n.id ? "bg-brand text-white" : "text-muted-foreground hover:bg-muted"
                                 }`}
@@ -390,6 +534,25 @@ function GuardianPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Historial de chats de esta sesión — visual únicamente, no persiste al recargar. */}
+            {chats.length > 0 && (
+                <div className="mb-4 flex flex-wrap items-center gap-1.5">
+                    <span className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+                        <MessagesSquare className="h-3.5 w-3.5" /> Chats de hoy:
+                    </span>
+                    {chats.map((c) => (
+                        <button
+                            key={c.id}
+                            onClick={() => abrirChatAnterior(c.id)}
+                            className="max-w-[220px] truncate rounded-full border bg-card px-3 py-1 text-[11px] font-medium text-muted-foreground transition hover:border-brand/40 hover:text-foreground"
+                            title={c.title}
+                        >
+                            {c.title}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* Chat body */}
             <Card className="flex flex-1 flex-col overflow-hidden border-border/60">
@@ -419,16 +582,21 @@ function GuardianPage() {
                                 </div>
                             </div>
 
-                            <div className="mt-6">
-                                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Antes de iniciar: selecciona el proceso</div>
-                                <ProcesoPicker onPick={(p) => submit(`Quiero auditar el proceso: ${p}, con base en los procesos y documentos registrados en Procesos CES.`)} />
+                            <div className="mt-6 flex justify-center">
+                                <button
+                                    onClick={() => submit(MENSAJE_PREPARAR_AUDITORIA)}
+                                    className="flex items-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90"
+                                >
+                                    <Sparkles className="h-4 w-4" /> Quiero prepararme para una auditoría
+                                </button>
                             </div>
                         </div>
                     ) : (
                         <div className="mx-auto max-w-3xl space-y-5">
-                            {messages.map((m) => {
+                            {messages.map((m, mIdx) => {
                                 const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
                                 const isUser = m.role === "user";
+                                const esUltimoMensaje = mIdx === messages.length - 1;
                                 return (
                                     <div key={m.id} className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
                                         {isUser ? (
@@ -447,7 +615,17 @@ function GuardianPage() {
                                             ) : (
                                                 m.parts.map((p, idx) => {
                                                     if (p.type === "text") return p.text ? <ChatMarkdown key={idx} text={p.text} /> : null;
-                                                    if (String(p.type).startsWith("tool-")) return <ToolPart key={idx} part={p} onApprove={handleApprove} />;
+                                                    if (String(p.type).startsWith("tool-")) {
+                                                        return (
+                                                            <ToolPart
+                                                                key={idx}
+                                                                part={p}
+                                                                onApprove={handleApprove}
+                                                                onOption={(t) => submit(t)}
+                                                                interactive={esUltimoMensaje && !loading}
+                                                            />
+                                                        );
+                                                    }
                                                     return null;
                                                 })
                                             )}
@@ -466,9 +644,13 @@ function GuardianPage() {
                                 </div>
                             )}
                             {auditoriaFinalizada && (
-                                <div className="rounded-2xl border bg-gradient-to-br from-brand-soft to-secondary p-4">
-                                    <div className="mb-3 text-sm font-semibold text-brand">¿Quieres auditar otro proceso?</div>
-                                    <ProcesoPicker onPick={(p) => submit(`Quiero auditar el proceso: ${p}, con base en los procesos y documentos registrados en Procesos CES.`)} />
+                                <div className="flex justify-center">
+                                    <button
+                                        onClick={() => submit(MENSAJE_PREPARAR_AUDITORIA)}
+                                        className="flex items-center gap-2 rounded-xl border border-brand/40 bg-brand-soft px-5 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white"
+                                    >
+                                        <Sparkles className="h-4 w-4" /> Auditar otro proceso
+                                    </button>
                                 </div>
                             )}
                             <div ref={endRef} />

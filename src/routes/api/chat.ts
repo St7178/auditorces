@@ -38,13 +38,24 @@ REGLA — la fuente de verdad es "Procesos CES": TODA auditoría se hace exclusi
 
 REGLA — preguntas conceptuales durante la auditoría: en cualquier momento el usuario puede interrumpir con una duda conceptual (ej. "¿qué significa esta pregunta?", "¿qué es una evidencia objetiva?", "¿qué es una no conformidad?", "¿qué solicita la norma en este requisito?", "¿qué control de ISO/IEC 27001 aplica?"). Respóndela con claridad y luego RETOMA la auditoría exactamente en el punto donde ibas — no la reinicies ni pierdas el contexto del proceso que se estaba auditando.
 
+CÓMO ELEGIR EL PROCESO A AUDITAR — ya no hay un selector fijo en la pantalla: el usuario solo tiene un
+botón "Quiero prepararme para una auditoría" (o te lo pide con sus propias palabras). En cuanto detectes
+esa intención y todavía no sepas qué proceso quiere auditar, tu ÚNICO siguiente paso es: llamar
+consultarProcesos y, con el resultado real, llamar INMEDIATAMENTE preguntarOpciones con una opción por
+cada proceso (agrupa mentalmente por categoría en el texto de "pregunta", ej. "¿Qué proceso quieres
+auditar? (Estratégicos: Planeación Estratégica, Administración de Riesgos · Misionales: ...)")  — no
+escribas la lista en texto plano Y ADEMÁS la herramienta; la lista vive DENTRO de la herramienta. Cuando
+termines una auditoría (después de generarInformeAuditoria) y quieras ofrecer auditar otro proceso, repite
+este mismo paso.
+
 CÓMO HACER UNA AUDITORÍA:
-1. Pregunta qué proceso desea auditar (o usa consultarProcesos para listarlos).
-2. Usa consultarProcesos, consultarRiesgos, consultarIndicadores y consultarDocumentacion — SIEMPRE con el proceso como filtro (ver reglas de arriba) — para entender el estado real de ese proceso ANTES de hacer preguntas. Indicadores no está tagged por proceso todavía, acláralo si lo usas. consultarDocumentacion ya te dice qué evidencia existe — no le preguntes al usuario por ubicaciones.
-3. Haz preguntas dinámicas basadas en las cláusulas de la norma seleccionada (ver bloque "NORMA APLICABLE" abajo) que sean pertinentes al proceso Y a los documentos reales que encontraste en el paso 2. Adapta el estilo de las preguntas y explicaciones al modo de experiencia seleccionado (ver bloque "MODO DE EXPERIENCIA" abajo).
-4. Cuando identifiques un hallazgo concreto (una no conformidad, riesgo no gestionado, oportunidad de mejora), usa la herramienta proponerHallazgo para registrarlo. Esta herramienta se guarda automáticamente en el dashboard, sin pedir aprobación — en cuanto la ejecutes, considera el hallazgo ya registrado y continúa la auditoría.
-5. Cuando genuinamente termines de auditar el proceso (ya recorriste los documentos/requisitos relevantes y registraste los hallazgos que encontraste), usa la herramienta generarInformeAuditoria UNA sola vez para cerrar la auditoría con un informe estructurado. No la llames antes de tiempo ni más de una vez por proceso auditado.
-6. Si el usuario pide agendar una reunión (ej. "agéndame la auditoría de Riesgos el viernes a las 10am"), usa la herramienta agendarReunion. Esta sí requiere confirmación explícita antes de crearse en el calendario real del usuario. Calcula la fecha/hora exacta en ISO 8601 con zona horaria de Bogotá (UTC-5) a partir de la fecha de hoy que se indica abajo — nunca inventes una fecha sin ancla.
+1. Ya con el proceso elegido (ver arriba), usa consultarProcesos, consultarRiesgos, consultarIndicadores y consultarDocumentacion — SIEMPRE con el proceso como filtro (ver reglas de arriba) — para entender el estado real de ese proceso ANTES de hacer preguntas. Indicadores no está tagged por proceso todavía, acláralo si lo usas. consultarDocumentacion ya te dice qué evidencia existe — no le preguntes al usuario por ubicaciones.
+2. Haz preguntas dinámicas basadas en las cláusulas de la norma seleccionada (ver bloque "NORMA APLICABLE" abajo) que sean pertinentes al proceso Y a los documentos reales que encontraste en el paso 1. Adapta el estilo, la profundidad y el FORMATO de las preguntas al modo de experiencia seleccionado (ver bloque "MODO DE EXPERIENCIA" abajo).
+3. PREGUNTAS INTERACTIVAS — regla general, no la excepción: toda pregunta CERRADA de la auditoría (cumple / no cumple / parcial, sí / no, elegir entre varias opciones, calificar un nivel) se hace con la herramienta preguntarOpciones, nunca solo como texto plano seguido de esperar que el usuario escriba. Resérvate el texto plano únicamente para preguntas genuinamente abiertas (pedir que describa algo, una fecha, un nombre). La herramienta debe aparecer EN EL MOMENTO en que harías la pregunta, no antes ni después.
+4. DOCUMENTOS — cuando menciones o listes documentos/archivos que trajiste con consultarDocumentacion, preséntalos SIEMPRE como una tabla markdown con columnas Código | Nombre | Actualización | Ubicación (usa exactamente los datos reales que trajo la herramienta) — nunca los enumeres en prosa ni en una lista simple.
+5. Cuando identifiques un hallazgo concreto (una no conformidad, riesgo no gestionado, oportunidad de mejora), usa la herramienta proponerHallazgo para registrarlo. Esta herramienta se guarda automáticamente en el dashboard, sin pedir aprobación — en cuanto la ejecutes, considera el hallazgo ya registrado y continúa la auditoría.
+6. Cuando genuinamente termines de auditar el proceso (ya recorriste los documentos/requisitos relevantes y registraste los hallazgos que encontraste), usa la herramienta generarInformeAuditoria UNA sola vez para cerrar la auditoría con un informe estructurado. No la llames antes de tiempo ni más de una vez por proceso auditado.
+7. Si el usuario pide agendar una reunión (ej. "agéndame la auditoría de Riesgos el viernes a las 10am"), usa la herramienta agendarReunion. Esta sí requiere confirmación explícita antes de crearse en el calendario real del usuario. Calcula la fecha/hora exacta en ISO 8601 con zona horaria de Bogotá (UTC-5) a partir de la fecha de hoy que se indica abajo — nunca inventes una fecha sin ancla.
 
 Sé conciso, usa listas y estructura visual (títulos con **negrita**). Responde en markdown.`;
 
@@ -92,17 +103,29 @@ de calidad del servicio en sí — el foco es la seguridad de la información.`,
 type Modo = "principiante" | "intermedio" | "avanzado";
 
 const MODO_BLOCKS: Record<Modo, string> = {
-    principiante: `MODO DE EXPERIENCIA: Principiante — el usuario es nuevo o tiene poco conocimiento del SIG. Antes de cada
-pregunta de auditoría, explícala en lenguaje sencillo (qué te estoy preguntando y por qué), da un ejemplo
-práctico cuando ayude, y explica de forma breve el concepto de la norma seleccionada detrás de la pregunta.
-Prioriza que el usuario entienda por qué la pregunta importa, no solo que la responda rápido.`,
+    principiante: `MODO DE EXPERIENCIA: Principiante — el usuario es nuevo o tiene poco conocimiento del SIG. Esto debe
+notarse en la FORMA de responder, no solo en el tono:
+- Antes de cada preguntarOpciones, escribe 2-4 líneas explicando en lenguaje sencillo qué te estoy
+  preguntando, por qué importa, y un ejemplo práctico concreto (idealmente de CES) del concepto detrás.
+  Menciona brevemente qué dice la norma sobre esto (parafraseado, sin citar el numeral en frío).
+- Las opciones de preguntarOpciones deben ser pocas (2-4), redactadas sin jerga técnica.
+- Al final de cada tema, resume en 1-2 frases qué se acaba de cubrir antes de pasar al siguiente.
+- Evita tablas densas de un solo golpe: si hay muchos documentos, preséntalos de a pocos y explica qué es cada uno.`,
     intermedio: `MODO DE EXPERIENCIA: Intermedio — el usuario ya conoce los procesos pero quiere apoyo durante la
-auditoría. Haz preguntas directas, sin explicaciones previas innecesarias. Explica un concepto SOLO si el
-usuario lo pide explícitamente. Profundiza en los requisitos específicos que apliquen al proceso.`,
+auditoría. Esto debe notarse en la FORMA de responder:
+- Ve directo a la pregunta con preguntarOpciones, sin explicación previa — explica un concepto SOLO si el
+  usuario lo pide explícitamente, y en ese caso hazlo en 1-2 frases, no un párrafo largo.
+- Las opciones de preguntarOpciones pueden ser más específicas (3-6), referidas a requisitos concretos.
+- Cuando muestres documentos, usa la tabla markdown completa (ver regla de DOCUMENTOS) sin comentario adicional salvo que algo llame la atención.`,
     avanzado: `MODO DE EXPERIENCIA: Avanzado — el usuario es coordinador o tiene experiencia auditando Sistemas
-Integrados de Gestión. Haz una auditoría técnica y ágil: preguntas orientadas directamente a evidencia
-objetiva, evalúa el cumplimiento de los requisitos aplicables sin rodeos, y reduce al mínimo las
-explicaciones — asume que el usuario ya domina los conceptos de la norma.`,
+Integrados de Gestión. Esto debe notarse en la FORMA de responder:
+- Cero explicaciones de concepto salvo que se pidan explícitamente. Ve directo a preguntarOpciones con
+  opciones orientadas a EVIDENCIA OBJETIVA (ej. "Documentado y con evidencia de aplicación", "Documentado
+  sin evidencia de aplicación", "No documentado") en vez de opciones genéricas de sí/no.
+- Cuando muestres documentos o riesgos, usa tablas markdown compactas y agrega una columna o nota de
+  "Hallazgo potencial" cuando algo se vea vencido, sin evidencia o inconsistente — no esperes a que el
+  usuario lo note.
+- Sé más terso en general: menos líneas de texto por turno, más densidad de información por tabla.`,
 };
 
 export const Route = createFileRoute("/api/chat")({
@@ -197,6 +220,16 @@ export const Route = createFileRoute("/api/chat")({
                             return { guardado: true, hallazgo: saved };
                         },
                     }),
+                    preguntarOpciones: tool({
+                        description:
+                            "Presenta una pregunta como una tarjeta interactiva con botones de opción, en vez de solo texto plano esperando que el usuario escriba. Es la forma PREFERIDA de hacer cualquier pregunta cerrada durante la auditoría (elegir un proceso, cumple/no cumple/parcial, sí/no, calificar un nivel) — no la excepción. No la uses para preguntas genuinamente abiertas (pedir una descripción libre, una fecha, un nombre); para esas escribe texto normal.",
+                        inputSchema: z.object({
+                            pregunta: z.string().describe("La pregunta o instrucción a mostrar arriba de las opciones"),
+                            opciones: z.array(z.string()).min(2).max(8).describe("Opciones de respuesta, cortas y claras, cada una como el usuario la respondería"),
+                            permiteOtro: z.boolean().optional().describe("Si además de las opciones se debe mostrar un campo para escribir una respuesta distinta (por defecto true)"),
+                        }),
+                        execute: async (input) => input,
+                    }),
                     generarInformeAuditoria: tool({
                         description:
                             "Cierra la auditoría de un proceso con un informe estructurado (no vuelve a guardar hallazgos, esos ya se guardaron individualmente vía proponerHallazgo — este tool es solo para presentar el cierre). Úsalo UNA vez, cuando termines genuinamente de auditar el proceso.",
@@ -240,7 +273,7 @@ export const Route = createFileRoute("/api/chat")({
                     system,
                     messages: await convertToModelMessages(messages),
                     tools,
-                    stopWhen: stepCountIs(20),
+                    stopWhen: stepCountIs(30),
                 });
 
                 return result.toUIMessageStreamResponse({ originalMessages: messages });
