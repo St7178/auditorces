@@ -52,9 +52,20 @@ export function CesAuditorAvatar({ estado, className }: { estado: AvatarEstado; 
                     className={className}
                     style={{ background: "transparent" }}
                     onLoad={(loadedApp) => {
-                        for (const nombre of OBJETOS_A_OCULTAR) {
+                        // Log de diagnóstico: la API de Spline no permite listar los objetos de la escena,
+                        // solo buscarlos por nombre exacto — así que si el watermark/fondo sigue apareciendo,
+                        // esto dice en la consola cuáles de los nombres conocidos SÍ existen en esta escena
+                        // en particular, para poder agregar el nombre real si no está en la lista.
+                        const encontrados = OBJETOS_A_OCULTAR.filter((nombre) => {
                             const obj = loadedApp.findObjectByName(nombre);
-                            if (obj) obj.visible = false;
+                            if (!obj) return false;
+                            obj.visible = false;
+                            return true;
+                        });
+                        if (encontrados.length > 0) {
+                            console.info("[CesAuditorAvatar] Objetos ocultados:", encontrados);
+                        } else {
+                            console.warn("[CesAuditorAvatar] Ningún objeto conocido de watermark/fondo se encontró en la escena. Revisa los nombres reales en el editor de Spline y agrégalos a OBJETOS_A_OCULTAR.");
                         }
                         setApp(loadedApp);
                     }}
