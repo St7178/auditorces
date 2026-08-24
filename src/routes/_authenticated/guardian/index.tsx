@@ -467,10 +467,14 @@ function GuardianPage() {
 
     return (
         <>
-            {/* El personaje ocupa toda la pantalla como fondo fijo, detrás de todo lo demás — con una
-                cámara en perspectiva, agrandar el lienzo no agranda al personaje, solo revela más
-                escena a su alrededor, así que su tamaño se mantiene igual que antes. */}
-            <CesAuditorAvatar estado={avatarEstado} className="pointer-events-none fixed inset-0 -z-10 h-screen w-screen" />
+            {/* El personaje ocupa toda la pantalla como fondo fijo, detrás de todo lo demás. OJO: sin
+                z-index negativo — un z-index negativo en un elemento fixed lo manda detrás del fondo
+                opaco de TODA la app (bg-background en AppShell), no solo detrás del chat, y queda
+                invisible. Al dejarlo en el orden natural del DOM (sin z-index), pinta encima del fondo
+                de la app pero debajo del resto del contenido de esta página, que viene después en el
+                árbol. Con cámara en perspectiva, agrandar el lienzo no agranda al personaje, solo
+                revela más escena a su alrededor, así que su tamaño se mantiene igual que antes. */}
+            <CesAuditorAvatar estado={avatarEstado} className="pointer-events-none fixed inset-0 h-screen w-screen" />
 
             <div className="relative mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
                 {/* Header */}
