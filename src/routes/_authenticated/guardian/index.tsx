@@ -9,7 +9,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ChatMarkdown } from "@/components/chat-markdown";
-import { CesAuditorAvatar } from "@/components/ces-auditor-avatar";
+import { CesAuditorAvatar, type AvatarEstado } from "@/components/ces-auditor-avatar";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 
 const TOOL_LABELS: Record<string, string> = {
@@ -398,6 +398,9 @@ function GuardianPage() {
     });
     const endRef = useRef<HTMLDivElement>(null);
     const loading = status === "submitted" || status === "streaming";
+    // "submitted" = ya se envió el mensaje y se espera la primera respuesta (pensando); "streaming" =
+    // ya está escribiendo la respuesta (hablando); cualquier otro momento, está a la espera (escuchando).
+    const avatarEstado: AvatarEstado = status === "submitted" ? "thinking" : status === "streaming" ? "talking" : "listening";
 
     const handleApprove = (approvalId: string, approved: boolean) => {
         void addToolApprovalResponse({ id: approvalId, approved });
@@ -466,8 +469,8 @@ function GuardianPage() {
         <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
             {/* Header */}
             <div className="mb-4 flex flex-wrap items-start gap-4">
-                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-brand shadow-sm shadow-slate-200 border border-slate-200">
-                    <Sparkles className="h-7 w-7" />
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden">
+                    <CesAuditorAvatar estado={avatarEstado} className="h-full w-full" />
                     <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-brand shadow-sm shadow-slate-200">
                         <ShieldCheck className="h-3 w-3" />
                     </span>
@@ -560,7 +563,6 @@ function GuardianPage() {
                 <div className="flex-1 overflow-y-auto px-6 py-6">
                     {empty ? (
                         <div className="mx-auto max-w-2xl">
-                            <CesAuditorAvatar className="mx-auto mb-2 h-56 w-56" />
                             <div className={`rounded-2xl border p-6 transition-colors ${MODO_TARJETA[modo]}`}>
                                 <p className="text-sm leading-relaxed">
                                     Hola <strong>{firstName}</strong> 👋, soy CES Auditor. Estoy aquí para ayudarte en la gestión del área CES.<br /><br />
