@@ -8,7 +8,7 @@ import type { Application } from "@splinetool/runtime";
 // esta tarjeta realmente se muestra, no como parte del bundle general de la app.
 const Spline = lazy(() => import("@splinetool/react-spline"));
 
-const SCENE_URL = "https://draft.spline.design/bAaA-EX-JR5o7wPI/scene.splinecode";
+const SCENE_URL = "https://prod.spline.design/EfiehPHlTt3AM6G7/scene.splinecode";
 
 export type AvatarEstado = "listening" | "thinking" | "talking";
 
