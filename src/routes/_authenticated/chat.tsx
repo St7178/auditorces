@@ -4,6 +4,7 @@ import { DefaultChatTransport } from "ai";
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Send, Loader2, Lightbulb, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { GridBackground } from "@/components/ui/grid-background";
 import { ChatMarkdown } from "@/components/chat-markdown";
 import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 
@@ -105,8 +106,9 @@ function ChatWikiPage() {
                 )}
             </Card>
 
-            <Card className="flex flex-1 flex-col overflow-hidden border-border/60">
-                <div className="flex-1 overflow-y-auto px-6 py-6">
+            <Card className="relative flex flex-1 flex-col overflow-hidden border-border/60 bg-transparent">
+                <GridBackground />
+                <div className="relative z-10 flex-1 overflow-y-auto px-6 py-6">
                     {empty ? (
                         <div className="mx-auto max-w-2xl">
                             <div className="rounded-2xl border bg-gradient-to-br from-brand-soft to-secondary p-6">
@@ -159,7 +161,7 @@ function ChatWikiPage() {
                     )}
                 </div>
 
-                <div className="border-t bg-card/70 p-4 backdrop-blur">
+                <div className="relative z-10 border-t bg-card/70 p-4 backdrop-blur">
                     <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border bg-background p-2 shadow-sm focus-within:border-brand">
                         <textarea
                             value={input}
