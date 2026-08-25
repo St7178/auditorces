@@ -10,7 +10,7 @@ import {
     Building2,
     Truck,
     Calendar,
-    MessagesSquare,
+    FileText,
     Settings,
     ChevronRight,
     Landmark,
@@ -69,6 +69,8 @@ const nav: { section: string; items: NavItem[] }[] = [
     },
     {
         section: "📚 Conocimiento", items: [
+            { title: "Wiki CES", url: "/chat", icon: Sparkles },
+            { title: "Normas CES", url: "/normas", icon: FileText },
             {
                 title: "Cultura SIG", url: "/cultura", icon: Landmark,
                 children: [
@@ -77,7 +79,6 @@ const nav: { section: string; items: NavItem[] }[] = [
                     { title: "📖 Conceptos", url: "/cultura/conceptos" },
                 ],
             },
-            { title: "Wiki CES", url: "/chat", icon: MessagesSquare },
             { title: "Agenda SIG", url: "/cronograma", icon: Calendar },
         ]
     },

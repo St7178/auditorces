@@ -17,6 +17,7 @@ import { Route as AuthenticatedConfiguracionRouteImport } from './routes/_authen
 import { Route as AuthenticatedCronogramaRouteImport } from './routes/_authenticated/cronograma'
 import { Route as AuthenticatedEquipoRouteImport } from './routes/_authenticated/equipo'
 import { Route as AuthenticatedIndicadoresRouteImport } from './routes/_authenticated/indicadores'
+import { Route as AuthenticatedNormasRouteImport } from './routes/_authenticated/normas'
 import { Route as AuthenticatedProveedoresRouteImport } from './routes/_authenticated/proveedores'
 import { Route as AuthenticatedRiesgosRouteImport } from './routes/_authenticated/riesgos'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
@@ -86,6 +87,11 @@ const AuthenticatedIndicadoresRoute =
     path: '/indicadores',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedNormasRoute = AuthenticatedNormasRouteImport.update({
+  id: '/normas',
+  path: '/normas',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedProveedoresRoute =
   AuthenticatedProveedoresRouteImport.update({
     id: '/proveedores',
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/cronograma': typeof AuthenticatedCronogramaRoute
   '/equipo': typeof AuthenticatedEquipoRoute
   '/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/normas': typeof AuthenticatedNormasRoute
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
@@ -279,6 +286,7 @@ export interface FileRoutesByTo {
   '/cronograma': typeof AuthenticatedCronogramaRoute
   '/equipo': typeof AuthenticatedEquipoRoute
   '/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/normas': typeof AuthenticatedNormasRoute
   '/proveedores': typeof AuthenticatedProveedoresRoute
   '/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
@@ -317,6 +325,7 @@ export interface FileRoutesById {
   '/_authenticated/cronograma': typeof AuthenticatedCronogramaRoute
   '/_authenticated/equipo': typeof AuthenticatedEquipoRoute
   '/_authenticated/indicadores': typeof AuthenticatedIndicadoresRoute
+  '/_authenticated/normas': typeof AuthenticatedNormasRoute
   '/_authenticated/proveedores': typeof AuthenticatedProveedoresRoute
   '/_authenticated/riesgos': typeof AuthenticatedRiesgosRoute
   '/api/chat': typeof ApiChatRoute
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
     | '/cronograma'
     | '/equipo'
     | '/indicadores'
+    | '/normas'
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | '/cronograma'
     | '/equipo'
     | '/indicadores'
+    | '/normas'
     | '/proveedores'
     | '/riesgos'
     | '/api/chat'
@@ -428,6 +439,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cronograma'
     | '/_authenticated/equipo'
     | '/_authenticated/indicadores'
+    | '/_authenticated/normas'
     | '/_authenticated/proveedores'
     | '/_authenticated/riesgos'
     | '/api/chat'
@@ -534,6 +546,13 @@ declare module '@tanstack/react-router' {
       path: '/indicadores'
       fullPath: '/indicadores'
       preLoaderRoute: typeof AuthenticatedIndicadoresRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/normas': {
+      id: '/_authenticated/normas'
+      path: '/normas'
+      fullPath: '/normas'
+      preLoaderRoute: typeof AuthenticatedNormasRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/proveedores': {
@@ -734,6 +753,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCronogramaRoute: typeof AuthenticatedCronogramaRoute
   AuthenticatedEquipoRoute: typeof AuthenticatedEquipoRoute
   AuthenticatedIndicadoresRoute: typeof AuthenticatedIndicadoresRoute
+  AuthenticatedNormasRoute: typeof AuthenticatedNormasRoute
   AuthenticatedProveedoresRoute: typeof AuthenticatedProveedoresRoute
   AuthenticatedRiesgosRoute: typeof AuthenticatedRiesgosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -755,6 +775,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCronogramaRoute: AuthenticatedCronogramaRoute,
   AuthenticatedEquipoRoute: AuthenticatedEquipoRoute,
   AuthenticatedIndicadoresRoute: AuthenticatedIndicadoresRoute,
+  AuthenticatedNormasRoute: AuthenticatedNormasRoute,
   AuthenticatedProveedoresRoute: AuthenticatedProveedoresRoute,
   AuthenticatedRiesgosRoute: AuthenticatedRiesgosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
