@@ -30,13 +30,15 @@ export interface ServiceCardProps extends VariantProps<typeof cardVariants> {
     /** Imagen decorativa de la esquina — si no se pasa, la tarjeta se ve igual, solo sin imagen. */
     imgSrc?: string;
     imgAlt?: string;
+    /** Sobreescribe la opacidad/tamaño por defecto de la imagen — útil cuando compite con texto encima. */
+    imgClassName?: string;
     /** Contenido entre el título y el enlace (ej. el número/KPI de esta tarjeta). */
     children?: React.ReactNode;
     className?: string;
 }
 
 const ServiceCard = React.forwardRef<HTMLDivElement, ServiceCardProps>(
-    ({ className, variant, title, href, imgSrc, imgAlt, children }, ref) => {
+    ({ className, variant, title, href, imgSrc, imgAlt, imgClassName, children }, ref) => {
         const navigate = useNavigate();
 
         // Navegación SPA (sin recargar la página) — ctrl/cmd/click central se dejan pasar tal
@@ -84,7 +86,7 @@ const ServiceCard = React.forwardRef<HTMLDivElement, ServiceCardProps>(
                     <motion.img
                         src={imgSrc}
                         alt={imgAlt ?? ""}
-                        className="pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 object-contain opacity-90 group-hover:opacity-100"
+                        className={cn("pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 object-contain opacity-90 group-hover:opacity-100", imgClassName)}
                         variants={imageAnimation}
                     />
                 )}

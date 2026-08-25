@@ -5,7 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
 import { ServiceCard } from "@/components/ui/service-card";
-import { AnimatedCard, CardBody, CardTitle, CardDescription, CardVisual, MaturityGauge } from "@/components/ui/animated-card-diagram";
+import { Badge } from "@/components/ui/badge";
+import {
+    AnimatedCard, CardBody, CardTitle, CardDescription, CardVisual, MaturityGauge, CardAmbientBackground, colorDeMadurez,
+} from "@/components/ui/animated-card-diagram";
 import { INDICADORES_REALES, type IndicadorDisponibilidadCES } from "@/lib/ces-data";
 import { clasificarContrato, resumenContratos, type Contrato } from "@/lib/contratos";
 import { clienteLogo } from "@/lib/cliente-logos";
@@ -42,6 +45,45 @@ function ClienteFaceSimple({ nombre, logo }: { nombre: string; logo?: string }) 
         </div>
     );
 }
+// Mismo criterio de color que "Nivel de madurez" (colorDeMadurez): ≥80% bueno, 50-79% regular, <50%
+// malo — así las dos tarjetas hablan el mismo idioma visual.
+function estadoCumplimiento(value: number | null) {
+    if (value === null) return { label: "Sin dato", badgeClass: "border-transparent bg-muted text-muted-foreground", barClass: "bg-muted-foreground/30" };
+    if (value >= 80) return { label: "Bueno", badgeClass: "border-transparent bg-emerald-100 text-emerald-700", barClass: "bg-emerald-500" };
+    if (value >= 50) return { label: "Regular", badgeClass: "border-transparent bg-amber-100 text-amber-700", barClass: "bg-amber-500" };
+    return { label: "Malo", badgeClass: "border-transparent bg-red-100 text-red-700", barClass: "bg-red-500" };
+}
+
+// La barra arranca en 0 y sube al valor real un instante después de montarse (con un pequeño
+// desfase por fila) para que el relleno se vea animado en vez de aparecer ya lleno.
+function ComplianceRow({ label, value, desc, delay }: { label: string; value: number | null; desc: string; delay: number }) {
+    const [visible, setVisible] = useState(false);
+    const [animado, setAnimado] = useState(0);
+    useEffect(() => {
+        const t1 = setTimeout(() => setVisible(true), delay);
+        const t2 = setTimeout(() => setAnimado(value ?? 0), delay + 150);
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+        };
+    }, [value, delay]);
+
+    const estado = estadoCumplimiento(value);
+    return (
+        <div className={`transition-all duration-500 ease-out ${visible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}>
+            <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">{label}</span>
+                <Badge className={estado.badgeClass}>{estado.label}</Badge>
+            </div>
+            <Progress value={animado} indicatorClassName={estado.barClass} className="mt-1.5 h-2.5" />
+            <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>{desc}</span>
+                <span className="font-semibold text-foreground">{value === null ? "—" : `${value}%`}</span>
+            </div>
+        </div>
+    );
+}
+
 type RiesgoReal = { id: string; descripcion?: string; porcentajeMitigacion?: number; nivelResidual?: { severidad?: string } };
 type Recomendacion = { titulo: string; texto: string; nivel: "alta" | "media" | "baja"; to: "/clientes" | "/riesgos" | "/indicadores" };
 type ChecklistItem = { id: string; codigo: string; nombre: string };
@@ -220,8 +262,17 @@ function Dashboard() {
                 {/* Contratos: única tarjeta con desglose (activos/próximos a vencer/vencidos) en vez de
                     un solo número, porque acá lo que importa es distinguir esos tres estados reales. */}
                 {/* text-black: la imagen decorativa tapa parte del texto en la esquina — con blanco
-                    (el color por defecto de la variante "red") "Vencidos" quedaba ilegible ahí. */}
-                <ServiceCard title="Contratos" href="/clientes" variant="red" imgSrc={KPI_IMG.contratos} imgAlt="Contratos" className="min-h-[172px] text-black">
+                    (el color por defecto de la variante "red") "Vencidos" quedaba ilegible ahí. Se le
+                    baja bastante la opacidad además, para que quede de fondo y no compita con el texto. */}
+                <ServiceCard
+                    title="Contratos"
+                    href="/clientes"
+                    variant="red"
+                    imgSrc={KPI_IMG.contratos}
+                    imgAlt="Contratos"
+                    imgClassName="opacity-[0.18] group-hover:opacity-30"
+                    className="min-h-[172px] text-black"
+                >
                     <div className="mt-3 text-4xl font-extrabold tracking-tight">{resumenContratosTotal ? resumenContratosTotal.total : "—"}</div>
                     {resumenContratosTotal && (
                         <div className="mt-2 space-y-1 text-[11px]">
@@ -244,24 +295,20 @@ function Dashboard() {
 
             {/* Cumplimiento SIG */}
             <section className="mt-8 grid gap-4 lg:grid-cols-3">
-                <Card className="lg:col-span-2 border-border/60">
-                    <CardContent className="p-6">
+                {/* Mismo fondo ambiental (resplandor + grilla) que "Nivel de madurez", en el mismo
+                    color, para que ambas tarjetas hagan pareja visual — ver CardAmbientBackground. */}
+                <AnimatedCard className="lg:col-span-2">
+                    <CardAmbientBackground color={colorDeMadurez(nivelMadurez).main} />
+                    <div className="relative z-10 p-6">
                         <h2 className="text-lg font-semibold">Cumplimiento SIG</h2>
                         <p className="text-xs text-muted-foreground">Riesgos, indicadores y documentación — basado en lo ya sincronizado</p>
                         <div className="mt-6 space-y-5">
-                            {metricasCumplimiento.map((m) => (
-                                <div key={m.label}>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="font-medium">{m.label}</span>
-                                        <span className="font-semibold">{m.value === null ? "—" : `${m.value}%`}</span>
-                                    </div>
-                                    <Progress value={m.value ?? 0} className="mt-1.5 h-2" />
-                                    <p className="mt-1 text-[11px] text-muted-foreground">{m.desc}</p>
-                                </div>
+                            {metricasCumplimiento.map((m, i) => (
+                                <ComplianceRow key={m.label} label={m.label} value={m.value} desc={m.desc} delay={i * 120} />
                             ))}
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AnimatedCard>
 
                 <AnimatedCard>
                     <CardVisual>

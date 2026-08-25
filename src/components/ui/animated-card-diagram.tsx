@@ -41,8 +41,9 @@ export function CardVisual({ className, ...props }: CardProps) {
 // Reemplaza al "Visual2" del template (que mostraba datos y nombres de tecnología inventados): acá
 // el aro muestra el nivel de madurez real, coloreado según qué tan bueno es el valor (verde = bueno,
 // ámbar = regular, rojo = malo), y al pasar el mouse revela el desglose real detrás del promedio en
-// vez de una animación de relleno falsa.
-function colorDeMadurez(percent: number | null) {
+// vez de una animación de relleno falsa. Exportado porque "Cumplimiento SIG" usa el mismo criterio
+// de color para sus barras y el mismo fondo ambiental para hacer pareja visual con esta tarjeta.
+export function colorDeMadurez(percent: number | null) {
     if (percent === null) return { main: "#94a3b8", soft: "#cbd5e1" }; // gris: sin dato real todavía
     if (percent >= 80) return { main: "#16a34a", soft: "#4ade80" }; // verde: bueno
     if (percent >= 50) return { main: "#d97706", soft: "#fbbf24" }; // ámbar: regular
@@ -68,8 +69,7 @@ export function MaturityGauge({ percent, breakdown }: MaturityGaugeProps) {
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
         >
-            <EllipseGradient color={main} />
-            <GridLayer />
+            <CardAmbientBackground color={main} />
 
             <div
                 className="absolute inset-0 z-[7] flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.6,0.6,0,1)] group-hover/gauge:-translate-y-6 group-hover/gauge:scale-105"
@@ -114,21 +114,27 @@ export function MaturityGauge({ percent, breakdown }: MaturityGaugeProps) {
     );
 }
 
-const EllipseGradient: React.FC<{ color: string }> = ({ color }) => (
-    <div className="absolute inset-0 z-[5] flex h-full w-full items-center justify-center">
-        <svg width="100%" height="180" viewBox="0 0 356 180" fill="none" preserveAspectRatio="xMidYMid slice">
-            <rect width="356" height="180" fill="url(#paint0_radial_madurez)" />
-            <defs>
-                <radialGradient id="paint0_radial_madurez" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(178 98) rotate(90) scale(98 178)">
-                    <stop stopColor={color} stopOpacity="0.25" />
-                    <stop offset="0.34" stopColor={color} stopOpacity="0.15" />
-                    <stop offset="1" stopOpacity="0" />
-                </radialGradient>
-            </defs>
-        </svg>
-    </div>
-);
-
-const GridLayer: React.FC = () => (
-    <div className="pointer-events-none absolute inset-0 z-[4] h-full w-full bg-transparent bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:20px_20px] bg-center opacity-40 [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_60%,transparent_100%)]" />
-);
+// Fondo ambiental compartido (resplandor radial + grilla sutil) — mismo color que el aro de arriba,
+// para que cualquier tarjeta que lo use haga pareja visual con "Nivel de madurez". `id` único vía
+// useId() porque puede haber más de una instancia en la misma página (dos <radialGradient> con el
+// mismo id en el DOM no son válidos).
+export function CardAmbientBackground({ color, className }: { color: string; className?: string }) {
+    const gradientId = React.useId();
+    return (
+        <div className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}>
+            <div className="absolute inset-0 z-[5] flex h-full w-full items-center justify-center">
+                <svg width="100%" height="100%" viewBox="0 0 356 180" fill="none" preserveAspectRatio="xMidYMid slice">
+                    <rect width="356" height="180" fill={`url(#${gradientId})`} />
+                    <defs>
+                        <radialGradient id={gradientId} cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(178 98) rotate(90) scale(98 178)">
+                            <stop stopColor={color} stopOpacity="0.25" />
+                            <stop offset="0.34" stopColor={color} stopOpacity="0.15" />
+                            <stop offset="1" stopOpacity="0" />
+                        </radialGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div className="absolute inset-0 z-[4] h-full w-full bg-transparent bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:20px_20px] bg-center opacity-40 [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_60%,transparent_100%)]" />
+        </div>
+    );
+}
