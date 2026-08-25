@@ -3,7 +3,7 @@ import {
     ShieldAlert, FileText, Truck, Gauge, Users,
     Sparkles, ArrowUpRight, Building2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
@@ -13,6 +13,11 @@ import { clienteLogo } from "@/lib/cliente-logos";
 import {
     ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis,
 } from "recharts";
+
+// Perezoso: "motion" queda en su propio chunk en vez de ir dentro del bundle de esta ruta.
+const InteractiveGridBackground = lazy(() =>
+    import("@/components/ui/interactive-grid-background").then((m) => ({ default: m.InteractiveGridBackground })),
+);
 
 type ClienteConContratos = { id?: string; nombre: string; estado?: string; contratos?: Contrato[] };
 
@@ -186,15 +191,17 @@ function Dashboard() {
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            {/* Hero */}
-            <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-[oklch(0.25_0.05_220)] via-[oklch(0.28_0.06_200)] to-[oklch(0.35_0.12_155)] p-8 text-white shadow-xl">
-                <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/40 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-[oklch(0.5_0.14_240)]/30 blur-3xl" />
-                <div className="relative">
-                    <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium backdrop-blur">
-                        <Sparkles className="h-3.5 w-3.5" /> Área CES
+            {/* Hero — mismo tamaño de siempre (p-8, dos líneas de contenido), solo cambia el fondo:
+                grilla animada con foco que sigue el cursor, adaptada de "the-infinite-grid". */}
+            <section className="relative overflow-hidden rounded-3xl border bg-background p-8 shadow-xl">
+                <Suspense fallback={null}>
+                    <InteractiveGridBackground />
+                </Suspense>
+                <div className="relative z-10">
+                    <div className="mb-3 inline-flex items-center gap-2 rounded-full border bg-card/80 px-3 py-1 text-[11px] font-medium backdrop-blur">
+                        <Sparkles className="h-3.5 w-3.5 text-brand" /> Área CES
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Informe General SIG</h1>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground drop-shadow-sm sm:text-4xl">Informe General SIG</h1>
                 </div>
             </section>
 
