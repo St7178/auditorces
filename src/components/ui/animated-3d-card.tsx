@@ -19,13 +19,17 @@ export const Card3D = React.forwardRef<HTMLDivElement, Card3DProps>(
         const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
         const [hovered, setHovered] = React.useState(false);
 
+        // Ángulos chicos a propósito: a mayor inclinación, más se nota el desenfoque que la
+        // perspectiva 3D le mete al texto (es un efecto óptico del navegador al proyectar texto
+        // plano en un ángulo, no un problema de rendimiento) — con esto casi no se nota y el texto
+        // se sigue leyendo bien mientras se mueve el mouse.
         const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             setMousePos({
-                x: (x / rect.width - 0.5) * 20,
-                y: (y / rect.height - 0.5) * -20,
+                x: (x / rect.width - 0.5) * 6,
+                y: (y / rect.height - 0.5) * -6,
             });
         };
 
@@ -49,7 +53,7 @@ export const Card3D = React.forwardRef<HTMLDivElement, Card3DProps>(
                 animate={{ rotateX: mousePos.y, rotateY: mousePos.x, z: hovered ? 20 : 0 }}
                 transition={{ type: "spring", stiffness: 400, damping: 35, mass: 0.8 }}
                 onClick={onClick}
-                style={{ transformStyle: "preserve-3d", perspective: "1200px" }}
+                style={{ transformStyle: "preserve-3d", perspective: "2400px", backfaceVisibility: "hidden" }}
             >
                 {/* Destello diagonal que sigue al mouse, mismo mecanismo del template original. */}
                 <motion.div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" style={{ transform: "translateZ(15px)" }}>
@@ -64,7 +68,7 @@ export const Card3D = React.forwardRef<HTMLDivElement, Card3DProps>(
                     />
                 </motion.div>
 
-                <div className="relative z-10 p-5" style={{ transform: "translateZ(20px)" }}>
+                <div className="relative z-10 p-5" style={{ transform: "translateZ(20px)", backfaceVisibility: "hidden" }}>
                     {children}
                 </div>
             </motion.div>
