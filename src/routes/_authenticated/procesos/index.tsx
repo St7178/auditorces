@@ -1,10 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
 import { MAPA_PROCESOS_CES, DOCUMENTOS, CATEGORIA_COLOR } from "@/lib/ces-data";
-import { FileText, Link2, KeyRound, ShieldQuestion, LifeBuoy, GraduationCap, ChevronDown } from "lucide-react";
+import { normalizeKey, SECCION_A_PROCESO } from "@/lib/documentos";
+import {
+    FileText, Link2, KeyRound, ShieldQuestion, LifeBuoy, GraduationCap, ChevronDown, Search, ClipboardCheck, ArrowUpRight,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/procesos/")({
@@ -75,35 +78,9 @@ function tipoDocumento(ubicacion: string) {
     return idx === -1 ? ubicacion : ubicacion.slice(idx + 1).trim();
 }
 
-// El nombre de sección tal como llega desde el Excel (ubicacion = "Sección Excel / subproceso").
-// No es fuzzy-match: es un mapeo exacto para evitar clasificar mal un documento en un SIG certificado.
-function normalizeKey(s: string) {
-    return s
-        .toUpperCase()
-        .normalize("NFD")
-        .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
-        .replace(/\s+/g, " ")
-        .trim();
-}
-
-const SECCION_A_PROCESO: Record<string, string> = {
-    "PROCESOS ESTRATEGICOS - PLANEACION ESTRATEGICA": "Planeación Estratégica",
-    "PROCESOS ESTRAEGICOS - ADMINISTRACION DE RIESGOS": "Administración de Riesgos",
-    "PROCESOS ESTRATEGICOS - ADMINISTRACION DE RIESGOS": "Administración de Riesgos",
-    "PROCESOS MISIONALES - ARQUITECTURA DE SOLUCIONES": "Arquitectura de Soluciones",
-    "PROCESOS MISIONALES - GESTION DE PROYECTOS": "Gestión de Proyectos",
-    "PROCESOS MISIONALES - GESTION DE SERVICIOS DE TIC": "Gestión de Servicios de TIC",
-    "PROCESOS MISIONALES - SERVICIO AL CLIENTE": "Gestión de Servicio al Cliente",
-    // El Excel de origen escribe estas tres secciones de Procesos de Apoyo con variaciones (doble
-    // espacio, "GESTION DE GESTIÓN HUMANA" en vez de "GESTIÓN HUMANA") — normalizeKey ya colapsa
-    // espacios/tildes, así que estas claves deben coincidir con esa forma normalizada exacta.
-    "PROCESOS DE APOYO - GESTION DEL SISTEMA INTEGRADO": "Gestión Sistema Integrado",
-    "PROCESOS DE APOYO - GESTION DE GESTION HUMANA": "Gestión Humana",
-    "PROCESOS DE APOYO - GESTION JURIDICA": "Gestión Jurídica",
-};
-
 function ProcesosPage() {
     const [documentos, setDocumentos] = useState(DOCUMENTOS);
+    const [busqueda, setBusqueda] = useState("");
     const [ejemplosAbiertos, setEjemplosAbiertos] = useState<Set<string>>(new Set());
     const toggleEjemplo = (tipo: string) =>
         setEjemplosAbiertos((prev) => {
@@ -126,9 +103,20 @@ function ProcesosPage() {
         };
     }, []);
 
+    // Búsqueda por nombre, código o responsable — insensible a tildes/mayúsculas (mismo normalizeKey
+    // que ya usa el mapeo de secciones).
+    const documentosVisibles = busqueda.trim()
+        ? documentos.filter((d: any) => {
+              const q = normalizeKey(busqueda);
+              return normalizeKey(String(d.nombre || "")).includes(q)
+                  || normalizeKey(String(d.codigo || "")).includes(q)
+                  || normalizeKey(String(d.responsable || "")).includes(q);
+          })
+        : documentos;
+
     const documentosPorProceso = new Map<string, typeof DOCUMENTOS>();
     const otros: typeof DOCUMENTOS = [];
-    for (const d of documentos) {
+    for (const d of documentosVisibles) {
         const seccion = String((d as any).ubicacion || "").split(" / ")[0] || "";
         const proceso = SECCION_A_PROCESO[normalizeKey(seccion)];
         if (proceso) {
@@ -141,7 +129,16 @@ function ProcesosPage() {
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <PageHeader eyebrow="Sistema Integrado de Gestión" title="Procesos CES" description="Cloud Enterprise Services." />
+            <PageHeader
+                eyebrow="Sistema Integrado de Gestión"
+                title="Procesos CES"
+                description="Cloud Enterprise Services."
+                actions={
+                    <Link to="/procesos/revision" className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent">
+                        <ClipboardCheck className="h-3.5 w-3.5" /> Revisión Documental <ArrowUpRight className="h-3 w-3" />
+                    </Link>
+                }
+            />
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium">
@@ -236,8 +233,21 @@ function ProcesosPage() {
             </div>
 
             <div className="mt-10">
-                <h2 className="text-lg font-semibold">Documentación por proceso</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Registro de documentos del SIG. CES SIG no almacena archivos — solo nombres de los documentos.</p>
+                <div className="flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <h2 className="text-lg font-semibold">Documentación por proceso</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">Registro de documentos del SIG. CES SIG no almacena archivos — solo nombres de los documentos.</p>
+                    </div>
+                    <div className="relative w-full max-w-xs">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                            value={busqueda}
+                            onChange={(e) => setBusqueda(e.target.value)}
+                            placeholder="Buscar por nombre, código o responsable…"
+                            className="h-9 w-full rounded-lg border bg-card pl-9 pr-3 text-sm outline-none focus:border-brand"
+                        />
+                    </div>
+                </div>
 
                 <Card className="mt-4 border-border/60">
                     <CardContent className="p-0">

@@ -34,6 +34,7 @@ import { Route as AuthenticatedCulturaPoliticasRouteImport } from './routes/_aut
 import { Route as AuthenticatedGuardianIndexRouteImport } from './routes/_authenticated/guardian/index'
 import { Route as AuthenticatedGuardianHallazgosRouteImport } from './routes/_authenticated/guardian/hallazgos'
 import { Route as AuthenticatedProcesosIndexRouteImport } from './routes/_authenticated/procesos/index'
+import { Route as AuthenticatedProcesosRevisionRouteImport } from './routes/_authenticated/procesos/revision'
 import { Route as AuthenticatedProcesosVulnerabilidadesRouteImport } from './routes/_authenticated/procesos/vulnerabilidades'
 import { Route as ApiAuthCallbackRouteImport } from './routes/api/auth/callback'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
@@ -183,6 +184,12 @@ const AuthenticatedProcesosIndexRoute =
     path: '/procesos/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProcesosRevisionRoute =
+  AuthenticatedProcesosRevisionRouteImport.update({
+    id: '/procesos/revision',
+    path: '/procesos/revision',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProcesosVulnerabilidadesRoute =
   AuthenticatedProcesosVulnerabilidadesRouteImport.update({
     id: '/procesos/vulnerabilidades',
@@ -263,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/cultura/objetivos': typeof AuthenticatedCulturaObjetivosRoute
   '/cultura/politicas': typeof AuthenticatedCulturaPoliticasRoute
   '/guardian/hallazgos': typeof AuthenticatedGuardianHallazgosRoute
+  '/procesos/revision': typeof AuthenticatedProcesosRevisionRoute
   '/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -300,6 +308,7 @@ export interface FileRoutesByTo {
   '/cultura/objetivos': typeof AuthenticatedCulturaObjetivosRoute
   '/cultura/politicas': typeof AuthenticatedCulturaPoliticasRoute
   '/guardian/hallazgos': typeof AuthenticatedGuardianHallazgosRoute
+  '/procesos/revision': typeof AuthenticatedProcesosRevisionRoute
   '/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -339,6 +348,7 @@ export interface FileRoutesById {
   '/_authenticated/cultura/objetivos': typeof AuthenticatedCulturaObjetivosRoute
   '/_authenticated/cultura/politicas': typeof AuthenticatedCulturaPoliticasRoute
   '/_authenticated/guardian/hallazgos': typeof AuthenticatedGuardianHallazgosRoute
+  '/_authenticated/procesos/revision': typeof AuthenticatedProcesosRevisionRoute
   '/_authenticated/procesos/vulnerabilidades': typeof AuthenticatedProcesosVulnerabilidadesRoute
   '/api/auth/callback': typeof ApiAuthCallbackRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -378,6 +388,7 @@ export interface FileRouteTypes {
     | '/cultura/objetivos'
     | '/cultura/politicas'
     | '/guardian/hallazgos'
+    | '/procesos/revision'
     | '/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
@@ -415,6 +426,7 @@ export interface FileRouteTypes {
     | '/cultura/objetivos'
     | '/cultura/politicas'
     | '/guardian/hallazgos'
+    | '/procesos/revision'
     | '/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
@@ -453,6 +465,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cultura/objetivos'
     | '/_authenticated/cultura/politicas'
     | '/_authenticated/guardian/hallazgos'
+    | '/_authenticated/procesos/revision'
     | '/_authenticated/procesos/vulnerabilidades'
     | '/api/auth/callback'
     | '/api/auth/login'
@@ -667,6 +680,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProcesosIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/procesos/revision': {
+      id: '/_authenticated/procesos/revision'
+      path: '/procesos/revision'
+      fullPath: '/procesos/revision'
+      preLoaderRoute: typeof AuthenticatedProcesosRevisionRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/procesos/vulnerabilidades': {
       id: '/_authenticated/procesos/vulnerabilidades'
       path: '/procesos/vulnerabilidades'
@@ -762,6 +782,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCulturaObjetivosRoute: typeof AuthenticatedCulturaObjetivosRoute
   AuthenticatedCulturaPoliticasRoute: typeof AuthenticatedCulturaPoliticasRoute
   AuthenticatedGuardianHallazgosRoute: typeof AuthenticatedGuardianHallazgosRoute
+  AuthenticatedProcesosRevisionRoute: typeof AuthenticatedProcesosRevisionRoute
   AuthenticatedProcesosVulnerabilidadesRoute: typeof AuthenticatedProcesosVulnerabilidadesRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
   AuthenticatedCulturaIndexRoute: typeof AuthenticatedCulturaIndexRoute
@@ -785,6 +806,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCulturaObjetivosRoute: AuthenticatedCulturaObjetivosRoute,
   AuthenticatedCulturaPoliticasRoute: AuthenticatedCulturaPoliticasRoute,
   AuthenticatedGuardianHallazgosRoute: AuthenticatedGuardianHallazgosRoute,
+  AuthenticatedProcesosRevisionRoute: AuthenticatedProcesosRevisionRoute,
   AuthenticatedProcesosVulnerabilidadesRoute:
     AuthenticatedProcesosVulnerabilidadesRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,

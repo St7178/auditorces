@@ -39,7 +39,10 @@ export const NAV: { section: string; items: NavItem[] }[] = [
             { title: "Equipo CES", url: "/equipo", icon: Users },
             {
                 title: "Procesos CES", url: "/procesos", icon: Workflow,
-                children: [{ title: "Vulnerabilidades CES", url: "/procesos/vulnerabilidades" }],
+                children: [
+                    { title: "Vulnerabilidades CES", url: "/procesos/vulnerabilidades" },
+                    { title: "Revisión Documental", url: "/procesos/revision" },
+                ],
             },
             { title: "Riesgos CES", url: "/riesgos", icon: ShieldAlert },
             { title: "Indicadores CES", url: "/indicadores", icon: Gauge },
