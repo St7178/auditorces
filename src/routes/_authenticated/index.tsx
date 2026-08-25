@@ -219,7 +219,9 @@ function Dashboard() {
 
                 {/* Contratos: única tarjeta con desglose (activos/próximos a vencer/vencidos) en vez de
                     un solo número, porque acá lo que importa es distinguir esos tres estados reales. */}
-                <ServiceCard title="Contratos" href="/clientes" variant="red" imgSrc={KPI_IMG.contratos} imgAlt="Contratos" className="min-h-[172px]">
+                {/* text-black: la imagen decorativa tapa parte del texto en la esquina — con blanco
+                    (el color por defecto de la variante "red") "Vencidos" quedaba ilegible ahí. */}
+                <ServiceCard title="Contratos" href="/clientes" variant="red" imgSrc={KPI_IMG.contratos} imgAlt="Contratos" className="min-h-[172px] text-black">
                     <div className="mt-3 text-4xl font-extrabold tracking-tight">{resumenContratosTotal ? resumenContratosTotal.total : "—"}</div>
                     {resumenContratosTotal && (
                         <div className="mt-2 space-y-1 text-[11px]">
