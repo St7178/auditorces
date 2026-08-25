@@ -19,10 +19,9 @@ export const Route = createFileRoute("/_authenticated/chat")({
 });
 
 const SUGERENCIAS = [
-    "¿Quiénes son nuestros clientes?",
-    "¿Cómo está organizado el equipo de Operación?",
-    "Dame el formato de acta de reunión",
-    "Procedimiento para restaurar una base SAP ASE",
+    "Dame el acta de reunión",
+    "Donde está el manual de calidad",
+    "Dame el formato de solicitud de vacaciones",
 ];
 
 function ChatWikiPage() {
@@ -32,7 +31,7 @@ function ChatWikiPage() {
         ? user.name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase()
         : "US";
     const [input, setInput] = useState("");
-    const [showTips, setShowTips] = useState(true);
+    const [showTips, setShowTips] = useState(false);
     const { messages, sendMessage, status } = useChat({
         transport: new DefaultChatTransport({ api: "/api/wiki-chat" }),
     });
@@ -56,7 +55,7 @@ function ChatWikiPage() {
         <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-5xl flex-col px-4 py-6 sm:px-6">
             <div className="mb-4 flex items-start gap-4">
                 <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/90 text-brand shadow-sm shadow-slate-200 border border-slate-200">
-                    <BookOpen className="h-7 w-7" />
+                    <img src="https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/IA" alt="Chat Wiki" className="h-9 w-9 object-contain" />
                 </div>
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -94,14 +93,6 @@ function ChatWikiPage() {
                                 concreto para buscar. Pregunta por algo puntual.
                             </li>
                         </ul>
-                        <div className="mt-3">
-                            <div className="mb-1 font-semibold uppercase tracking-wide text-[10px] text-amber-700">Ejemplos</div>
-                            <div className="flex flex-wrap gap-1.5">
-                                {["¿Qué servicios de Active Directory tiene Nutresa?", "Procedimiento para restaurar una base SAP ASE", "¿Cómo configuro VMware DC BT?"].map((ej) => (
-                                    <span key={ej} className="rounded-full border border-amber-300 bg-white px-2 py-1 text-[11px]">{ej}</span>
-                                ))}
-                            </div>
-                        </div>
                     </div>
                 )}
             </Card>
