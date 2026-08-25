@@ -1,12 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-    ShieldAlert, FileText, Truck, Gauge, Users,
-    Sparkles, ArrowUpRight, Building2,
-} from "lucide-react";
+import { Sparkles, ArrowUpRight, Building2 } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
+import { ServiceCard } from "@/components/ui/service-card";
 import { INDICADORES_REALES, type IndicadorDisponibilidadCES } from "@/lib/ces-data";
 import { clasificarContrato, resumenContratos, type Contrato } from "@/lib/contratos";
 import { clienteLogo } from "@/lib/cliente-logos";
@@ -20,6 +18,14 @@ const InteractiveGridBackground = lazy(() =>
 );
 
 type ClienteConContratos = { id?: string; nombre: string; estado?: string; contratos?: Contrato[] };
+
+const KPI_IMG = {
+    riesgos: "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Alertas",
+    indicadores: "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Indicadores",
+    clientes: "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Clientes",
+    proveedores: "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Proveedores",
+    contratos: "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Contratos",
+};
 
 // Cara simplificada para el carrusel del Dashboard: a diferencia de /clientes, acá solo se muestra
 // nombre + logo — sin responsable ni el tono "Contratos vencidos" (esa señal de alerta vive
@@ -150,10 +156,10 @@ function Dashboard() {
     // de ejemplo. "Indicadores" cuenta los indicadores con sync real conectado (ver INDICADORES_REALES
     // en ces-data.ts), no los de demostración que aún se ven en /indicadores.
     const kpis = [
-        { label: "Riesgos", icon: ShieldAlert, tone: "warning" as const, value: riesgos?.length ?? null },
-        { label: "Indicadores", icon: Gauge, tone: "brand" as const, value: INDICADORES_REALES.length },
-        { label: "Clientes", icon: Users, tone: "brand" as const, value: clientes?.length ?? null },
-        { label: "Proveedores", icon: Truck, tone: "muted" as const, value: proveedoresTotal },
+        { label: "Riesgos", href: "/riesgos", variant: "red" as const, imgSrc: KPI_IMG.riesgos, value: riesgos?.length ?? null },
+        { label: "Indicadores", href: "/indicadores", variant: "blue" as const, imgSrc: KPI_IMG.indicadores, value: INDICADORES_REALES.length },
+        { label: "Clientes", href: "/clientes", variant: "gray" as const, imgSrc: KPI_IMG.clientes, value: clientes?.length ?? null },
+        { label: "Proveedores", href: "/proveedores", variant: "default" as const, imgSrc: KPI_IMG.proveedores, value: proveedoresTotal },
     ];
 
     const recomendaciones = construirRecomendaciones(clientes, riesgos, indicadorDisp);
@@ -207,48 +213,33 @@ function Dashboard() {
 
             {/* Indicadores principales */}
             <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                {kpis.map((k) => {
-                    const toneBg = k.tone === "warning" ? "bg-amber-50 text-amber-700" : k.tone === "brand" ? "bg-brand-soft text-brand" : "bg-muted text-muted-foreground";
-                    return (
-                        <Card key={k.label} className="overflow-hidden border-border/60 transition hover:shadow-lg">
-                            <CardContent className="p-5">
-                                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${toneBg}`}>
-                                    <k.icon className="h-5 w-5" />
-                                </div>
-                                <div className="mt-4 text-3xl font-bold tracking-tight">{k.value === null || k.value === undefined ? "—" : k.value}</div>
-                                <div className="mt-1 text-xs text-muted-foreground">{k.label}</div>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
+                {kpis.map((k) => (
+                    <ServiceCard key={k.label} title={k.label} href={k.href} variant={k.variant} imgSrc={k.imgSrc} imgAlt={k.label} className="min-h-[172px]">
+                        <div className="mt-3 text-4xl font-extrabold tracking-tight">{k.value === null || k.value === undefined ? "—" : k.value}</div>
+                    </ServiceCard>
+                ))}
 
                 {/* Contratos: única tarjeta con desglose (activos/próximos a vencer/vencidos) en vez de
                     un solo número, porque acá lo que importa es distinguir esos tres estados reales. */}
-                <Card className="overflow-hidden border-border/60 transition hover:shadow-lg">
-                    <CardContent className="p-5">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                            <FileText className="h-5 w-5" />
-                        </div>
-                        <div className="mt-4 text-3xl font-bold tracking-tight">{resumenContratosTotal ? resumenContratosTotal.total : "—"}</div>
-                        <div className="mt-1 text-xs text-muted-foreground">Contratos</div>
-                        {resumenContratosTotal && (
-                            <div className="mt-2 space-y-1 border-t pt-2 text-[11px]">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Activos</span>
-                                    <span className="font-semibold text-brand">{resumenContratosTotal.vigentes}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Próximos a vencer</span>
-                                    <span className="font-semibold text-amber-700">{resumenContratosTotal.proximos}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Vencidos</span>
-                                    <span className="font-semibold text-destructive">{resumenContratosTotal.vencidos}</span>
-                                </div>
+                <ServiceCard title="Contratos" href="/clientes" variant="red" imgSrc={KPI_IMG.contratos} imgAlt="Contratos" className="min-h-[172px]">
+                    <div className="mt-3 text-4xl font-extrabold tracking-tight">{resumenContratosTotal ? resumenContratosTotal.total : "—"}</div>
+                    {resumenContratosTotal && (
+                        <div className="mt-2 space-y-1 text-[11px]">
+                            <div className="flex items-center justify-between">
+                                <span className="opacity-80">Activos</span>
+                                <span className="font-semibold">{resumenContratosTotal.vigentes}</span>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+                            <div className="flex items-center justify-between">
+                                <span className="opacity-80">Próximos a vencer</span>
+                                <span className="font-semibold">{resumenContratosTotal.proximos}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="opacity-80">Vencidos</span>
+                                <span className="font-semibold">{resumenContratosTotal.vencidos}</span>
+                            </div>
+                        </div>
+                    )}
+                </ServiceCard>
             </section>
 
             {/* Cumplimiento SIG */}
