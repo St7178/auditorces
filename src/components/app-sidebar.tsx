@@ -11,6 +11,7 @@ import {
     Truck,
     Calendar,
     FileText,
+    MessagesSquare,
     Settings,
     ChevronRight,
     Landmark,
@@ -38,6 +39,7 @@ type NavItem = {
     url: string;
     icon: typeof LayoutDashboard;
     highlight?: boolean;
+    iconClassName?: string;
     children?: { title: string; url: string }[];
 };
 
@@ -69,7 +71,7 @@ const nav: { section: string; items: NavItem[] }[] = [
     },
     {
         section: "📚 Conocimiento", items: [
-            { title: "Wiki CES", url: "/chat", icon: Sparkles },
+            { title: "Wiki CES", url: "/chat", icon: MessagesSquare, iconClassName: "text-sidebar-primary" },
             { title: "Normas CES", url: "/normas", icon: FileText },
             {
                 title: "Cultura SIG", url: "/cultura", icon: Landmark,
@@ -140,7 +142,7 @@ export function AppSidebar({ user }: { user: { name: string; jobTitle?: string |
                                                 className={item.highlight ? "font-semibold" : ""}
                                             >
                                                 <Link to={item.url}>
-                                                    <item.icon className={item.highlight ? "text-sidebar-primary" : ""} />
+                                                    <item.icon className={item.highlight ? "text-sidebar-primary" : item.iconClassName ?? ""} />
                                                     <span>{item.title}</span>
                                                 </Link>
                                             </SidebarMenuButton>
