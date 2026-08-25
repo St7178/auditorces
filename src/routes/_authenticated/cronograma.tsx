@@ -32,18 +32,18 @@ function CronPage() {
 
     return (
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-            <PageHeader eyebrow="Planeación" title="Agenda SIG" description={`Reuniones registradas en el calendario de ${AGENDA_SIG_MAILBOX}.`} />
+            <PageHeader eyebrow="Planeación" title="Agenda SIG" description={`De tu calendario: solo las reuniones que organizó ${AGENDA_SIG_MAILBOX}.`} />
 
             <div className="mt-8">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Próximas reuniones (Outlook)</h2>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Próximas reuniones asignadas (Outlook)</h2>
 
                 {error && (
                     <div className="mt-3 flex gap-3 rounded-xl border border-amber-300/60 bg-amber-50 p-4 text-amber-900">
                         <AlertTriangle className="h-5 w-5 shrink-0" />
                         <div className="text-sm">
-                            <div className="font-semibold">No se pudo cargar el calendario de Agenda SIG</div>
+                            <div className="font-semibold">No se pudo cargar tu calendario de Microsoft</div>
                             <div className="mt-0.5 text-amber-800/80">
-                                Verifica que la app tenga el permiso de aplicación "Calendars.Read" concedido en Azure.
+                                Si acabas de agregar esta función, cierra sesión y vuelve a iniciarla para autorizar el acceso al calendario.
                                 Detalle: <span className="font-mono text-xs">{error}</span>
                             </div>
                         </div>
@@ -51,7 +51,7 @@ function CronPage() {
                 )}
 
                 {!error && reuniones.length === 0 && (
-                    <div className="mt-3 text-sm text-muted-foreground">No hay reuniones en los próximos 14 días.</div>
+                    <div className="mt-3 text-sm text-muted-foreground">No tienes reuniones asignadas por {AGENDA_SIG_MAILBOX} en los próximos 14 días.</div>
                 )}
 
                 {reuniones.length > 0 && (

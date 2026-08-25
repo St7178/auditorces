@@ -49,8 +49,8 @@ export const Route = createFileRoute("/api/hallazgos")({
                             subject: titulo || "Seguimiento de hallazgo de auditoría",
                             startIso,
                             endIso,
-                            // Laura siempre queda invitada para que la reunión aparezca en Agenda SIG
-                            // (que lee su calendario específicamente) sin importar quién la agende.
+                            // Laura (coordinadora de calidad CES) siempre queda invitada a estos
+                            // seguimientos de hallazgo, sin importar quién los agende.
                             attendeeEmails: [AGENDA_SIG_MAILBOX],
                         });
                         const hallazgo = await setPaso(body.id, "agenda", true);

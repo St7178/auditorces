@@ -83,6 +83,7 @@ export type CalendarEvent = {
     start: string;
     end: string;
     organizer: string | null;
+    organizerEmail: string | null;
     isOnlineMeeting: boolean;
     joinUrl: string | null;
     webLink: string;
@@ -94,7 +95,7 @@ type GraphCalendarViewResponse = {
         subject: string;
         start: { dateTime: string };
         end: { dateTime: string };
-        organizer?: { emailAddress?: { name?: string } };
+        organizer?: { emailAddress?: { name?: string; address?: string } };
         isOnlineMeeting: boolean;
         onlineMeeting?: { joinUrl?: string };
         webLink: string;
@@ -108,6 +109,7 @@ function parseCalendarView(json: GraphCalendarViewResponse): CalendarEvent[] {
         start: e.start.dateTime,
         end: e.end.dateTime,
         organizer: e.organizer?.emailAddress?.name ?? null,
+        organizerEmail: e.organizer?.emailAddress?.address ?? null,
         isOnlineMeeting: e.isOnlineMeeting,
         joinUrl: e.onlineMeeting?.joinUrl ?? null,
         webLink: e.webLink,
@@ -124,27 +126,6 @@ export async function fetchCalendarView(accessToken: string, startIso: string, e
         headers: { Authorization: `Bearer ${accessToken}`, Prefer: 'outlook.timezone="America/Bogota"' },
     });
     if (!res.ok) throw new Error(`Graph /me/calendarView failed (${res.status}): ${await res.text()}`);
-    return parseCalendarView(await res.json());
-}
-
-// Igual que fetchCalendarView pero para el buzón de UNA persona específica, con token de aplicación
-// en vez del token delegado de quien esté logueado — así "Agenda SIG" siempre muestra el calendario
-// de esa persona sin importar quién abra la página. Requiere el permiso de aplicación
-// "Calendars.Read" con consentimiento de admin (da acceso de lectura a los calendarios de todo el
-// tenant, no hay forma de acotarlo a un solo buzón desde Graph).
-export async function fetchUserCalendarView(mail: string, startIso: string, endIso: string): Promise<CalendarEvent[]> {
-    const token = await getGraphAppToken();
-    const url =
-        `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(mail)}/calendarView?startDateTime=${encodeURIComponent(startIso)}&endDateTime=${encodeURIComponent(endIso)}` +
-        `&$select=${CALENDAR_VIEW_SELECT}&$orderby=start/dateTime&$top=50`;
-    const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}`, Prefer: 'outlook.timezone="America/Bogota"' },
-    });
-    if (!res.ok) {
-        throw new Error(
-            `Graph /users/${mail}/calendarView failed (${res.status}). Verifica en Azure Portal → App registrations → API permissions que "Calendars.Read" (aplicación) tenga el consentimiento de administrador concedido. Detalle: ${await res.text()}`,
-        );
-    }
     return parseCalendarView(await res.json());
 }
 
