@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
-import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
+import { Card3D } from "@/components/ui/animated-3d-card";
 import { CLIENTES } from "@/lib/ces-data";
-import { clasificarContrato, resumenContratos } from "@/lib/contratos";
+import { clasificarContrato, resumenContratos, type Contrato } from "@/lib/contratos";
 import { clienteLogo } from "@/lib/cliente-logos";
 import { normalizeName } from "@/lib/normalize-name";
 import { Building2, AlertTriangle, ClipboardList, ArrowUpRight, Users, X } from "lucide-react";
@@ -16,23 +16,80 @@ export const Route = createFileRoute("/_authenticated/clientes/")({
     head: () => ({ meta: [{ title: "Clientes — CES SIG" }] }),
 });
 
-// Cara de cada tarjeta del carrusel: el fondo sigue siendo sólido oscuro/claro (nada de fotos de
-// stock), pero el logo real del cliente sí se muestra — en una placa clara para que se lea igual de
-// bien sobre cualquiera de los dos tonos — con el ícono genérico como respaldo si no hay logo.
-function ClienteFace({ nombre, badgeLabel, logo, light }: { nombre: string; badgeLabel: string; logo?: string; light: boolean }) {
-    const chip = light ? "bg-slate-900/8" : "bg-white/12";
+type Cliente = (typeof CLIENTES)[number];
+
+// Color de cada estado de contrato — el mismo criterio (verde=vigente, ámbar=próximo,
+// rojo=vencido) que ya usa el resumen de Contratos en el Dashboard.
+function colorEstadoContrato(ct: Contrato, sobreRojo: boolean) {
+    const clasif = clasificarContrato(ct);
+    if (clasif === "vencido") return sobreRojo ? "text-white font-bold" : "text-red-600 font-bold";
+    if (clasif === "proximo") return sobreRojo ? "text-amber-100 font-semibold" : "text-amber-600 font-semibold";
+    return sobreRojo ? "text-emerald-100 font-semibold" : "text-brand font-semibold";
+}
+
+function ClienteCard({ c, todoVencido, algunVencido }: { c: Cliente; todoVencido: boolean; algunVencido: boolean }) {
+    const logo = clienteLogo(c.nombre);
+    const mut = todoVencido ? "text-white/75" : "text-muted-foreground";
+    const divider = todoVencido ? "border-white/20" : "border-border/60";
+
     return (
-        <div className="flex flex-col items-center justify-center gap-3 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-sm">
-                {logo ? (
-                    <img src={logo} alt={nombre} className="h-full w-full object-contain" />
-                ) : (
-                    <Building2 className="h-7 w-7 text-slate-900" />
+        <Card3D variant={todoVencido ? "red" : "white"}>
+            <div className="flex items-start gap-3">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white p-2 shadow-sm ring-1 ring-black/5">
+                    {logo ? (
+                        <img src={logo} alt={c.nombre} className="h-full w-full object-contain" />
+                    ) : (
+                        <Building2 className="h-6 w-6 text-slate-700" />
+                    )}
+                </div>
+                <div className="min-w-0 flex-1 pt-0.5">
+                    <div className="truncate text-lg font-bold leading-tight">{c.nombre}</div>
+                    <div className={`text-xs ${mut}`}>Responsable · {c.responsable}</div>
+                </div>
+                <span
+                    className={`mt-2 h-2.5 w-2.5 shrink-0 rounded-full ${todoVencido ? "bg-white" : c.estado === "Activo" ? "bg-emerald-500" : "bg-amber-500"}`}
+                />
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                        todoVencido
+                            ? "bg-white/15 text-white"
+                            : c.estado === "Activo"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-amber-50 text-amber-700"
+                    }`}
+                >
+                    {todoVencido ? "Contratos vencidos" : c.estado}
+                </span>
+                {algunVencido && (
+                    <span className="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700">
+                        ⚠ Contrato(s) vencido(s)
+                    </span>
                 )}
             </div>
-            <div className="px-2 text-base font-semibold leading-tight">{nombre}</div>
-            <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${chip}`}>{badgeLabel}</span>
-        </div>
+
+            {c.servicios && c.servicios.length > 0 && (
+                <div className={`mt-3 text-xs leading-relaxed ${mut}`}>
+                    <span className={`font-semibold ${todoVencido ? "text-white" : "text-foreground"}`}>Servicios: </span>
+                    {c.servicios.join(", ")}
+                </div>
+            )}
+
+            {c.contratos && c.contratos.length > 0 && (
+                <div className={`mt-3 space-y-1.5 border-t pt-3 text-[11px] ${divider}`}>
+                    {c.contratos.map((ct) => (
+                        <div key={ct.id} className="flex items-center justify-between gap-3">
+                            <span className={mut}>{ct.id}</span>
+                            <span className={colorEstadoContrato(ct, todoVencido)}>
+                                {ct.estado} · {ct.inicio} → {ct.fin}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </Card3D>
     );
 }
 
@@ -69,7 +126,7 @@ function ClientesPage() {
 
     // Un cliente "Activo" con al menos un contrato vencido es una inconsistencia que vale la pena
     // señalar; si TODOS sus contratos están vencidos, "Activo" ya ni siquiera describe la realidad —
-    // en ese caso se reemplaza el badge en vez de solo advertir debajo.
+    // en ese caso la tarjeta completa pasa a rojo en vez de solo advertir con un badge.
     const clientesConAlgunContratoVencido = new Set(
         clientesFiltrados.filter((c) => c.estado === "Activo" && (c.contratos || []).some((ct) => clasificarContrato(ct) === "vencido")).map((c) => c.id),
     );
@@ -78,32 +135,6 @@ function ClientesPage() {
             .filter((c) => c.estado === "Activo" && (c.contratos || []).length > 0 && (c.contratos || []).every((ct) => clasificarContrato(ct) === "vencido"))
             .map((c) => c.id),
     );
-
-    const slides: CoverflowSlide[] = clientesFiltrados.map((c, i) => {
-        const todoVencido = clientesConTodoVencido.has(c.id);
-        const algunVencido = clientesConAlgunContratoVencido.has(c.id) && !todoVencido;
-        const badgeLabel = todoVencido ? "Contratos vencidos" : c.estado;
-        const light = i % 2 === 0;
-        const tone: CoverflowSlide["tone"] = todoVencido ? "danger" : light ? "light" : "dark";
-
-        const meta: { label: string; value: string }[] = [
-            { label: "Responsable", value: c.responsable },
-            { label: "Estado", value: badgeLabel },
-        ];
-        if (algunVencido) meta.push({ label: "⚠ Atención", value: "Tiene contrato(s) vencido(s)" });
-        if (c.servicios?.length) meta.push({ label: "Servicios", value: c.servicios.join(", ") });
-        for (const ct of c.contratos ?? []) {
-            meta.push({ label: ct.id, value: `${ct.estado} · ${ct.inicio} → ${ct.fin}` });
-        }
-
-        return {
-            face: <ClienteFace nombre={c.nombre} badgeLabel={badgeLabel} logo={clienteLogo(c.nombre)} light={light && !todoVencido} />,
-            tone,
-            title: c.nombre,
-            subtitle: `Responsable · ${c.responsable}`,
-            meta,
-        };
-    });
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -134,7 +165,7 @@ function ClientesPage() {
             <div className="mt-10 flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <h2 className="text-lg font-semibold">Clientes</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">Arrastra o usa las flechas para recorrerlos — el panel de abajo muestra el detalle del que quede al centro.</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{clientesFiltrados.length} cliente{clientesFiltrados.length === 1 ? "" : "s"}.</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -163,14 +194,15 @@ function ClientesPage() {
                     Ningún cliente sincronizado tiene a "{responsable}" como responsable todavía.
                 </div>
             ) : (
-                <div className="mt-2">
-                    <CoverflowCarousel
-                        slides={slides}
-                        showCaption
-                        showPagination
-                        showNavigation
-                        label="Clientes CES"
-                    />
+                <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" style={{ perspective: "1500px" }}>
+                    {clientesFiltrados.map((c) => (
+                        <ClienteCard
+                            key={c.id}
+                            c={c}
+                            todoVencido={clientesConTodoVencido.has(c.id)}
+                            algunVencido={clientesConAlgunContratoVencido.has(c.id) && !clientesConTodoVencido.has(c.id)}
+                        />
+                    ))}
                 </div>
             )}
         </div>
