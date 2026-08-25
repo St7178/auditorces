@@ -111,18 +111,22 @@ function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => void 
                         <Icon className="h-9 w-9" />
                     </motion.div>
 
-                    <div className="overflow-hidden">
-                        <motion.div
-                            variants={{
-                                initial: { x: "100%", opacity: 0 },
-                                whileHover: { x: "0%", opacity: 1 },
-                            }}
-                            transition={{ type: "spring" }}
-                            className="relative z-10 p-2"
-                        >
-                            <ArrowRight className="size-5 text-foreground sm:size-6" />
-                        </motion.div>
-                    </div>
+                    {/* Solo se muestra en los ítems sin subpágina — en los que sí tienen, esta
+                        flecha de hover competía visualmente con el chevron del desplegable. */}
+                    {!tieneHijos && (
+                        <div className="overflow-hidden">
+                            <motion.div
+                                variants={{
+                                    initial: { x: "100%", opacity: 0 },
+                                    whileHover: { x: "0%", opacity: 1 },
+                                }}
+                                transition={{ type: "spring" }}
+                                className="relative z-10 p-2"
+                            >
+                                <ArrowRight className="size-5 text-foreground sm:size-6" />
+                            </motion.div>
+                        </div>
+                    )}
                 </motion.a>
 
                 {/* Botón aparte, fuera del <a>, para no anidar elementos interactivos: despliega
