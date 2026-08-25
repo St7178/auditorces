@@ -1,10 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, ArrowUpRight, Building2 } from "lucide-react";
-import { lazy, Suspense, useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Sparkles, ArrowUpRight, Building2, AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Progress } from "@/components/ui/progress";
 import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
 import { ServiceCard } from "@/components/ui/service-card";
+import { HighlightCard, type HighlightCardColor } from "@/components/ui/card-5";
 import { Badge } from "@/components/ui/badge";
 import {
     AnimatedCard, CardBody, CardTitle, CardDescription, CardVisual, MaturityGauge, CardAmbientBackground, colorDeMadurez,
@@ -86,6 +86,14 @@ function ComplianceRow({ label, value, desc, delay }: { label: string; value: nu
 
 type RiesgoReal = { id: string; descripcion?: string; porcentajeMitigacion?: number; nivelResidual?: { severidad?: string } };
 type Recomendacion = { titulo: string; texto: string; nivel: "alta" | "media" | "baja"; to: "/clientes" | "/riesgos" | "/indicadores" };
+
+// "alta" = negativo/urgente (rojo), "media" = alerta (ámbar), "baja" = positivo (verde) — mismo
+// criterio de color que ya usaba la lista de recomendaciones, ahora aplicado a la tarjeta destacada.
+const NIVEL_INFO: Record<Recomendacion["nivel"], { color: HighlightCardColor; icon: ReactNode; label: string }> = {
+    alta: { color: "red", icon: <AlertTriangle className="h-5 w-5" />, label: "Alta" },
+    media: { color: "amber", icon: <AlertCircle className="h-5 w-5" />, label: "Media" },
+    baja: { color: "green", icon: <CheckCircle2 className="h-5 w-5" />, label: "Baja" },
+};
 type ChecklistItem = { id: string; codigo: string; nombre: string };
 type ChecklistDef = { cliente: ChecklistItem[]; interna: ChecklistItem[] };
 
@@ -135,6 +143,7 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 function Dashboard() {
+    const navigate = useNavigate();
     const [clientes, setClientes] = useState<ClienteConContratos[] | null>(null);
     const [riesgos, setRiesgos] = useState<RiesgoReal[] | null>(null);
     const [proveedoresTotal, setProveedoresTotal] = useState<number | null>(null);
@@ -324,38 +333,40 @@ function Dashboard() {
 
             {/* Recomendaciones */}
             <section className="mt-8">
-                <Card className="border-border/60">
-                    <CardContent className="p-6">
-                        <div className="flex items-center gap-2">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-[oklch(0.5_0.14_200)] text-white">
-                                <Sparkles className="h-4 w-4" />
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-semibold">Recomendaciones del área CES</h2>
-                                <p className="text-xs text-muted-foreground">Señales reales de contratos, riesgos e indicadores sincronizados</p>
-                            </div>
-                        </div>
-                        <div className="mt-4 space-y-3">
-                            {recomendaciones.length === 0 && (
-                                <div className="text-sm text-muted-foreground">Sin alertas activas por ahora — contratos, riesgos e indicadores dentro de lo esperado.</div>
-                            )}
-                            {recomendaciones.map((r) => (
-                                <Link
+                <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-[oklch(0.5_0.14_200)] text-white">
+                        <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-semibold">Recomendaciones del área CES</h2>
+                        <p className="text-xs text-muted-foreground">Señales reales de contratos, riesgos e indicadores sincronizados</p>
+                    </div>
+                </div>
+
+                {recomendaciones.length === 0 ? (
+                    <div className="mt-4 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+                        Sin alertas activas por ahora — contratos, riesgos e indicadores dentro de lo esperado.
+                    </div>
+                ) : (
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {recomendaciones.map((r) => {
+                            const info = NIVEL_INFO[r.nivel];
+                            return (
+                                <HighlightCard
                                     key={r.titulo}
-                                    to={r.to}
-                                    className="flex items-center gap-3 rounded-xl border bg-card p-4 transition hover:border-brand/40 hover:shadow-sm"
-                                >
-                                    <div className={`mt-0.5 h-2 w-2 shrink-0 self-start rounded-full ${r.nivel === "alta" ? "bg-destructive" : r.nivel === "media" ? "bg-amber-500" : "bg-brand"}`} />
-                                    <div className="min-w-0 flex-1">
-                                        <div className="text-sm font-semibold">{r.titulo}</div>
-                                        <div className="mt-0.5 text-xs text-muted-foreground">{r.texto}</div>
-                                    </div>
-                                    <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                </Link>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                                    title={r.titulo}
+                                    description={r.texto}
+                                    metricValue={info.label}
+                                    metricLabel="Nivel de prioridad"
+                                    buttonText="Ver más"
+                                    onButtonClick={() => navigate({ to: r.to })}
+                                    icon={info.icon}
+                                    color={info.color}
+                                />
+                            );
+                        })}
+                    </div>
+                )}
             </section>
 
             {/* Clientes — resumen visual simple (solo nombre + logo, sin filtros ni el tono de alerta
