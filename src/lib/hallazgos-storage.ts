@@ -12,7 +12,18 @@ export type Hallazgo = {
     creadoEn: string;
     mitigado: boolean | null;
     comentarioMitigacion: string | null;
+    responsable: string | null;
+    pasoIdentifico: boolean;
+    pasoAgenda: boolean;
+    pasoSoluciono: boolean;
 };
+
+const SELECT_COLUMNS = `
+    id, proceso, titulo, descripcion, nivel_riesgo AS "nivelRiesgo", recomendacion,
+    evidencia_ubicacion AS "evidenciaUbicacion", estado, creado_en AS "creadoEn",
+    mitigado, comentario_mitigacion AS "comentarioMitigacion", responsable,
+    paso_identifico AS "pasoIdentifico", paso_agenda AS "pasoAgenda", paso_soluciono AS "pasoSoluciono"
+`;
 
 function sql() {
     const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
@@ -42,6 +53,12 @@ async function ensureSchema() {
             // recrear, para no perder lo que ya hay.
             .then(() => db`ALTER TABLE hallazgos_auditoria ADD COLUMN IF NOT EXISTS mitigado BOOLEAN`)
             .then(() => db`ALTER TABLE hallazgos_auditoria ADD COLUMN IF NOT EXISTS comentario_mitigacion TEXT`)
+            .then(() => db`ALTER TABLE hallazgos_auditoria ADD COLUMN IF NOT EXISTS responsable TEXT`)
+            // "Identificó" nace en true: por definición, un hallazgo guardado ya fue identificado —
+            // los otros dos pasos del seguimiento empiezan sin marcar.
+            .then(() => db`ALTER TABLE hallazgos_auditoria ADD COLUMN IF NOT EXISTS paso_identifico BOOLEAN NOT NULL DEFAULT true`)
+            .then(() => db`ALTER TABLE hallazgos_auditoria ADD COLUMN IF NOT EXISTS paso_agenda BOOLEAN NOT NULL DEFAULT false`)
+            .then(() => db`ALTER TABLE hallazgos_auditoria ADD COLUMN IF NOT EXISTS paso_soluciono BOOLEAN NOT NULL DEFAULT false`)
             .then(() => undefined)
             .catch((err) => {
                 ready = null;
@@ -58,16 +75,15 @@ export async function saveHallazgo(input: {
     nivelRiesgo?: string | null;
     recomendacion: string;
     evidenciaUbicacion?: string | null;
+    responsable?: string | null;
 }): Promise<Hallazgo> {
     await ensureSchema();
     const db = sql();
     const id = `H-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
     const rows = await db`
-        INSERT INTO hallazgos_auditoria (id, proceso, titulo, descripcion, nivel_riesgo, recomendacion, evidencia_ubicacion)
-        VALUES (${id}, ${input.proceso}, ${input.titulo}, ${input.descripcion}, ${input.nivelRiesgo ?? null}, ${input.recomendacion}, ${input.evidenciaUbicacion ?? null})
-        RETURNING id, proceso, titulo, descripcion, nivel_riesgo AS "nivelRiesgo", recomendacion,
-                  evidencia_ubicacion AS "evidenciaUbicacion", estado, creado_en AS "creadoEn",
-                  mitigado, comentario_mitigacion AS "comentarioMitigacion"
+        INSERT INTO hallazgos_auditoria (id, proceso, titulo, descripcion, nivel_riesgo, recomendacion, evidencia_ubicacion, responsable)
+        VALUES (${id}, ${input.proceso}, ${input.titulo}, ${input.descripcion}, ${input.nivelRiesgo ?? null}, ${input.recomendacion}, ${input.evidenciaUbicacion ?? null}, ${input.responsable ?? null})
+        RETURNING ${db.unsafe(SELECT_COLUMNS)}
     `;
     return rows[0] as unknown as Hallazgo;
 }
@@ -76,9 +92,7 @@ export async function getHallazgos(): Promise<Hallazgo[]> {
     await ensureSchema();
     const db = sql();
     const rows = await db`
-        SELECT id, proceso, titulo, descripcion, nivel_riesgo AS "nivelRiesgo", recomendacion,
-               evidencia_ubicacion AS "evidenciaUbicacion", estado, creado_en AS "creadoEn",
-               mitigado, comentario_mitigacion AS "comentarioMitigacion"
+        SELECT ${db.unsafe(SELECT_COLUMNS)}
         FROM hallazgos_auditoria
         ORDER BY creado_en DESC
     `;
@@ -97,9 +111,26 @@ export async function setMitigacion(id: string, mitigado: boolean, comentario: s
         UPDATE hallazgos_auditoria
         SET mitigado = ${mitigado}, comentario_mitigacion = ${mitigado ? comentario : null}
         WHERE id = ${id}
-        RETURNING id, proceso, titulo, descripcion, nivel_riesgo AS "nivelRiesgo", recomendacion,
-                  evidencia_ubicacion AS "evidenciaUbicacion", estado, creado_en AS "creadoEn",
-                  mitigado, comentario_mitigacion AS "comentarioMitigacion"
+        RETURNING ${db.unsafe(SELECT_COLUMNS)}
+    `;
+    if (!rows.length) throw new Error("Hallazgo no encontrado");
+    return rows[0] as unknown as Hallazgo;
+}
+
+export type Paso = "identifico" | "agenda" | "soluciono";
+const PASO_COLUMN: Record<Paso, string> = { identifico: "paso_identifico", agenda: "paso_agenda", soluciono: "paso_soluciono" };
+
+// Checklist de seguimiento (Identificó / Agendó / Solucionó) — cada casilla se guarda por separado,
+// independiente de la mitigación con comentario obligatorio de arriba.
+export async function setPaso(id: string, paso: Paso, valor: boolean): Promise<Hallazgo> {
+    await ensureSchema();
+    const db = sql();
+    const column = PASO_COLUMN[paso];
+    const rows = await db`
+        UPDATE hallazgos_auditoria
+        SET ${db.unsafe(column)} = ${valor}
+        WHERE id = ${id}
+        RETURNING ${db.unsafe(SELECT_COLUMNS)}
     `;
     if (!rows.length) throw new Error("Hallazgo no encontrado");
     return rows[0] as unknown as Hallazgo;

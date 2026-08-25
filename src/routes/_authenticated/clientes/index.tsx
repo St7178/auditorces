@@ -1,32 +1,20 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
 import { CLIENTES } from "@/lib/ces-data";
 import { clasificarContrato, resumenContratos } from "@/lib/contratos";
-import { Building2, AlertTriangle, ClipboardList, ArrowUpRight } from "lucide-react";
+import { clienteLogo } from "@/lib/cliente-logos";
+import { normalizeName } from "@/lib/normalize-name";
+import { Building2, AlertTriangle, ClipboardList, ArrowUpRight, Users, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/clientes/")({
     component: ClientesPage,
+    validateSearch: (search: Record<string, unknown>): { responsable?: string } => ({
+        responsable: typeof search.responsable === "string" ? search.responsable : undefined,
+    }),
     head: () => ({ meta: [{ title: "Clientes — CES SIG" }] }),
 });
-
-const CLIENTE_LOGO: Record<string, string> = {
-    "CONCONCRETO": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Concocreto.png",
-    "GRUPO RECORDAR": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Grupo%20Recordar.png",
-    "INCOLMOTOS": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/Logo%20Incolmotos.png",
-    "INDUPALMA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/LOGO_INDUPALMA.png",
-    "INGENIO CARMELITA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/carmelita.png",
-    "INGENIO RISARALDA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/INGENIORISARALDALOGO.png",
-    "LEVAPAN": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/LevapanLogo.png",
-    "NUTRESA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/NUTRESALOGO.png",
-    "PROTELA": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/PROTELA.png",
-    "SURTIALIMENTOS": "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/SURTIALIAMENTOSLOGO.png",
-};
-
-function clienteLogo(nombre: string) {
-    return CLIENTE_LOGO[String(nombre || "").trim().toUpperCase()];
-}
 
 // Cara de cada tarjeta del carrusel: el fondo sigue siendo sólido oscuro/claro (nada de fotos de
 // stock), pero el logo real del cliente sí se muestra — en una placa clara para que se lea igual de
@@ -49,6 +37,8 @@ function ClienteFace({ nombre, badgeLabel, logo, light }: { nombre: string; badg
 }
 
 function ClientesPage() {
+    const { responsable } = Route.useSearch();
+    const navigate = useNavigate({ from: Route.fullPath });
     const [clientes, setClientes] = useState(CLIENTES);
 
     useEffect(() => {
@@ -66,19 +56,30 @@ function ClientesPage() {
 
     const resumen = resumenContratos(clientes.flatMap((c) => c.contratos || []));
 
+    // Responsables distintos para el select — a partir de los datos reales ya sincronizados, no de
+    // un listado aparte que se podría desincronizar.
+    const responsables = [...new Set(clientes.map((c) => c.responsable).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+
+    // Comparación normalizada (sin tildes/mayúsculas) porque el filtro puede llegar desde /equipo con
+    // el nombre tal como lo fusiona Entra ID, que no siempre calza carácter a carácter con el
+    // "responsable" tal como está escrito en el archivo sincronizado de clientes.
+    const clientesFiltrados = responsable
+        ? clientes.filter((c) => normalizeName(c.responsable) === normalizeName(responsable))
+        : clientes;
+
     // Un cliente "Activo" con al menos un contrato vencido es una inconsistencia que vale la pena
     // señalar; si TODOS sus contratos están vencidos, "Activo" ya ni siquiera describe la realidad —
     // en ese caso se reemplaza el badge en vez de solo advertir debajo.
     const clientesConAlgunContratoVencido = new Set(
-        clientes.filter((c) => c.estado === "Activo" && (c.contratos || []).some((ct) => clasificarContrato(ct) === "vencido")).map((c) => c.id),
+        clientesFiltrados.filter((c) => c.estado === "Activo" && (c.contratos || []).some((ct) => clasificarContrato(ct) === "vencido")).map((c) => c.id),
     );
     const clientesConTodoVencido = new Set(
-        clientes
+        clientesFiltrados
             .filter((c) => c.estado === "Activo" && (c.contratos || []).length > 0 && (c.contratos || []).every((ct) => clasificarContrato(ct) === "vencido"))
             .map((c) => c.id),
     );
 
-    const slides: CoverflowSlide[] = clientes.map((c, i) => {
+    const slides: CoverflowSlide[] = clientesFiltrados.map((c, i) => {
         const todoVencido = clientesConTodoVencido.has(c.id);
         const algunVencido = clientesConAlgunContratoVencido.has(c.id) && !todoVencido;
         const badgeLabel = todoVencido ? "Contratos vencidos" : c.estado;
@@ -130,17 +131,48 @@ function ClientesPage() {
                 </div>
             )}
 
-            <h2 className="mt-10 text-lg font-semibold">Clientes</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Arrastra o usa las flechas para recorrerlos — el panel de abajo muestra el detalle del que quede al centro.</p>
-            <div className="mt-2">
-                <CoverflowCarousel
-                    slides={slides}
-                    showCaption
-                    showPagination
-                    showNavigation
-                    label="Clientes CES"
-                />
+            <div className="mt-10 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <h2 className="text-lg font-semibold">Clientes</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">Arrastra o usa las flechas para recorrerlos — el panel de abajo muestra el detalle del que quede al centro.</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <select
+                        value={responsable ?? ""}
+                        onChange={(e) => navigate({ search: { responsable: e.target.value || undefined } })}
+                        className="rounded-lg border bg-card px-2.5 py-1.5 text-xs font-medium outline-none focus:border-brand"
+                    >
+                        <option value="">Todos los responsables</option>
+                        {responsables.map((r) => (
+                            <option key={r} value={r}>{r}</option>
+                        ))}
+                    </select>
+                    {responsable && (
+                        <button
+                            onClick={() => navigate({ search: {} })}
+                            className="flex items-center gap-1 rounded-lg border bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
+                        >
+                            <X className="h-3 w-3" /> Quitar filtro
+                        </button>
+                    )}
+                </div>
             </div>
+            {clientesFiltrados.length === 0 ? (
+                <div className="mt-4 rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    Ningún cliente sincronizado tiene a "{responsable}" como responsable todavía.
+                </div>
+            ) : (
+                <div className="mt-2">
+                    <CoverflowCarousel
+                        slides={slides}
+                        showCaption
+                        showPagination
+                        showNavigation
+                        label="Clientes CES"
+                    />
+                </div>
+            )}
         </div>
     );
 }

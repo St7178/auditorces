@@ -88,26 +88,20 @@ export type CalendarEvent = {
     webLink: string;
 };
 
-export async function fetchCalendarView(accessToken: string, startIso: string, endIso: string): Promise<CalendarEvent[]> {
-    const url =
-        `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${encodeURIComponent(startIso)}&endDateTime=${encodeURIComponent(endIso)}` +
-        `&$select=id,subject,start,end,organizer,isOnlineMeeting,onlineMeeting,webLink&$orderby=start/dateTime&$top=50`;
-    const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${accessToken}`, Prefer: 'outlook.timezone="America/Bogota"' },
-    });
-    if (!res.ok) throw new Error(`Graph /me/calendarView failed (${res.status}): ${await res.text()}`);
-    const json = (await res.json()) as {
-        value: Array<{
-            id: string;
-            subject: string;
-            start: { dateTime: string };
-            end: { dateTime: string };
-            organizer?: { emailAddress?: { name?: string } };
-            isOnlineMeeting: boolean;
-            onlineMeeting?: { joinUrl?: string };
-            webLink: string;
-        }>;
-    };
+type GraphCalendarViewResponse = {
+    value: Array<{
+        id: string;
+        subject: string;
+        start: { dateTime: string };
+        end: { dateTime: string };
+        organizer?: { emailAddress?: { name?: string } };
+        isOnlineMeeting: boolean;
+        onlineMeeting?: { joinUrl?: string };
+        webLink: string;
+    }>;
+};
+
+function parseCalendarView(json: GraphCalendarViewResponse): CalendarEvent[] {
     return json.value.map((e) => ({
         id: e.id,
         subject: e.subject || "(Sin título)",
@@ -118,6 +112,40 @@ export async function fetchCalendarView(accessToken: string, startIso: string, e
         joinUrl: e.onlineMeeting?.joinUrl ?? null,
         webLink: e.webLink,
     }));
+}
+
+const CALENDAR_VIEW_SELECT = "id,subject,start,end,organizer,isOnlineMeeting,onlineMeeting,webLink";
+
+export async function fetchCalendarView(accessToken: string, startIso: string, endIso: string): Promise<CalendarEvent[]> {
+    const url =
+        `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${encodeURIComponent(startIso)}&endDateTime=${encodeURIComponent(endIso)}` +
+        `&$select=${CALENDAR_VIEW_SELECT}&$orderby=start/dateTime&$top=50`;
+    const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}`, Prefer: 'outlook.timezone="America/Bogota"' },
+    });
+    if (!res.ok) throw new Error(`Graph /me/calendarView failed (${res.status}): ${await res.text()}`);
+    return parseCalendarView(await res.json());
+}
+
+// Igual que fetchCalendarView pero para el buzón de UNA persona específica, con token de aplicación
+// en vez del token delegado de quien esté logueado — así "Agenda SIG" siempre muestra el calendario
+// de esa persona sin importar quién abra la página. Requiere el permiso de aplicación
+// "Calendars.Read" con consentimiento de admin (da acceso de lectura a los calendarios de todo el
+// tenant, no hay forma de acotarlo a un solo buzón desde Graph).
+export async function fetchUserCalendarView(mail: string, startIso: string, endIso: string): Promise<CalendarEvent[]> {
+    const token = await getGraphAppToken();
+    const url =
+        `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(mail)}/calendarView?startDateTime=${encodeURIComponent(startIso)}&endDateTime=${encodeURIComponent(endIso)}` +
+        `&$select=${CALENDAR_VIEW_SELECT}&$orderby=start/dateTime&$top=50`;
+    const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}`, Prefer: 'outlook.timezone="America/Bogota"' },
+    });
+    if (!res.ok) {
+        throw new Error(
+            `Graph /users/${mail}/calendarView failed (${res.status}). Verifica en Azure Portal → App registrations → API permissions que "Calendars.Read" (aplicación) tenga el consentimiento de administrador concedido. Detalle: ${await res.text()}`,
+        );
+    }
+    return parseCalendarView(await res.json());
 }
 
 export type GraphProfile = {

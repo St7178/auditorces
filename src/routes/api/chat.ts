@@ -216,7 +216,7 @@ export const Route = createFileRoute("/api/chat")({
                             evidenciaUbicacion: z.string().optional().describe("Ubicación de la evidencia ya identificada vía consultarDocumentacion (SharePoint, SAP, Power BI, etc.), nunca el archivo en sí"),
                         }),
                         execute: async (input) => {
-                            const saved = await saveHallazgo(input);
+                            const saved = await saveHallazgo({ ...input, responsable: session.name });
                             return { guardado: true, hallazgo: saved };
                         },
                     }),

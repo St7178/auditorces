@@ -1,18 +1,38 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-    ShieldAlert, FileText, Truck, Gauge,
-    Sparkles, ArrowUpRight,
+    ShieldAlert, FileText, Truck, Gauge, Users,
+    Sparkles, ArrowUpRight, Building2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
 import { INDICADORES_REALES, type IndicadorDisponibilidadCES } from "@/lib/ces-data";
 import { clasificarContrato, resumenContratos, type Contrato } from "@/lib/contratos";
+import { clienteLogo } from "@/lib/cliente-logos";
 import {
     ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis,
 } from "recharts";
 
-type ClienteConContratos = { nombre: string; contratos?: Contrato[] };
+type ClienteConContratos = { id?: string; nombre: string; estado?: string; contratos?: Contrato[] };
+
+// Cara simplificada para el carrusel del Dashboard: a diferencia de /clientes, acá solo se muestra
+// nombre + logo — sin responsable ni el tono "Contratos vencidos" (esa señal de alerta vive
+// exclusivamente en /clientes, no en este resumen general).
+function ClienteFaceSimple({ nombre, logo }: { nombre: string; logo?: string }) {
+    return (
+        <div className="flex flex-col items-center justify-center gap-3 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-sm">
+                {logo ? (
+                    <img src={logo} alt={nombre} className="h-full w-full object-contain" />
+                ) : (
+                    <Building2 className="h-7 w-7 text-slate-900" />
+                )}
+            </div>
+            <div className="px-2 text-base font-semibold leading-tight">{nombre}</div>
+        </div>
+    );
+}
 type RiesgoReal = { id: string; descripcion?: string; porcentajeMitigacion?: number; nivelResidual?: { severidad?: string } };
 type Recomendacion = { titulo: string; texto: string; nivel: "alta" | "media" | "baja"; to: "/clientes" | "/riesgos" | "/indicadores" };
 type ChecklistItem = { id: string; codigo: string; nombre: string };
@@ -127,6 +147,7 @@ function Dashboard() {
     const kpis = [
         { label: "Riesgos", icon: ShieldAlert, tone: "warning" as const, value: riesgos?.length ?? null },
         { label: "Indicadores", icon: Gauge, tone: "brand" as const, value: INDICADORES_REALES.length },
+        { label: "Clientes", icon: Users, tone: "brand" as const, value: clientes?.length ?? null },
         { label: "Proveedores", icon: Truck, tone: "muted" as const, value: proveedoresTotal },
     ];
 
@@ -178,7 +199,7 @@ function Dashboard() {
             </section>
 
             {/* Indicadores principales */}
-            <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 {kpis.map((k) => {
                     const toneBg = k.tone === "warning" ? "bg-amber-50 text-amber-700" : k.tone === "brand" ? "bg-brand-soft text-brand" : "bg-muted text-muted-foreground";
                     return (
@@ -303,6 +324,31 @@ function Dashboard() {
                     </CardContent>
                 </Card>
             </section>
+
+            {/* Clientes — resumen visual simple (solo nombre + logo, sin filtros ni el tono de alerta
+                de "Contratos vencidos"); ese detalle completo vive en /clientes. */}
+            {clientes && clientes.length > 0 && (
+                <section className="mt-8">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold">Clientes</h2>
+                        <Link to="/clientes" className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline">
+                            Ver todos <ArrowUpRight className="h-3 w-3" />
+                        </Link>
+                    </div>
+                    <div className="mt-2">
+                        <CoverflowCarousel
+                            slides={clientes.map((c, i): CoverflowSlide => ({
+                                face: <ClienteFaceSimple nombre={c.nombre} logo={clienteLogo(c.nombre)} />,
+                                tone: i % 2 === 0 ? "light" : "dark",
+                                title: c.nombre,
+                            }))}
+                            showPagination
+                            showNavigation
+                            label="Clientes CES"
+                        />
+                    </div>
+                </section>
+            )}
         </div>
     );
 }

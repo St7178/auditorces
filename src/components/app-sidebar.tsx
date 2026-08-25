@@ -78,7 +78,7 @@ const nav: { section: string; items: NavItem[] }[] = [
                 ],
             },
             { title: "Wiki CES", url: "/chat", icon: MessagesSquare },
-            { title: "Cronograma", url: "/cronograma", icon: Calendar },
+            { title: "Agenda SIG", url: "/cronograma", icon: Calendar },
         ]
     },
     {

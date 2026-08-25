@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { EQUIPO, CLIENTES } from "@/lib/ces-data";
 import { Mail, ArrowRight, AlertTriangle } from "lucide-react";
 import { getCesTeamFromEntra } from "@/lib/team.functions";
+import { normalizeName } from "@/lib/normalize-name";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/equipo")({
@@ -45,16 +46,6 @@ function PresenceDot({ availability }: { availability?: string | null }) {
             className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card ${info.dot}`}
         />
     );
-}
-
-// Sin quitar tildes, "Andrés Cano" (roster) y "Andres Cano" (displayName real en Entra) no
-// calzaban y el cruce fallaba en silencio — quedaba mostrando el cargo/foto de respaldo.
-function normalizeName(name: string) {
-    return name
-        .trim()
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(new RegExp("[\\u0300-\\u036f]", "g"), "");
 }
 
 // Un cliente se considera "al día" (🟢) si su estado es Activo; cualquier otro estado (En renovación,
@@ -154,7 +145,11 @@ function MemberCard({
                     >
                         <Mail className="h-3 w-3" /> Email
                     </a>
-                    <Link to="/clientes" className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent">
+                    <Link
+                        to="/clientes"
+                        search={mode === "todos" ? {} : { responsable: nombre }}
+                        className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent"
+                    >
                         Ir al Cliente <ArrowRight className="h-3 w-3" />
                     </Link>
                 </div>
