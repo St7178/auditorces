@@ -5,12 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
 import { ServiceCard } from "@/components/ui/service-card";
+import { AnimatedCard, CardBody, CardTitle, CardDescription, CardVisual, MaturityGauge } from "@/components/ui/animated-card-diagram";
 import { INDICADORES_REALES, type IndicadorDisponibilidadCES } from "@/lib/ces-data";
 import { clasificarContrato, resumenContratos, type Contrato } from "@/lib/contratos";
 import { clienteLogo } from "@/lib/cliente-logos";
-import {
-    ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis,
-} from "recharts";
 
 // Perezoso: "motion" queda en su propio chunk en vez de ir dentro del bundle de esta ruta.
 const InteractiveGridBackground = lazy(() =>
@@ -263,28 +261,17 @@ function Dashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-border/60">
-                    <CardContent className="p-6">
-                        <h2 className="text-lg font-semibold">Nivel de madurez</h2>
-                        <p className="text-xs text-muted-foreground">Promedio de riesgos, indicadores y documentación</p>
-                        <div className="relative mt-2 h-40">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ name: "madurez", value: nivelMadurez ?? 0, fill: "oklch(0.62 0.17 152)" }]} startAngle={90} endAngle={-270}>
-                                    <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-                                    <RadialBar background={{ fill: "oklch(0.94 0.01 220)" }} dataKey="value" cornerRadius={20} />
-                                </RadialBarChart>
-                            </ResponsiveContainer>
-                            {/* El % se dibuja centrado sobre el hueco del donut (posición absoluta, no
-                                margin negativo) para que nunca se solape con el texto de abajo. */}
-                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                <span className="text-3xl font-bold text-brand">{nivelMadurez === null ? "—" : `${nivelMadurez}%`}</span>
-                            </div>
-                        </div>
-                        <div className="mt-3 text-center text-xs text-muted-foreground">
-                            {metricasConDato.length} de {metricasCumplimiento.length} métricas con dato real
-                        </div>
-                    </CardContent>
-                </Card>
+                <AnimatedCard>
+                    <CardVisual>
+                        <MaturityGauge percent={nivelMadurez} breakdown={metricasCumplimiento.map((m) => ({ label: m.label, value: m.value }))} />
+                    </CardVisual>
+                    <CardBody>
+                        <CardTitle>Nivel de madurez</CardTitle>
+                        <CardDescription>
+                            Promedio de riesgos, indicadores y documentación — {metricasConDato.length} de {metricasCumplimiento.length} métricas con dato real. Pasa el mouse para ver el detalle.
+                        </CardDescription>
+                    </CardBody>
+                </AnimatedCard>
             </section>
 
             {/* Recomendaciones */}
