@@ -1,13 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/page-header";
 import { EQUIPO, CLIENTES } from "@/lib/ces-data";
-import { Mail, ArrowRight, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { getCesTeamFromEntra } from "@/lib/team.functions";
 import { normalizeName } from "@/lib/normalize-name";
-import { useEffect, useState, type ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { TeamShowcase, type TeamMember, type TeamMemberCliente } from "@/components/ui/team-showcase";
 
 export const Route = createFileRoute("/_authenticated/equipo")({
     component: EquipoPage,
@@ -27,56 +25,21 @@ function initials(name: string) {
     return name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase();
 }
 
-const PRESENCE_INFO: Record<string, { label: string; dot: string }> = {
-    Available: { label: "Disponible", dot: "bg-emerald-500" },
-    AvailableIdle: { label: "Disponible (inactivo)", dot: "bg-emerald-500" },
-    Busy: { label: "Ocupado", dot: "bg-red-500" },
-    BusyIdle: { label: "Ocupado (inactivo)", dot: "bg-red-500" },
-    DoNotDisturb: { label: "No molestar", dot: "bg-red-600" },
-    BeRightBack: { label: "Vuelvo enseguida", dot: "bg-amber-500" },
-    Away: { label: "Ausente", dot: "bg-amber-400" },
-    Offline: { label: "Sin conexión", dot: "bg-muted-foreground/50" },
+const PRESENCE_DOT: Record<string, string> = {
+    Available: "bg-emerald-500",
+    AvailableIdle: "bg-emerald-500",
+    Busy: "bg-red-500",
+    BusyIdle: "bg-red-500",
+    DoNotDisturb: "bg-red-600",
+    BeRightBack: "bg-amber-500",
+    Away: "bg-amber-400",
+    Offline: "bg-muted-foreground/50",
 };
-
-function PresenceDot({ availability }: { availability?: string | null }) {
-    const info = availability ? PRESENCE_INFO[availability] : undefined;
-    if (!info) return null;
-    return (
-        <span
-            title={info.label}
-            className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card ${info.dot}`}
-        />
-    );
-}
-
-// Un cliente se considera "al día" (🟢) si su estado es Activo; cualquier otro estado (En renovación,
-// etc.) se muestra en amarillo — mismo criterio que ya usa /clientes.
-type ClienteAsignado = { nombre: string; activo: boolean | null };
-
-function ClientesTable({ clientes }: { clientes: ClienteAsignado[] }) {
-    if (clientes.length === 0) return null;
-    return (
-        <div className="mt-2 overflow-hidden rounded-lg border">
-            <table className="w-full text-[11px]">
-                <tbody className="divide-y">
-                    {clientes.map((c) => (
-                        <tr key={c.nombre}>
-                            <td className="px-2 py-1.5">{c.nombre}</td>
-                            <td className="px-2 py-1.5 text-right">
-                                {c.activo === null ? "⚪" : c.activo ? "🟢" : "🟡"}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-}
 
 // Organigrama: "Vicepresidente"/"Gerentes"/"Coordinadores"/"Analistas" son niveles jerárquicos. El
 // orden acá define el orden de arriba hacia abajo en la página.
 const GRUPO_ORDEN = ["Vicepresidente", "Gerentes", "Coordinadores", "Analistas"] as const;
-const GRUPO_INFO: Record<string, { label: string; nota?: string; dot: string }> = {
+const GRUPO_INFO: Record<string, { label: string; dot: string }> = {
     Vicepresidente: { label: "Vicepresidente", dot: "bg-fuchsia-500" },
     Gerentes: { label: "Gerentes", dot: "bg-violet-500" },
     Coordinadores: { label: "Coordinadores", dot: "bg-sky-500" },
@@ -92,129 +55,21 @@ const CLIENTE_FIJO: Record<string, string> = { david: "Nutresa", jonny: "Nutresa
 
 type DisplayMode = "todos" | "clientes";
 
-function MemberCard({
-    id, nombre, cargo, mail, photoUrl, availability, colorRing, clientes, mode, dashed, hoveredId, onHover,
-}: {
-    id: string;
-    nombre: string;
-    cargo: string;
-    mail: string | null;
-    photoUrl: string | null;
-    availability?: string | null;
-    colorRing?: string;
-    clientes: ClienteAsignado[];
-    mode: DisplayMode;
-    dashed?: boolean;
-    hoveredId: string | null;
-    onHover: (id: string | null) => void;
-}) {
-    // Inspirado en "team-showcase": la foto pasa de blanco/negro a color y el indicador crece al
-    // pasar el mouse, y el resto de tarjetas de la sección se atenúan — sin ocultar ningún dato,
-    // todo (correo, clientes, acciones) sigue visible siempre, esto es solo el acabado visual.
-    const isActive = hoveredId === id;
-    const isDimmed = hoveredId !== null && !isActive;
-    const indicatorColor = colorRing ? `oklch(0.65 0.14 ${colorRing})` : "var(--foreground)";
-
-    return (
-        <Card
-            className={cn(
-                dashed ? "border-dashed" : "border-border/60",
-                "cursor-pointer transition-all duration-300 hover:shadow-lg",
-                isDimmed && "opacity-60",
-            )}
-            onMouseEnter={() => onHover(id)}
-            onMouseLeave={() => onHover(null)}
-        >
-            <CardContent className="p-5">
-                <div className="flex items-start gap-3">
-                    <div className="relative shrink-0">
-                        <Avatar
-                            className="h-14 w-14 rounded-2xl ring-2 ring-offset-2 ring-offset-card"
-                            style={colorRing ? ({ "--tw-ring-color": `oklch(0.65 0.14 ${colorRing})` } as React.CSSProperties) : undefined}
-                        >
-                            <AvatarImage
-                                src={photoUrl ?? undefined}
-                                alt={nombre}
-                                className="object-cover transition-[filter] duration-500"
-                                style={{ filter: isActive ? "grayscale(0) brightness(1)" : "grayscale(1) brightness(0.85)" }}
-                            />
-                            <AvatarFallback className="rounded-2xl bg-brand-soft text-base font-bold text-brand">{initials(nombre)}</AvatarFallback>
-                        </Avatar>
-                        <PresenceDot availability={availability} />
-                    </div>
-                    <div className="min-w-0 flex-1 pt-0.5">
-                        <div className="flex items-center gap-2">
-                            <span
-                                className="h-3 w-4 shrink-0 rounded-[5px] transition-all duration-300"
-                                style={{ backgroundColor: indicatorColor, opacity: isActive ? 1 : 0.35, width: isActive ? "1.25rem" : "1rem" }}
-                            />
-                            <span className="truncate text-base font-semibold">{nombre}</span>
-                        </div>
-                        <div className="mt-1 truncate pl-[1.5rem] text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{cargo}</div>
-                    </div>
-                </div>
-                <div className="mt-3 text-xs text-muted-foreground">{mail ?? "Correo no disponible"}</div>
-
-                {mode === "todos" && (
-                    <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand">Todos los clientes</div>
-                )}
-                {mode === "clientes" && clientes.length > 0 && (
-                    <>
-                        <div className="mt-3 text-[11px] font-semibold text-foreground">
-                            {clientes.length} cliente{clientes.length === 1 ? "" : "s"} asignado{clientes.length === 1 ? "" : "s"}
-                        </div>
-                        <ClientesTable clientes={clientes} />
-                    </>
-                )}
-
-                <div className="mt-4 flex gap-2">
-                    <a
-                        href={mail ? `mailto:${mail}` : undefined}
-                        className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent aria-disabled:pointer-events-none aria-disabled:opacity-50"
-                        aria-disabled={!mail}
-                    >
-                        <Mail className="h-3 w-3" /> Email
-                    </a>
-                    <Link
-                        to="/clientes"
-                        search={mode === "todos" ? {} : { responsable: nombre }}
-                        className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-xs hover:bg-accent"
-                    >
-                        Ir al Cliente <ArrowRight className="h-3 w-3" />
-                    </Link>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-// `rows` son sub-filas dentro de la misma sección que nunca se mezclan entre sí en la cuadrícula
-// (p.ej. dentro de "Analistas", el equipo de Nutresa siempre queda en su propia fila, separado de
-// los demás), a diferencia de pasar todas las tarjetas juntas a un único grid que las reacomoda
-// libremente según el ancho de pantalla.
-// El estado de hover vive acá (no en cada MemberCard) para que, al pasar el mouse por una persona,
-// las demás de la misma sección se atenúen — el mismo efecto de "team-showcase", con el hover
-// compartido dentro de cada bloque del organigrama en vez de la página completa.
-function OrgSection<T extends { id: string }>({
-    grupo, rows, renderItem,
-}: {
-    grupo: string;
-    rows: T[][];
-    renderItem: (item: T, hoveredId: string | null, onHover: (id: string | null) => void) => ReactNode;
-}) {
-    const [hoveredId, setHoveredId] = useState<string | null>(null);
+// Cada bloque del organigrama (Vicepresidente/Gerentes/...) es su propia "team-showcase": grilla de
+// fotos + lista de nombres, con el dimming cruzado del template acotado a ese grupo — así inventamos
+// la jerarquía encima del diseño original en vez de mezclar a todo el equipo en una sola grilla.
+function OrgSection({ grupo, rows }: { grupo: string; rows: TeamMember[][] }) {
     const info = GRUPO_INFO[grupo] ?? { label: grupo, dot: "bg-muted-foreground" };
     return (
-        <section className="relative mt-10 first:mt-8">
-            <div className="mb-3 flex items-center gap-3">
+        <section className="relative mt-12 first:mt-8">
+            <div className="mb-5 flex items-center gap-3">
                 <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${info.dot}`} />
                 <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">{info.label}</h2>
                 <span className="h-px flex-1 bg-border" />
             </div>
-            {info.nota && <p className="mb-3 -mt-1 text-xs text-muted-foreground">{info.nota}</p>}
             {rows.map((row, i) => (
-                <div key={i} className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${i > 0 ? "mt-4" : ""}`}>
-                    {row.map((item) => renderItem(item, hoveredId, setHoveredId))}
+                <div key={i} className={i > 0 ? "mt-10" : ""}>
+                    <TeamShowcase members={row} />
                 </div>
             ))}
         </section>
@@ -260,7 +115,7 @@ function EquipoPage() {
     // `responsable` de los clientes reales sincronizados. Solo se cae a EQUIPO.clientes (demo) si la
     // sincronización todavía no cargó — si ya cargó pero esta persona no es responsable de ningún
     // cliente real, eso es un dato real ("0 asignados"), no un motivo para mostrar el fallback.
-    function clientesDe(m: (typeof equipo)[number]): ClienteAsignado[] {
+    function clientesDe(m: (typeof equipo)[number]): TeamMemberCliente[] {
         const real = clientesSync
             ? clientesSync
                   .filter((c) => normalizeName(c.responsable) === normalizeName(m.nombre))
@@ -274,6 +129,28 @@ function EquipoPage() {
             return [{ nombre: fijo, activo: null }, ...real];
         }
         return real;
+    }
+
+    function toMember(id: string, nombre: string, cargo: string, mail: string | null, photoUrl: string | null, availability: string | null | undefined, color: string | undefined, clientes: TeamMemberCliente[], mode: DisplayMode): TeamMember {
+        const clientesLabel =
+            mode === "todos"
+                ? "Todos los clientes"
+                : clientes.length === 0
+                    ? "Sin clientes asignados"
+                    : `${clientes.length} cliente${clientes.length === 1 ? "" : "s"} asignado${clientes.length === 1 ? "" : "s"}`;
+        return {
+            id,
+            name: nombre,
+            role: cargo,
+            image: photoUrl,
+            initials: initials(nombre),
+            presenceDot: availability ? PRESENCE_DOT[availability] ?? null : null,
+            indicatorColor: color ? `oklch(0.65 0.14 ${color})` : "var(--muted-foreground)",
+            mail,
+            clientesLabel,
+            clientes: mode === "todos" ? [] : clientes,
+            clienteSearch: mode === "todos" ? {} : { responsable: nombre },
+        };
     }
 
     const knownNames = new Set(EQUIPO.map((m) => normalizeName(m.nombre)));
@@ -299,58 +176,30 @@ function EquipoPage() {
                 const miembros = equipo.filter((m) => m.grupo === grupo);
                 if (miembros.length === 0) return null;
 
+                const mode: DisplayMode = GRUPOS_TODOS_LOS_CLIENTES.has(grupo) ? "todos" : "clientes";
+
                 // Dentro de "Analistas", el equipo de Nutresa (David/Jonny/Robinson) siempre va en su
-                // propia fila, arriba, separado del resto — no se mezclan en un mismo grid.
-                const rows: (typeof miembros)[] =
+                // propia fila, arriba, separado del resto — no se mezclan en una misma showcase.
+                const gruposDeMiembros: (typeof miembros)[] =
                     grupo === "Analistas"
                         ? [miembros.filter((m) => CLIENTE_FIJO[m.id]), miembros.filter((m) => !CLIENTE_FIJO[m.id])].filter((r) => r.length > 0)
                         : [miembros];
 
-                return (
-                    <OrgSection
-                        key={grupo}
-                        grupo={grupo}
-                        rows={rows}
-                        renderItem={(m, hoveredId, onHover) => (
-                            <MemberCard
-                                key={m.id}
-                                id={m.id}
-                                nombre={m.nombre}
-                                cargo={m.cargo}
-                                mail={m.mail}
-                                photoUrl={m.photoUrl}
-                                availability={m.availability}
-                                colorRing={m.color}
-                                clientes={clientesDe(m)}
-                                mode={GRUPOS_TODOS_LOS_CLIENTES.has(grupo) ? "todos" : "clientes"}
-                                hoveredId={hoveredId}
-                                onHover={onHover}
-                            />
-                        )}
-                    />
+                const rows: TeamMember[][] = gruposDeMiembros.map((fila) =>
+                    fila.map((m) => toMember(m.id, m.nombre, m.cargo, m.mail, m.photoUrl, m.availability, m.color, clientesDe(m), mode)),
                 );
+
+                return <OrgSection key={grupo} grupo={grupo} rows={rows} />;
             })}
 
             {entraOnly.length > 0 && (
                 <OrgSection
                     grupo="Otros"
-                    rows={[entraOnly]}
-                    renderItem={(u, hoveredId, onHover) => (
-                        <MemberCard
-                            key={u.id}
-                            id={u.id}
-                            nombre={u.displayName}
-                            cargo={u.jobTitle ?? ""}
-                            mail={u.mail ?? u.userPrincipalName ?? null}
-                            photoUrl={u.photoUrl ?? null}
-                            availability={u.availability}
-                            clientes={[]}
-                            mode="clientes"
-                            dashed
-                            hoveredId={hoveredId}
-                            onHover={onHover}
-                        />
-                    )}
+                    rows={[
+                        entraOnly.map((u) =>
+                            toMember(u.id, u.displayName, u.jobTitle ?? "", u.mail ?? u.userPrincipalName ?? null, u.photoUrl ?? null, u.availability, undefined, [], "clientes"),
+                        ),
+                    ]}
                 />
             )}
         </div>
