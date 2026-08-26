@@ -17,7 +17,7 @@ export function AppShell({ user, children }: { user: AppSession; children: React
         <SidebarProvider defaultOpen={false}>
             <div className="min-h-screen w-full bg-background">
                 <ShellHeader user={user} />
-                <main className="min-w-0">{children}</main>
+                <main className="min-w-0 pt-16">{children}</main>
                 <AppSidebar user={user} />
             </div>
         </SidebarProvider>
@@ -28,7 +28,7 @@ function ShellHeader({ user }: { user: AppSession }) {
     const { toggleSidebar } = useSidebar();
 
     return (
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b bg-card/70 px-4 backdrop-blur-xl sm:px-6">
+        <header className="fixed inset-x-0 top-0 z-10 flex h-16 items-center gap-3 border-b bg-card/70 px-4 backdrop-blur-xl sm:px-6">
             <button
                 onClick={toggleSidebar}
                 aria-label="Abrir menú"

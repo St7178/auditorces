@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
+import { ScrollSwapText } from "@/components/ui/scroll-swap-text";
 import {
     Sidebar,
     SidebarContent,
@@ -26,6 +27,9 @@ import { NAV } from "@/lib/nav-items";
 export function AppSidebar({ user }: { user: { name: string; jobTitle?: string | null } }) {
     const currentPath = useRouterState({ select: (r) => r.location.pathname });
     const { open, isMobile, setOpen } = useSidebar();
+    // Contenedor con scroll real de la lista de ítems — ScrollSwapText mide el progreso de scroll
+    // de cada ítem contra este elemento para animar el swap de texto al entrar/salir de la vista.
+    const contentRef = useRef<HTMLDivElement>(null);
     const userInitials = user.name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase();
     // Ítems expandidos manualmente por el usuario — si el hijo activo cambia, igual se muestra
     // desplegado aunque no esté en este set (ver `abierto` más abajo).
@@ -51,7 +55,7 @@ export function AppSidebar({ user }: { user: { name: string; jobTitle?: string |
                 />
             )}
             <Sidebar collapsible="offcanvas">
-                <SidebarContent>
+                <SidebarContent ref={contentRef}>
                     {NAV.map((group) => (
                         <SidebarGroup key={group.section}>
                             <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50">
@@ -72,7 +76,9 @@ export function AppSidebar({ user }: { user: { name: string; jobTitle?: string |
                                                 >
                                                     <Link to={item.url} onClick={() => setOpen(false)}>
                                                         <item.icon className={item.highlight ? "text-sidebar-primary" : item.iconClassName ?? ""} />
-                                                        <span>{item.title}</span>
+                                                        <ScrollSwapText as="span" containerRef={contentRef} className="justify-start">
+                                                            {item.title}
+                                                        </ScrollSwapText>
                                                     </Link>
                                                 </SidebarMenuButton>
                                                 {item.children && (
@@ -85,7 +91,11 @@ export function AppSidebar({ user }: { user: { name: string; jobTitle?: string |
                                                                 {item.children.map((c) => (
                                                                     <SidebarMenuSubItem key={c.url}>
                                                                         <SidebarMenuSubButton asChild isActive={currentPath === c.url}>
-                                                                            <Link to={c.url} onClick={() => setOpen(false)}>{c.title}</Link>
+                                                                            <Link to={c.url} onClick={() => setOpen(false)}>
+                                                                                <ScrollSwapText as="span" containerRef={contentRef} className="justify-start">
+                                                                                    {c.title}
+                                                                                </ScrollSwapText>
+                                                                            </Link>
                                                                         </SidebarMenuSubButton>
                                                                     </SidebarMenuSubItem>
                                                                 ))}

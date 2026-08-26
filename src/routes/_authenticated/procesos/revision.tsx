@@ -8,7 +8,7 @@ import {
     TIPOS_DOCUMENTO, tipoDeDocumento, procesoDeDocumento, edadEnAnios, estadoRevision,
     type EstadoRevision,
 } from "@/lib/documentos";
-import { ArrowLeft, FileText, AlertTriangle, FolderKanban } from "lucide-react";
+import { ArrowLeft, FileText, AlertTriangle, FolderKanban, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/procesos/revision")({
     component: RevisionPage,
@@ -120,7 +120,7 @@ function RevisionPage() {
             <div className="mt-6 flex flex-wrap items-center gap-2">
                 <FolderKanban className="h-4 w-4 text-muted-foreground" />
                 <select value={filtroArea} onChange={(e) => setFiltroArea(e.target.value)} className="rounded-lg border bg-card px-2.5 py-1.5 text-xs font-medium outline-none focus:border-brand">
-                    <option value="">Todas las áreas</option>
+                    <option value="">Todos los procesos</option>
                     {areas.map((a) => <option key={a} value={a}>{a}</option>)}
                 </select>
                 <select value={filtroResponsable} onChange={(e) => setFiltroResponsable(e.target.value)} className="rounded-lg border bg-card px-2.5 py-1.5 text-xs font-medium outline-none focus:border-brand">
@@ -226,6 +226,52 @@ function RevisionPage() {
                     </div>
                 )}
             </div>
+
+            {/* Cuando se filtra específicamente por estado "Vigente", los vigentes no aparecen en
+                "Pendientes de revisión" (no requieren seguimiento) — se listan acá para no dejar
+                ese filtro sin resultados visibles. */}
+            {filtroEstado === "Vigente" && (
+                <div className="mt-8">
+                    <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                            Documentos vigentes ({porRevision.vigente.length})
+                        </h2>
+                    </div>
+
+                    {porRevision.vigente.length === 0 ? (
+                        <div className="mt-3 rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                            Ningún documento vigente con los filtros actuales.
+                        </div>
+                    ) : (
+                        <div className="mt-3 space-y-3">
+                            {porRevision.vigente.map((d) => (
+                                <Card key={d.id} className="border-border/60">
+                                    <CardContent className="p-4">
+                                        <div className="flex flex-wrap items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-1.5 font-semibold">
+                                                    <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> {d.nombre}
+                                                </div>
+                                                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                                                    <span className="font-mono">{d.codigo || "—"}</span>
+                                                    <span>{d.tipo}</span>
+                                                    <span>{d.area}</span>
+                                                    <span>Responsable: {d.responsable}</span>
+                                                    <span>Actualizado: {d.actualizacion}</span>
+                                                </div>
+                                            </div>
+                                            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${ESTADO_INFO.vigente.badge}`}>
+                                                {formatEdad(d.edad)}
+                                            </span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
