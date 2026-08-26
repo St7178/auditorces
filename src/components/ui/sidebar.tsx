@@ -88,12 +88,14 @@ const SidebarProvider = React.forwardRef<
             [setOpenProp, open],
         );
 
-        // Helper to toggle the sidebar.
+        // El sidebar de desktop es permanente en esta app — solo el de mobile (Sheet) puede
+        // alternarse. En desktop este toggle no hace nada (ver app-sidebar.tsx y ShellHeader).
         const toggleSidebar = React.useCallback(() => {
-            return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
-        }, [isMobile, setOpen, setOpenMobile]);
+            if (isMobile) setOpenMobile((open) => !open);
+        }, [isMobile, setOpenMobile]);
 
-        // Adds a keyboard shortcut to toggle the sidebar.
+        // El shortcut de teclado solo tiene efecto en mobile (ver toggleSidebar más arriba) — en
+        // desktop el sidebar es permanente y Ctrl/Cmd+B no debe poder ocultarlo.
         React.useEffect(() => {
             const handleKeyDown = (event: KeyboardEvent) => {
                 if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
@@ -219,13 +221,23 @@ const Sidebar = React.forwardRef<
                 data-variant={variant}
                 data-side={side}
             >
-                {/* En esta app el sidebar siempre es "offcanvas" (overlay, nunca empuja el
-                    contenido) — a diferencia del shadcn original, este hueco se deja en 0 siempre,
-                    incluso abierto, para que la pantalla se mantenga completa en todo momento. */}
-                <div className="relative w-0 bg-transparent" />
+                {/* En desktop el sidebar es permanente: este hueco reserva su ancho real en el
+                    layout para que el contenido nunca quede debajo. En mobile no aplica (el
+                    bloque completo está oculto y se usa el Sheet en su lugar). */}
                 <div
                     className={cn(
-                        "fixed inset-y-0 z-40 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+                        "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+                        variant === "floating" || variant === "inset"
+                            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
+                            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)",
+                        "group-data-[collapsible=offcanvas]:w-0",
+                    )}
+                />
+                <div
+                    className={cn(
+                        // top-16 / h-[calc(100svh-4rem)] en vez de inset-y-0 / h-svh: el sidebar
+                        // vive debajo del header fixed de 4rem (ver app-shell.tsx), nunca sobre él.
+                        "fixed top-16 z-40 hidden h-[calc(100svh-4rem)] w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
                         side === "left"
                             ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
                             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",

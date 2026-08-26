@@ -12,13 +12,15 @@ function initials(name: string) {
 
 export function AppShell({ user, children }: { user: AppSession; children: ReactNode }) {
     return (
-        // Cerrado por defecto: la pantalla se ve completa siempre, el menú es un panel que se
-        // despliega encima (nunca reserva espacio — ver el ajuste en ui/sidebar.tsx) al abrirlo.
-        <SidebarProvider defaultOpen={false}>
+        // Permanente en desktop: siempre abierto y reserva su espacio en el layout (ver el ajuste
+        // en ui/sidebar.tsx). En mobile sigue siendo un Sheet que se abre con el botón hamburguesa.
+        <SidebarProvider defaultOpen={true}>
             <div className="min-h-screen w-full bg-background">
                 <ShellHeader user={user} />
-                <main className="min-w-0 pt-16">{children}</main>
-                <AppSidebar user={user} />
+                <div className="flex pt-16">
+                    <AppSidebar user={user} />
+                    <main className="min-w-0 flex-1">{children}</main>
+                </div>
             </div>
         </SidebarProvider>
     );
@@ -29,10 +31,11 @@ function ShellHeader({ user }: { user: AppSession }) {
 
     return (
         <header className="fixed inset-x-0 top-0 z-10 flex h-16 items-center gap-3 border-b bg-card/70 px-4 backdrop-blur-xl sm:px-6">
+            {/* Solo mobile: en desktop el sidebar es permanente y no hay nada que alternar. */}
             <button
                 onClick={toggleSidebar}
                 aria-label="Abrir menú"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border hover:bg-accent"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border hover:bg-accent md:hidden"
             >
                 <Menu className="h-4 w-4" />
             </button>
