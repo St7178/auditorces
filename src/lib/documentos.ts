@@ -70,3 +70,34 @@ export function estadoRevision(edad: number | null): EstadoRevision {
     if (edad <= 5) return "revision";
     return "critico";
 }
+
+// Mismo checklist de 4 pasos que usa /procesos/revision — compartido acá para que el Dashboard
+// pueda calcular el mismo % de cumplimiento sin duplicar la lista de pasos.
+export const PASOS_REVISION = [
+    { id: "busqueda", label: "Búsqueda de documentos vencidos" },
+    { id: "reunion", label: "Reunión con el responsable" },
+    { id: "actualizacion", label: "Actualización de documentos" },
+    { id: "publicado", label: "Publicado en el SIG" },
+] as const;
+
+type DocumentoConEdad = { id: string; actualizacion?: string | null };
+
+// % de cumplimiento de la Revisión Documental: si ningún documento requiere revisión, 100% (no hay
+// nada pendiente); si hay documentos en "revision"/"critico", es el % de pasos del checklist
+// (revision:<docId>:<paso>, mismo id que persiste /procesos/revision) ya completados sobre el total
+// posible — mismo criterio de "cumplimiento = checklist completado" que ya usa Documentación de clientes.
+export function cumplimientoRevisionDocumental(
+    documentos: DocumentoConEdad[] | null,
+    checklistEstado: Record<string, boolean> | null,
+): number | null {
+    if (!documentos || documentos.length === 0 || !checklistEstado) return null;
+    const pendientes = documentos.filter((d) => estadoRevision(d.actualizacion ? edadEnAnios(d.actualizacion) : null) !== "vigente");
+    if (pendientes.length === 0) return 100;
+    let completados = 0;
+    for (const d of pendientes) {
+        for (const p of PASOS_REVISION) {
+            if (checklistEstado[`revision:${d.id}:${p.id}`]) completados++;
+        }
+    }
+    return Math.round((completados / (pendientes.length * PASOS_REVISION.length)) * 100);
+}

@@ -12,6 +12,7 @@ import {
 import { INDICADORES_REALES, type IndicadorDisponibilidadCES } from "@/lib/ces-data";
 import { clasificarContrato, resumenContratos, type Contrato } from "@/lib/contratos";
 import { clienteLogo } from "@/lib/cliente-logos";
+import { cumplimientoRevisionDocumental } from "@/lib/documentos";
 
 // Perezoso: "motion" queda en su propio chunk en vez de ir dentro del bundle de esta ruta.
 const InteractiveGridBackground = lazy(() =>
@@ -85,6 +86,14 @@ function ComplianceRow({ label, value, desc, delay }: { label: string; value: nu
 }
 
 type RiesgoReal = { id: string; descripcion?: string; porcentajeMitigacion?: number; nivelResidual?: { severidad?: string } };
+type HallazgoDashboard = { id: string; titulo: string; proceso: string; pasoIdentifico: boolean; pasoAgenda: boolean; pasoSoluciono: boolean };
+
+// % de seguimiento de un hallazgo puntual: cuántos de los 3 pasos (identificó/agendó/solucionó) ya
+// están marcados — mismo checklist que se marca en /guardian/hallazgos.
+function pctSeguimientoHallazgo(h: HallazgoDashboard): number {
+    const pasos = [h.pasoIdentifico, h.pasoAgenda, h.pasoSoluciono];
+    return Math.round((pasos.filter(Boolean).length / pasos.length) * 100);
+}
 type Recomendacion = { titulo: string; texto: string; nivel: "alta" | "media" | "baja"; to: "/clientes" | "/riesgos" | "/indicadores" };
 
 // "alta" = negativo/urgente (rojo), "media" = alerta (ámbar), "baja" = positivo (verde) — mismo
@@ -150,6 +159,8 @@ function Dashboard() {
     const [indicadorDisp, setIndicadorDisp] = useState<IndicadorDisponibilidadCES | null>(null);
     const [checklistDef, setChecklistDef] = useState<ChecklistDef | null>(null);
     const [checklistEstado, setChecklistEstado] = useState<Record<string, boolean> | null>(null);
+    const [documentos, setDocumentos] = useState<{ id: string; actualizacion?: string | null }[] | null>(null);
+    const [hallazgos, setHallazgos] = useState<HallazgoDashboard[] | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -193,6 +204,22 @@ function Dashboard() {
             .catch(() => {
                 /* sin fuente real disponible: el % de documentación queda en "—" */
             });
+        // Mismos datos que usa /procesos/revision — reutilizados acá para el % de "Revisión
+        // Documental" en Cumplimiento SIG / Nivel de madurez.
+        fetch("/api/sync/documentacion")
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+            .then((data: { id: string; actualizacion?: string | null }[]) => mounted && setDocumentos(data))
+            .catch(() => {
+                /* sin fuente real disponible: el % de revisión documental queda en "—" */
+            });
+        // Mismos hallazgos que gestiona /guardian/hallazgos — reutilizados acá para el % de
+        // seguimiento (identificó/agendó/solucionó) en Cumplimiento SIG y el detalle por hallazgo.
+        fetch("/api/hallazgos")
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+            .then((data: HallazgoDashboard[]) => mounted && setHallazgos(data))
+            .catch(() => {
+                /* sin fuente real disponible: el % de hallazgos queda en "—" */
+            });
         return () => {
             mounted = false;
         };
@@ -233,10 +260,26 @@ function Dashboard() {
         ? Math.round((totalListos / todosLosItems.length) * 100)
         : null;
 
+    // Cumplimiento de revisión documental: mismo checklist de 4 pasos que /procesos/revision, 100%
+    // si ningún documento requiere revisión todavía.
+    const cumplimientoRevision = cumplimientoRevisionDocumental(documentos, checklistEstado);
+
+    // Cumplimiento de hallazgos: % de pasos de seguimiento (identificó/agendó/solucionó) ya marcados
+    // sobre el total posible en todos los hallazgos registrados.
+    const cumplimientoHallazgos = hallazgos && hallazgos.length > 0
+        ? Math.round((hallazgos.reduce((sum, h) => sum + [h.pasoIdentifico, h.pasoAgenda, h.pasoSoluciono].filter(Boolean).length, 0) / (hallazgos.length * 3)) * 100)
+        : null;
+
     const metricasCumplimiento = [
         { label: "Riesgos", value: cumplimientoRiesgos, desc: "Mitigación promedio de los riesgos registrados" },
         { label: "Indicadores", value: cumplimientoIndicadores, desc: "Meta alcanzada en los meses con medición real" },
         { label: "Documentación de clientes", value: cumplimientoDocumentacion, desc: "Checklist de entrega de documentación completado" },
+        { label: "Revisión Documental", value: cumplimientoRevision, desc: "Checklist de revisión completado en los documentos pendientes" },
+        {
+            label: "Hallazgos de auditoría",
+            value: cumplimientoHallazgos,
+            desc: hallazgos && hallazgos.length > 0 ? `Seguimiento completado en ${hallazgos.length} hallazgo${hallazgos.length === 1 ? "" : "s"} registrado${hallazgos.length === 1 ? "" : "s"}` : "Seguimiento de hallazgos registrados por CES AUDITOR",
+        },
     ];
     const metricasConDato = metricasCumplimiento.filter((m) => m.value !== null);
     // "Retroalimentación" de las tres — promedio simple de las que sí tienen dato real todavía.
@@ -309,7 +352,7 @@ function Dashboard() {
                     <CardAmbientBackground color={colorDeMadurez(nivelMadurez).main} />
                     <div className="relative z-10 p-6">
                         <h2 className="text-lg font-semibold">Cumplimiento SIG</h2>
-                        <p className="text-xs text-muted-foreground">Riesgos, indicadores y documentación — basado en lo ya sincronizado</p>
+                        <p className="text-xs text-muted-foreground">Riesgos, indicadores, documentación, revisión documental y hallazgos — basado en lo ya sincronizado</p>
                         <div className="mt-6 space-y-5">
                             {metricasCumplimiento.map((m, i) => (
                                 <ComplianceRow key={m.label} label={m.label} value={m.value} desc={m.desc} delay={i * 120} />
@@ -325,10 +368,52 @@ function Dashboard() {
                     <CardBody>
                         <CardTitle>Nivel de madurez</CardTitle>
                         <CardDescription>
-                            Promedio de riesgos, indicadores y documentación — {metricasConDato.length} de {metricasCumplimiento.length} métricas con dato real. Pasa el mouse para ver el detalle.
+                            Promedio de las {metricasCumplimiento.length} métricas de Cumplimiento SIG — {metricasConDato.length} de {metricasCumplimiento.length} con dato real. Pasa el mouse para ver el detalle.
                         </CardDescription>
                     </CardBody>
                 </AnimatedCard>
+            </section>
+
+            {/* Seguimiento de Hallazgos — total y % de seguimiento (identificó/agendó/solucionó) de
+                cada hallazgo registrado por CES AUDITOR; el promedio de estos % ya alimenta
+                "Hallazgos de auditoría" en Cumplimiento SIG / Nivel de madurez arriba. */}
+            <section className="mt-8">
+                <div className="flex items-center justify-between gap-2">
+                    <div>
+                        <h2 className="text-lg font-semibold">Seguimiento de Hallazgos</h2>
+                        <p className="text-xs text-muted-foreground">
+                            {hallazgos === null ? "Cargando…" : `${hallazgos.length} hallazgo${hallazgos.length === 1 ? "" : "s"} registrado${hallazgos.length === 1 ? "" : "s"} por CES AUDITOR`}
+                        </p>
+                    </div>
+                    <Link to="/guardian/hallazgos" className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand hover:underline">
+                        Ver todos <ArrowUpRight className="h-3 w-3" />
+                    </Link>
+                </div>
+
+                {hallazgos !== null && hallazgos.length === 0 && (
+                    <div className="mt-4 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+                        Todavía no hay hallazgos registrados.
+                    </div>
+                )}
+
+                {hallazgos !== null && hallazgos.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                        {hallazgos.map((h) => {
+                            const pct = pctSeguimientoHallazgo(h);
+                            const estado = estadoCumplimiento(pct);
+                            return (
+                                <div key={h.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
+                                    <div className="min-w-0 flex-1">
+                                        <div className="truncate text-sm font-medium">{h.titulo}</div>
+                                        <div className="truncate text-[11px] text-muted-foreground">{h.proceso}</div>
+                                    </div>
+                                    <Progress value={pct} indicatorClassName={estado.barClass} className="h-2 w-24 shrink-0 sm:w-32" />
+                                    <span className="w-9 shrink-0 text-right text-xs font-semibold">{pct}%</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </section>
 
             {/* Recomendaciones */}

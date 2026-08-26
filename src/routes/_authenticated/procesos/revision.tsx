@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/page-header";
 import { DOCUMENTOS } from "@/lib/ces-data";
 import {
-    TIPOS_DOCUMENTO, tipoDeDocumento, procesoDeDocumento, edadEnAnios, estadoRevision,
+    TIPOS_DOCUMENTO, tipoDeDocumento, procesoDeDocumento, edadEnAnios, estadoRevision, PASOS_REVISION,
     type EstadoRevision,
 } from "@/lib/documentos";
 import { ArrowLeft, FileText, AlertTriangle, FolderKanban, CheckCircle2 } from "lucide-react";
@@ -15,12 +15,7 @@ export const Route = createFileRoute("/_authenticated/procesos/revision")({
     head: () => ({ meta: [{ title: "Revisión Documental — CES SIG" }] }),
 });
 
-const PASOS = [
-    { id: "busqueda", label: "Búsqueda de documentos vencidos" },
-    { id: "reunion", label: "Reunión con el responsable" },
-    { id: "actualizacion", label: "Actualización de documentos" },
-    { id: "publicado", label: "Publicado en el SIG" },
-] as const;
+const PASOS = PASOS_REVISION;
 
 const ESTADO_INFO: Record<EstadoRevision, { label: string; badge: string; texto: string }> = {
     vigente: { label: "Vigentes (< 1 año)", badge: "bg-emerald-50 text-emerald-700", texto: "text-emerald-700" },
