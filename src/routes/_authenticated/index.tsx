@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Sparkles, ArrowUpRight, Building2, AlertTriangle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Sparkles, ArrowUpRight, Building2, AlertTriangle, AlertCircle, CheckCircle2, User } from "lucide-react";
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Progress } from "@/components/ui/progress";
 import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
@@ -86,7 +86,7 @@ function ComplianceRow({ label, value, desc, delay }: { label: string; value: nu
 }
 
 type RiesgoReal = { id: string; descripcion?: string; porcentajeMitigacion?: number; nivelResidual?: { severidad?: string } };
-type HallazgoDashboard = { id: string; titulo: string; proceso: string; pasoIdentifico: boolean; pasoAgenda: boolean; pasoSoluciono: boolean };
+type HallazgoDashboard = { id: string; titulo: string; proceso: string; responsable: string | null; pasoIdentifico: boolean; pasoAgenda: boolean; pasoSoluciono: boolean };
 
 // % de seguimiento de un hallazgo puntual: cuántos de los 3 pasos (identificó/agendó/solucionó) ya
 // están marcados — mismo checklist que se marca en /guardian/hallazgos.
@@ -405,7 +405,12 @@ function Dashboard() {
                                 <div key={h.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
                                     <div className="min-w-0 flex-1">
                                         <div className="truncate text-sm font-medium">{h.titulo}</div>
-                                        <div className="truncate text-[11px] text-muted-foreground">{h.proceso}</div>
+                                        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                                            <span className="truncate">{h.proceso}</span>
+                                            <span className={`flex items-center gap-1 ${h.responsable ? "font-semibold text-orange-600" : ""}`}>
+                                                <User className="h-3 w-3" /> {h.responsable ?? "—"}
+                                            </span>
+                                        </div>
                                     </div>
                                     <Progress value={pct} indicatorClassName={estado.barClass} className="h-2 w-24 shrink-0 sm:w-32" />
                                     <span className="w-9 shrink-0 text-right text-xs font-semibold">{pct}%</span>

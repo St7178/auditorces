@@ -203,17 +203,25 @@ function RevisionPage() {
                                         </span>
                                     </div>
 
-                                    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t pt-3">
-                                        {PASOS.map((p) => {
-                                            const id = `revision:${d.id}:${p.id}`;
-                                            const marcado = Boolean(checklist[id]);
-                                            return (
-                                                <label key={p.id} className="flex cursor-pointer items-center gap-1.5 text-xs">
-                                                    <Checkbox checked={marcado} onCheckedChange={(v) => actualizarPaso(d.id, p.id, v === true)} />
-                                                    <span className={marcado ? "text-foreground" : "text-muted-foreground"}>{p.label}</span>
-                                                </label>
-                                            );
-                                        })}
+                                    <div className="mt-3 border-t pt-3">
+                                        <div className="mb-1.5 flex items-center justify-between">
+                                            <span className="text-[11px] font-semibold text-muted-foreground">Seguimiento de revisión</span>
+                                            <span className="text-[11px] font-bold text-foreground">
+                                                {Math.round((PASOS.filter((p) => Boolean(checklist[`revision:${d.id}:${p.id}`])).length / PASOS.length) * 100)}%
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-x-5 gap-y-2">
+                                            {PASOS.map((p) => {
+                                                const id = `revision:${d.id}:${p.id}`;
+                                                const marcado = Boolean(checklist[id]);
+                                                return (
+                                                    <label key={p.id} className="flex cursor-pointer items-center gap-1.5 text-xs">
+                                                        <Checkbox checked={marcado} onCheckedChange={(v) => actualizarPaso(d.id, p.id, v === true)} />
+                                                        <span className={marcado ? "text-foreground" : "text-muted-foreground"}>{p.label}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>

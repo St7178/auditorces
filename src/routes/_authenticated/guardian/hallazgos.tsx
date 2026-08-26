@@ -43,24 +43,33 @@ function SeguimientoChecklist({
     hallazgo: Hallazgo;
     onToggle: (paso: Paso, valor: boolean) => void;
 }) {
+    const marcados = PASOS.filter((p) => (p.id === "identifico" ? hallazgo.pasoIdentifico : p.id === "agenda" ? hallazgo.pasoAgenda : hallazgo.pasoSoluciono)).length;
+    const pct = Math.round((marcados / PASOS.length) * 100);
+
     return (
-        <div className="mt-3 flex flex-wrap gap-3 border-t pt-3">
-            {PASOS.map((p) => {
-                const marcado = p.id === "identifico" ? hallazgo.pasoIdentifico : p.id === "agenda" ? hallazgo.pasoAgenda : hallazgo.pasoSoluciono;
-                return (
-                    <label key={p.id} className="flex cursor-pointer items-center gap-1.5 text-xs">
-                        <span
-                            onClick={() => onToggle(p.id, !marcado)}
-                            className={`flex h-4 w-4 items-center justify-center rounded border transition ${
-                                marcado ? "border-brand bg-brand text-white" : "border-muted-foreground/40"
-                            }`}
-                        >
-                            {marcado && <Check className="h-3 w-3" />}
-                        </span>
-                        <span className={marcado ? "text-foreground" : "text-muted-foreground"}>{p.label}</span>
-                    </label>
-                );
-            })}
+        <div className="mt-3 border-t pt-3">
+            <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-muted-foreground">Seguimiento</span>
+                <span className="text-[11px] font-bold text-foreground">{pct}%</span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+                {PASOS.map((p) => {
+                    const marcado = p.id === "identifico" ? hallazgo.pasoIdentifico : p.id === "agenda" ? hallazgo.pasoAgenda : hallazgo.pasoSoluciono;
+                    return (
+                        <label key={p.id} className="flex cursor-pointer items-center gap-1.5 text-xs">
+                            <span
+                                onClick={() => onToggle(p.id, !marcado)}
+                                className={`flex h-4 w-4 items-center justify-center rounded border transition ${
+                                    marcado ? "border-brand bg-brand text-white" : "border-muted-foreground/40"
+                                }`}
+                            >
+                                {marcado && <Check className="h-3 w-3" />}
+                            </span>
+                            <span className={marcado ? "text-foreground" : "text-muted-foreground"}>{p.label}</span>
+                        </label>
+                    );
+                })}
+            </div>
         </div>
     );
 }
@@ -377,7 +386,7 @@ function HallazgosPage() {
 
                                 <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                                     <span>{h.estado}</span>
-                                    <span className="flex items-center gap-1">
+                                    <span className={`flex items-center gap-1 ${h.responsable ? "font-semibold text-orange-600" : ""}`}>
                                         <User className="h-3 w-3" /> {h.responsable ?? "—"}
                                     </span>
                                     <span className="flex items-center gap-1">
