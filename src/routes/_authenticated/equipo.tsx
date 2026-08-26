@@ -6,7 +6,8 @@ import { EQUIPO, CLIENTES } from "@/lib/ces-data";
 import { Mail, ArrowRight, AlertTriangle } from "lucide-react";
 import { getCesTeamFromEntra } from "@/lib/team.functions";
 import { normalizeName } from "@/lib/normalize-name";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/equipo")({
     component: EquipoPage,
@@ -92,8 +93,9 @@ const CLIENTE_FIJO: Record<string, string> = { david: "Nutresa", jonny: "Nutresa
 type DisplayMode = "todos" | "clientes";
 
 function MemberCard({
-    nombre, cargo, mail, photoUrl, availability, colorRing, clientes, mode, dashed,
+    id, nombre, cargo, mail, photoUrl, availability, colorRing, clientes, mode, dashed, hoveredId, onHover,
 }: {
+    id: string;
     nombre: string;
     cargo: string;
     mail: string | null;
@@ -103,9 +105,26 @@ function MemberCard({
     clientes: ClienteAsignado[];
     mode: DisplayMode;
     dashed?: boolean;
+    hoveredId: string | null;
+    onHover: (id: string | null) => void;
 }) {
+    // Inspirado en "team-showcase": la foto pasa de blanco/negro a color y el indicador crece al
+    // pasar el mouse, y el resto de tarjetas de la sección se atenúan — sin ocultar ningún dato,
+    // todo (correo, clientes, acciones) sigue visible siempre, esto es solo el acabado visual.
+    const isActive = hoveredId === id;
+    const isDimmed = hoveredId !== null && !isActive;
+    const indicatorColor = colorRing ? `oklch(0.65 0.14 ${colorRing})` : "var(--foreground)";
+
     return (
-        <Card className={`${dashed ? "border-dashed" : "border-border/60"} transition hover:shadow-lg`}>
+        <Card
+            className={cn(
+                dashed ? "border-dashed" : "border-border/60",
+                "cursor-pointer transition-all duration-300 hover:shadow-lg",
+                isDimmed && "opacity-60",
+            )}
+            onMouseEnter={() => onHover(id)}
+            onMouseLeave={() => onHover(null)}
+        >
             <CardContent className="p-5">
                 <div className="flex items-start gap-3">
                     <div className="relative shrink-0">
@@ -113,14 +132,25 @@ function MemberCard({
                             className="h-14 w-14 rounded-2xl ring-2 ring-offset-2 ring-offset-card"
                             style={colorRing ? ({ "--tw-ring-color": `oklch(0.65 0.14 ${colorRing})` } as React.CSSProperties) : undefined}
                         >
-                            <AvatarImage src={photoUrl ?? undefined} alt={nombre} className="object-cover" />
+                            <AvatarImage
+                                src={photoUrl ?? undefined}
+                                alt={nombre}
+                                className="object-cover transition-[filter] duration-500"
+                                style={{ filter: isActive ? "grayscale(0) brightness(1)" : "grayscale(1) brightness(0.85)" }}
+                            />
                             <AvatarFallback className="rounded-2xl bg-brand-soft text-base font-bold text-brand">{initials(nombre)}</AvatarFallback>
                         </Avatar>
                         <PresenceDot availability={availability} />
                     </div>
                     <div className="min-w-0 flex-1 pt-0.5">
-                        <div className="truncate text-base font-semibold">{nombre}</div>
-                        <div className="truncate text-xs text-muted-foreground">{cargo}</div>
+                        <div className="flex items-center gap-2">
+                            <span
+                                className="h-3 w-4 shrink-0 rounded-[5px] transition-all duration-300"
+                                style={{ backgroundColor: indicatorColor, opacity: isActive ? 1 : 0.35, width: isActive ? "1.25rem" : "1rem" }}
+                            />
+                            <span className="truncate text-base font-semibold">{nombre}</span>
+                        </div>
+                        <div className="mt-1 truncate pl-[1.5rem] text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{cargo}</div>
                     </div>
                 </div>
                 <div className="mt-3 text-xs text-muted-foreground">{mail ?? "Correo no disponible"}</div>
@@ -162,7 +192,17 @@ function MemberCard({
 // (p.ej. dentro de "Analistas", el equipo de Nutresa siempre queda en su propia fila, separado de
 // los demás), a diferencia de pasar todas las tarjetas juntas a un único grid que las reacomoda
 // libremente según el ancho de pantalla.
-function OrgSection({ grupo, rows }: { grupo: string; rows: React.ReactNode[][] }) {
+// El estado de hover vive acá (no en cada MemberCard) para que, al pasar el mouse por una persona,
+// las demás de la misma sección se atenúen — el mismo efecto de "team-showcase", con el hover
+// compartido dentro de cada bloque del organigrama en vez de la página completa.
+function OrgSection<T extends { id: string }>({
+    grupo, rows, renderItem,
+}: {
+    grupo: string;
+    rows: T[][];
+    renderItem: (item: T, hoveredId: string | null, onHover: (id: string | null) => void) => ReactNode;
+}) {
+    const [hoveredId, setHoveredId] = useState<string | null>(null);
     const info = GRUPO_INFO[grupo] ?? { label: grupo, dot: "bg-muted-foreground" };
     return (
         <section className="relative mt-10 first:mt-8">
@@ -174,7 +214,7 @@ function OrgSection({ grupo, rows }: { grupo: string; rows: React.ReactNode[][] 
             {info.nota && <p className="mb-3 -mt-1 text-xs text-muted-foreground">{info.nota}</p>}
             {rows.map((row, i) => (
                 <div key={i} className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${i > 0 ? "mt-4" : ""}`}>
-                    {row}
+                    {row.map((item) => renderItem(item, hoveredId, setHoveredId))}
                 </div>
             ))}
         </section>
@@ -259,20 +299,6 @@ function EquipoPage() {
                 const miembros = equipo.filter((m) => m.grupo === grupo);
                 if (miembros.length === 0) return null;
 
-                const card = (m: (typeof miembros)[number]) => (
-                    <MemberCard
-                        key={m.id}
-                        nombre={m.nombre}
-                        cargo={m.cargo}
-                        mail={m.mail}
-                        photoUrl={m.photoUrl}
-                        availability={m.availability}
-                        colorRing={m.color}
-                        clientes={clientesDe(m)}
-                        mode={GRUPOS_TODOS_LOS_CLIENTES.has(grupo) ? "todos" : "clientes"}
-                    />
-                );
-
                 // Dentro de "Analistas", el equipo de Nutresa (David/Jonny/Robinson) siempre va en su
                 // propia fila, arriba, separado del resto — no se mezclan en un mismo grid.
                 const rows: (typeof miembros)[] =
@@ -281,28 +307,50 @@ function EquipoPage() {
                         : [miembros];
 
                 return (
-                    <OrgSection key={grupo} grupo={grupo} rows={rows.map((row) => row.map(card))} />
+                    <OrgSection
+                        key={grupo}
+                        grupo={grupo}
+                        rows={rows}
+                        renderItem={(m, hoveredId, onHover) => (
+                            <MemberCard
+                                key={m.id}
+                                id={m.id}
+                                nombre={m.nombre}
+                                cargo={m.cargo}
+                                mail={m.mail}
+                                photoUrl={m.photoUrl}
+                                availability={m.availability}
+                                colorRing={m.color}
+                                clientes={clientesDe(m)}
+                                mode={GRUPOS_TODOS_LOS_CLIENTES.has(grupo) ? "todos" : "clientes"}
+                                hoveredId={hoveredId}
+                                onHover={onHover}
+                            />
+                        )}
+                    />
                 );
             })}
 
             {entraOnly.length > 0 && (
                 <OrgSection
                     grupo="Otros"
-                    rows={[
-                        entraOnly.map((u) => (
-                            <MemberCard
-                                key={u.id}
-                                nombre={u.displayName}
-                                cargo={u.jobTitle ?? ""}
-                                mail={u.mail ?? u.userPrincipalName ?? null}
-                                photoUrl={u.photoUrl ?? null}
-                                availability={u.availability}
-                                clientes={[]}
-                                mode="clientes"
-                                dashed
-                            />
-                        )),
-                    ]}
+                    rows={[entraOnly]}
+                    renderItem={(u, hoveredId, onHover) => (
+                        <MemberCard
+                            key={u.id}
+                            id={u.id}
+                            nombre={u.displayName}
+                            cargo={u.jobTitle ?? ""}
+                            mail={u.mail ?? u.userPrincipalName ?? null}
+                            photoUrl={u.photoUrl ?? null}
+                            availability={u.availability}
+                            clientes={[]}
+                            mode="clientes"
+                            dashed
+                            hoveredId={hoveredId}
+                            onHover={onHover}
+                        />
+                    )}
                 />
             )}
         </div>
