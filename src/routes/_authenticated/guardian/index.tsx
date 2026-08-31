@@ -406,6 +406,20 @@ function debeOcultarTextoLibre(messages: UIMessage[], idx: number): boolean {
     return tieneDocumentos && tieneOpciones;
 }
 
+// Tercer patrón de duplicación, más sutil: el texto que antecede a preguntarOpciones puede ser
+// legítimo (la explicación del modo Principiante), pero cualquier texto que aparezca DESPUÉS de la
+// tarjeta de la pregunta nunca lo es — el propio prompt dice que la herramienta "no antes ni
+// después" debe ir acompañada de texto, así que un mensaje no debería seguir hablando después de
+// mostrarla. Se recorta solo esa cola, dejando intacto cualquier texto previo a la tarjeta.
+function recortarTextoTrasOpciones(parts: readonly any[]): any[] {
+    let ultimoIdxOpciones = -1;
+    parts.forEach((p, i) => {
+        if (p.type === "tool-preguntarOpciones") ultimoIdxOpciones = i;
+    });
+    if (ultimoIdxOpciones === -1) return parts as any[];
+    return parts.filter((p, i) => !(p.type === "text" && i > ultimoIdxOpciones));
+}
+
 // El backend no emite una señal explícita de "en qué fase va la auditoría" — se infiere del lado del
 // cliente con señales ya disponibles (si hay conversación, si ya se guardó algún hallazgo, si ya se
 // generó el informe final). Es aproximado a propósito: sirve como indicador visual de progreso, no
@@ -718,7 +732,7 @@ function GuardianPage() {
                                 const ocultarTexto = debeOcultarTextoLibre(messages, messages.length - 1);
                                 const partesAMostrar = ocultarTexto
                                     ? ultimoAsistente.parts.filter((p) => String(p.type).startsWith("tool-"))
-                                    : ultimoAsistente.parts;
+                                    : recortarTextoTrasOpciones(ultimoAsistente.parts);
                                 return (
                                     <>
                                         {textoUltimoUsuario && !ocultarTexto && (
@@ -790,7 +804,9 @@ function GuardianPage() {
                                             const tieneHallazgo = m.parts.some((p: any) => p.type === "tool-proponerHallazgo" && p.state === "output-available");
                                             // Mismo criterio que en la tarjeta del paso actual (ver debeOcultarTextoLibre).
                                             const ocultarTexto = debeOcultarTextoLibre(messages, mIdx);
-                                            const partesAMostrar = ocultarTexto ? m.parts.filter((p) => String(p.type).startsWith("tool-")) : m.parts;
+                                            const partesAMostrar = ocultarTexto
+                                                ? m.parts.filter((p) => String(p.type).startsWith("tool-"))
+                                                : recortarTextoTrasOpciones(m.parts);
                                             return (
                                                 <div
                                                     key={m.id}
