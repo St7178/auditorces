@@ -272,8 +272,12 @@ export const Route = createFileRoute("/api/chat")({
                     }),
                 };
 
+                // gpt-4o-mini no respetaba de forma consistente reglas de formato con varias
+                // instrucciones simultáneas (no repetir documentos, usar preguntarOpciones siempre) —
+                // gpt-4.1-mini sigue instrucciones sensiblemente mejor a una fracción del costo de
+                // gpt-4o, así que es el punto intermedio entre cumplimiento y gasto de tokens.
                 const result = streamText({
-                    model: openai("gpt-4o-mini"),
+                    model: openai("gpt-4.1-mini"),
                     system,
                     messages: await convertToModelMessages(messages),
                     tools,
