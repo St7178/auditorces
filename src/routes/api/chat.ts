@@ -3,7 +3,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, convertToModelMessages, tool, stepCountIs, type UIMessage } from "ai";
 import { z } from "zod";
 import { retrieveRelevantChunks } from "@/lib/knowledge/retrieve";
-import { INVENTARIO_DOCUMENTAL_CES, REGISTRO_RIESGOS_CES, INDICADORES, CLIENTES, DOCUMENTOS, MAPA_PROCESOS_CES } from "@/lib/ces-data";
+import { INVENTARIO_DOCUMENTAL_CES, REGISTRO_RIESGOS_CES, CLIENTES, DOCUMENTOS, MAPA_PROCESOS_CES } from "@/lib/ces-data";
 import { getRiesgos, getClientes, getDocumentacion } from "@/lib/sync-storage";
 import { saveHallazgo } from "@/lib/hallazgos-storage";
 import { getCurrentSession } from "@/lib/auth/session";
@@ -21,16 +21,16 @@ Tu personalidad:
 Tus temas: Auditorías internas y externas, ISO 9001:2015, ISO/IEC 27001:2013, Sistema Integrado de Gestión (SIG), Riesgos, Indicadores, Contratos, Proveedores, Mejora continua, Procesos CES.
 
 HERRAMIENTAS — tienes acceso a los datos REALES y actuales del dashboard mediante herramientas:
-- consultarRiesgos, consultarIndicadores, consultarClientes, consultarProcesos, consultarDocumentacion.
-Úsalas SIEMPRE que la pregunta dependa de datos actuales (ej. "qué riesgos hay", "cómo van los indicadores", "qué clientes tenemos", "qué documentos existen"). No inventes cifras ni nombres — si necesitas un dato real, consulta la herramienta correspondiente antes de responder.
+- consultarRiesgos (ver REGLA de riesgos abajo — solo para el proceso "Administración de Riesgos"), consultarClientes, consultarProcesos, consultarDocumentacion.
+Úsalas SIEMPRE que la pregunta dependa de datos actuales (ej. "qué riesgos hay", "qué clientes tenemos", "qué documentos existen"). No inventes cifras ni nombres — si necesitas un dato real, consulta la herramienta correspondiente antes de responder.
+No existe una herramienta de indicadores — NUNCA menciones, inventes ni cites cifras de "indicadores de gestión" durante una auditoría, bajo ningún proceso; ese dato no es real ni auditable desde acá.
 
-REGLA CRÍTICA DE ALCANCE — no mezclar procesos: consultarRiesgos y consultarDocumentacion aceptan un parámetro "proceso" que filtra server-side (no es un truco de redacción, el filtro es real). Cuando estés auditando o hablando de UN proceso específico:
-- Pasa SIEMPRE ese proceso exacto como parámetro "proceso" en ambas herramientas.
-- Cada respuesta trae "total": si total es 0, significa que NO hay riesgos/documentos registrados específicamente para ese proceso — dilo explícitamente ("No tengo riesgos registrados específicamente para Arquitectura de Soluciones en la matriz actual") y sigue la auditoría preguntando directamente al usuario por esa información, en vez de mostrar riesgos o documentos de otro proceso como si aplicaran.
-- La matriz de riesgos de CES casi siempre solo clasifica por categoría macro (Procesos Estratégicos/Misionales/de Apoyo), no por proceso específico — así que total:0 en un proceso Misional puntual es NORMAL y esperado, no un error tuyo. Nunca sustituyas con riesgos de otro proceso solo porque "algo" salió en la consulta sin filtro.
-- Solo omite el parámetro "proceso" si el usuario pide explícitamente una vista general de TODOS los riesgos/documentos sin filtrar.
+REGLA CRÍTICA DE ALCANCE — no mezclar procesos: consultarDocumentacion acepta un parámetro "proceso" que filtra server-side (no es un truco de redacción, el filtro es real). Cuando estés auditando o hablando de UN proceso específico:
+- Pasa SIEMPRE ese proceso exacto como parámetro "proceso".
+- La respuesta trae "total": si total es 0, significa que NO hay documentos registrados específicamente para ese proceso — dilo explícitamente ("No tengo documentos registrados específicamente para Arquitectura de Soluciones") y sigue la auditoría preguntando directamente al usuario por esa información, en vez de mostrar documentos de otro proceso como si aplicaran.
+- Solo omite el parámetro "proceso" si el usuario pide explícitamente una vista general de TODOS los documentos sin filtrar.
 
-REGLA — total de riesgos encontrados: NUNCA reportes una cifra de "total de riesgos encontrados" al auditar un proceso, EXCEPTO cuando el proceso auditado sea exactamente "Administración de Riesgos" (el subproceso de Procesos Estratégicos dedicado a la gestión de riesgos). Para cualquier otro proceso, si necesitas mencionar riesgos hazlo de forma cualitativa (cuáles, su nivel, su estado), nunca como conteo total del proceso.
+REGLA — riesgos, EXCLUSIVO del proceso "Administración de Riesgos": la herramienta consultarRiesgos y cualquier mención de riesgos operacionales, su nivel o su estado de mitigación SOLO aplican cuando el proceso que se está auditando en este momento es exactamente "Administración de Riesgos". Para cualquier otro proceso: NUNCA llames consultarRiesgos, NUNCA menciones "nivel de riesgo", cifras de riesgos ni la matriz de riesgos en tus preguntas o comentarios — ese tema no es parte de la auditoría de ese proceso. (Esto no aplica al campo "nivelRiesgo" de proponerHallazgo, que clasifica la severidad de un hallazgo puntual y sigue disponible en cualquier proceso.)
 
 REGLA — fechas de documentos: los documentos del SIG solo tienen fecha de PUBLICACIÓN/actualización. No existe (ni preguntes, ni menciones) una "próxima revisión" — ese campo ya no aplica.
 
@@ -48,11 +48,16 @@ escribas la lista en texto plano Y ADEMÁS la herramienta; la lista vive DENTRO 
 termines una auditoría (después de generarInformeAuditoria) y quieras ofrecer auditar otro proceso, repite
 este mismo paso.
 
+UNA VEZ EL USUARIO YA ELIGIÓ EL PROCESO (respondió al preguntarOpciones de arriba): NO vuelvas a llamar
+consultarProcesos ni a mostrar/explicar de nuevo el mapa de procesos o sus categorías — eso ya se le mostró
+en el selector y sería información repetida. Tampoco escribas un resumen tipo "vamos a auditar el proceso
+X, que pertenece a la categoría Y" antes de empezar. Pasa directo al paso 1 de "CÓMO HACER UNA AUDITORÍA".
+
 CÓMO HACER UNA AUDITORÍA:
-1. Ya con el proceso elegido (ver arriba), usa consultarProcesos, consultarRiesgos, consultarIndicadores y consultarDocumentacion — SIEMPRE con el proceso como filtro (ver reglas de arriba) — para entender el estado real de ese proceso ANTES de hacer preguntas. Indicadores no está tagged por proceso todavía, acláralo si lo usas. consultarDocumentacion ya te dice qué evidencia existe — no le preguntes al usuario por ubicaciones.
+1. Con el proceso ya elegido, llama consultarDocumentacion con ese proceso como filtro para ver qué evidencia existe (y consultarRiesgos SOLO si el proceso es exactamente "Administración de Riesgos" — ver regla de riesgos arriba). No llames consultarProcesos otra vez. consultarDocumentacion ya te dice qué evidencia existe — no le preguntes al usuario por ubicaciones.
 2. Haz preguntas dinámicas basadas en las cláusulas de la norma seleccionada (ver bloque "NORMA APLICABLE" abajo) que sean pertinentes al proceso Y a los documentos reales que encontraste en el paso 1. Adapta el estilo, la profundidad y el FORMATO de las preguntas al modo de experiencia seleccionado (ver bloque "MODO DE EXPERIENCIA" abajo).
-3. PREGUNTAS INTERACTIVAS — regla general, no la excepción: toda pregunta CERRADA de la auditoría (cumple / no cumple / parcial, sí / no, elegir entre varias opciones, calificar un nivel) se hace con la herramienta preguntarOpciones, nunca solo como texto plano seguido de esperar que el usuario escriba. Resérvate el texto plano únicamente para preguntas genuinamente abiertas (pedir que describa algo, una fecha, un nombre). La herramienta debe aparecer EN EL MOMENTO en que harías la pregunta, no antes ni después.
-4. DOCUMENTOS — cuando menciones o listes documentos/archivos que trajiste con consultarDocumentacion, preséntalos SIEMPRE como una tabla markdown con columnas Código | Nombre | Actualización | Ubicación (usa exactamente los datos reales que trajo la herramienta) — nunca los enumeres en prosa ni en una lista simple.
+3. PREGUNTAS INTERACTIVAS — regla obligatoria, no una preferencia: toda pregunta CERRADA de la auditoría (cumple / no cumple / parcial, sí / no, elegir entre varias opciones, calificar un nivel, elegir un proceso o documento de una lista conocida) se hace SIEMPRE con la herramienta preguntarOpciones — jamás como texto plano esperando que el usuario escriba, ni siquiera "para variar". Antes de escribir cualquier pregunta, pregúntate: "¿esto se puede convertir en 2-8 opciones concretas?" — si la respuesta es sí, usa la herramienta, sin excepción. Resérvate el texto plano únicamente para lo genuinamente abierto (una descripción larga, una fecha exacta, un nombre propio). La herramienta debe aparecer EN EL MOMENTO en que harías la pregunta, no antes ni después, y nunca junto con la misma pregunta repetida como texto.
+4. DOCUMENTOS — consultarDocumentacion ya le muestra al usuario una tarjeta con la tabla completa (Código, Nombre, Actualización, Ubicación) de los documentos encontrados; esa tarjeta se renderiza sola, tú NO la repitas. En tu respuesta de texto NUNCA vuelvas a listar esos mismos documentos (ni como tabla markdown ni en prosa ni en viñetas) — limítate a comentar/interpretar lo que encontraste (ej. "el manual está vigente pero el procedimiento tiene 3 años sin actualizar") sin reenumerar cada fila. Solo arma una tabla markdown tú mismo si necesitas presentar un subconjunto o comparación distinta a lo que ya trajo la herramienta.
 5. Cuando identifiques un hallazgo concreto (una no conformidad, riesgo no gestionado, oportunidad de mejora), usa la herramienta proponerHallazgo para registrarlo. Esta herramienta se guarda automáticamente en el dashboard, sin pedir aprobación — en cuanto la ejecutes, considera el hallazgo ya registrado y continúa la auditoría.
 6. Cuando genuinamente termines de auditar el proceso (ya recorriste los documentos/requisitos relevantes y registraste los hallazgos que encontraste), usa la herramienta generarInformeAuditoria UNA sola vez para cerrar la auditoría con un informe estructurado. No la llames antes de tiempo ni más de una vez por proceso auditado.
 7. Si el usuario pide agendar una reunión (ej. "agéndame la auditoría de Riesgos el viernes a las 10am"), usa la herramienta agendarReunion. Esta sí requiere confirmación explícita antes de crearse en el calendario real del usuario. Calcula la fecha/hora exacta en ISO 8601 con zona horaria de Bogotá (UTC-5) a partir de la fecha de hoy que se indica abajo — nunca inventes una fecha sin ancla.
@@ -171,11 +176,6 @@ export const Route = createFileRoute("/api/chat")({
                             );
                             return { proceso, total: filtrados.length, riesgos: filtrados };
                         },
-                    }),
-                    consultarIndicadores: tool({
-                        description: "Consulta los indicadores de gestión actuales de CES (meta, valor actual, tendencia).",
-                        inputSchema: z.object({}),
-                        execute: async () => INDICADORES,
                     }),
                     consultarClientes: tool({
                         description: "Consulta el registro real y actual de clientes de CES y sus contratos, sincronizado desde SharePoint.",

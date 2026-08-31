@@ -14,7 +14,6 @@ import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 
 const TOOL_LABELS: Record<string, string> = {
     consultarRiesgos: "Riesgos CES",
-    consultarIndicadores: "Indicadores CES",
     consultarClientes: "Clientes CES",
     consultarProcesos: "Procesos CES",
 };
