@@ -206,7 +206,12 @@ function ToolPart({
                 </div>
             );
         }
-        const opciones: string[] = Array.isArray(input.opciones) ? input.opciones : [];
+        // Filtro de seguridad: una opción es el texto de un botón, no un párrafo — si el modelo
+        // manda algo desproporcionado (viola el max(60) del schema, o llega a medio transmitir),
+        // se descarta en vez de renderizar un botón gigante con contenido ilegible.
+        const opciones: string[] = (Array.isArray(input.opciones) ? input.opciones : []).filter(
+            (op: unknown): op is string => typeof op === "string" && op.length > 0 && op.length <= 80,
+        );
         return (
             <div className="rounded-xl border border-brand/30 bg-card p-3.5 text-sm">
                 <div className="flex items-start gap-1.5 font-medium text-foreground">
@@ -406,18 +411,16 @@ function debeOcultarTextoLibre(messages: UIMessage[], idx: number): boolean {
     return tieneDocumentos && tieneOpciones;
 }
 
-// Tercer patrón de duplicación, más sutil: el texto que antecede a preguntarOpciones puede ser
-// legítimo (la explicación del modo Principiante), pero cualquier texto que aparezca DESPUÉS de la
-// tarjeta de la pregunta nunca lo es — el propio prompt dice que la herramienta "no antes ni
-// después" debe ir acompañada de texto, así que un mensaje no debería seguir hablando después de
-// mostrarla. Se recorta solo esa cola, dejando intacto cualquier texto previo a la tarjeta.
+// Tercer (y cuarto) patrón de duplicación, más sutiles: el texto que antecede a la PRIMERA
+// preguntarOpciones puede ser legítimo (la explicación del modo Principiante), pero nada de lo que
+// venga después lo es — ni texto repitiendo las opciones, ni (a veces) una segunda llamada a
+// preguntarOpciones casi idéntica en el mismo mensaje. El turno debe terminar en esa primera
+// tarjeta, así que se recorta TODO lo que venga después de ella (no solo el texto), dejando intacto
+// lo que la antecede.
 function recortarTextoTrasOpciones(parts: readonly any[]): any[] {
-    let ultimoIdxOpciones = -1;
-    parts.forEach((p, i) => {
-        if (p.type === "tool-preguntarOpciones") ultimoIdxOpciones = i;
-    });
-    if (ultimoIdxOpciones === -1) return parts as any[];
-    return parts.filter((p, i) => !(p.type === "text" && i > ultimoIdxOpciones));
+    const idxPrimeraPregunta = parts.findIndex((p: any) => p.type === "tool-preguntarOpciones");
+    if (idxPrimeraPregunta === -1) return parts as any[];
+    return parts.filter((_, i) => i <= idxPrimeraPregunta);
 }
 
 // El backend no emite una señal explícita de "en qué fase va la auditoría" — se infiere del lado del
