@@ -117,6 +117,15 @@ export async function setMitigacion(id: string, mitigado: boolean, comentario: s
     return rows[0] as unknown as Hallazgo;
 }
 
+// Eliminación manual desde /guardian/hallazgos — a diferencia de setMitigacion/setPaso, esto borra
+// el registro por completo, no lo marca. No hay soft-delete: si se necesita, se vuelve a registrar.
+export async function deleteHallazgo(id: string): Promise<void> {
+    await ensureSchema();
+    const db = sql();
+    const rows = await db`DELETE FROM hallazgos_auditoria WHERE id = ${id} RETURNING id`;
+    if (!rows.length) throw new Error("Hallazgo no encontrado");
+}
+
 export type Paso = "identifico" | "agenda" | "soluciono";
 const PASO_COLUMN: Record<Paso, string> = { identifico: "paso_identifico", agenda: "paso_agenda", soluciono: "paso_soluciono" };
 

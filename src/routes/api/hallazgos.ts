@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getHallazgos, setMitigacion, setPaso, type Paso } from "@/lib/hallazgos-storage";
+import { getHallazgos, setMitigacion, setPaso, deleteHallazgo, type Paso } from "@/lib/hallazgos-storage";
 import { getCurrentSession } from "@/lib/auth/session";
 import { getValidUserAccessToken, createCalendarEvent } from "@/lib/auth/entra";
 import { AGENDA_SIG_MAILBOX } from "@/lib/calendar.functions";
@@ -70,6 +70,22 @@ export const Route = createFileRoute("/api/hallazgos")({
                     }
                     const hallazgo = await setMitigacion(body.id, body.mitigado, body.comentario ?? null);
                     return new Response(JSON.stringify(hallazgo), { status: 200, headers: { "Content-Type": "application/json" } });
+                } catch (err: any) {
+                    return new Response(JSON.stringify({ error: String(err?.message ?? err) }), { status: 400, headers: { "Content-Type": "application/json" } });
+                }
+            },
+            // Eliminación manual desde /guardian/hallazgos — borra el registro por completo.
+            DELETE: async ({ request }) => {
+                const session = await getCurrentSession();
+                if (!session) return new Response("Unauthorized", { status: 401 });
+
+                try {
+                    const body = (await request.json()) as { id?: string };
+                    if (typeof body.id !== "string" || !body.id) {
+                        return new Response(JSON.stringify({ error: "Se espera un campo 'id'" }), { status: 400, headers: { "Content-Type": "application/json" } });
+                    }
+                    await deleteHallazgo(body.id);
+                    return new Response(JSON.stringify({ eliminado: true }), { status: 200, headers: { "Content-Type": "application/json" } });
                 } catch (err: any) {
                     return new Response(JSON.stringify({ error: String(err?.message ?? err) }), { status: 400, headers: { "Content-Type": "application/json" } });
                 }

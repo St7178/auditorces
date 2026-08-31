@@ -3,7 +3,11 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
-import { ArrowLeft, MapPin, Lightbulb, User, CalendarDays, CalendarPlus, Check, ExternalLink } from "lucide-react";
+import {
+    AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
+    AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, MapPin, Lightbulb, User, CalendarDays, CalendarPlus, Check, ExternalLink, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/guardian/hallazgos")({
     component: HallazgosPage,
@@ -163,6 +167,38 @@ function AgendarReunion({
                 </button>
             </div>
         </div>
+    );
+}
+
+// Confirmación explícita antes de borrar — la eliminación es permanente (no hay soft-delete). El
+// borrado en sí es optimista (ver eliminarHallazgo en HallazgosPage), así que acá solo se confirma
+// y se dispara — no hace falta mantener el diálogo abierto esperando la respuesta del servidor.
+function EliminarHallazgo({ titulo, onConfirm }: { titulo: string; onConfirm: () => void }) {
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <button
+                    title="Eliminar hallazgo"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                >
+                    <Trash2 className="h-3.5 w-3.5" />
+                </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>¿Eliminar este hallazgo?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        "{titulo}" se borrará permanentemente del dashboard y de este listado. Esta acción no se puede deshacer.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Eliminar
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 
@@ -335,6 +371,26 @@ function HallazgosPage() {
         setHallazgos((prev) => prev?.map((h) => (h.id === actualizado.id ? actualizado : h)) ?? prev);
     };
 
+    // Optimista, igual que el resto de acciones de esta página: desaparece de inmediato y, si el
+    // servidor lo rechaza, se vuelve a insertar en su posición original.
+    const eliminarHallazgo = async (id: string) => {
+        const anteriores = hallazgos;
+        const indice = anteriores?.findIndex((h) => h.id === id) ?? -1;
+        setHallazgos((prev) => prev?.filter((h) => h.id !== id) ?? prev);
+        const res = await fetch("/api/hallazgos", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id }),
+        });
+        if (!res.ok && anteriores && indice !== -1) {
+            setHallazgos((prev) => {
+                const next = [...(prev ?? [])];
+                next.splice(indice, 0, anteriores[indice]);
+                return next;
+            });
+        }
+    };
+
     return (
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
             <PageHeader
@@ -366,7 +422,10 @@ function HallazgosPage() {
                             <CardContent className="p-5">
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h.proceso}</div>
-                                    {h.nivelRiesgo && <Badge className={nivelTone(h.nivelRiesgo)}>{h.nivelRiesgo}</Badge>}
+                                    <div className="flex shrink-0 items-center gap-1">
+                                        {h.nivelRiesgo && <Badge className={nivelTone(h.nivelRiesgo)}>{h.nivelRiesgo}</Badge>}
+                                        <EliminarHallazgo titulo={h.titulo} onConfirm={() => eliminarHallazgo(h.id)} />
+                                    </div>
                                 </div>
                                 <div className="mt-1.5 text-sm font-semibold">{h.titulo}</div>
                                 <p className="mt-1 text-xs text-muted-foreground">{h.descripcion}</p>

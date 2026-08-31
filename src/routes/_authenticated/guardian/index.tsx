@@ -77,24 +77,60 @@ function ToolPart({
 
     if (toolName === "proponerHallazgo") {
         const input = part.input || {};
+        const resumen = (
+            <div className="mt-1.5 space-y-1">
+                {input.proceso && <div><strong>Proceso:</strong> {input.proceso}</div>}
+                {input.titulo && <div className="font-semibold">{input.titulo}</div>}
+                {input.descripcion && <div className="opacity-90">{input.descripcion}</div>}
+                {input.nivelRiesgo && <div><strong>Nivel de riesgo:</strong> {input.nivelRiesgo}</div>}
+                {input.recomendacion && <div><strong>Recomendación:</strong> {input.recomendacion}</div>}
+            </div>
+        );
+        if (part.state === "approval-requested") {
+            return (
+                <div className="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs text-amber-900">
+                    <div className="flex items-center gap-1.5 font-semibold">
+                        <ClipboardCheck className="h-3.5 w-3.5 shrink-0" /> ¿Estás de acuerdo con este hallazgo?
+                    </div>
+                    {resumen}
+                    <div className="mt-2 flex gap-2">
+                        <button
+                            onClick={() => onApprove(part.approval.id, true)}
+                            className="rounded-lg bg-brand px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-brand/90"
+                        >
+                            Confirmar y guardar
+                        </button>
+                        <button
+                            onClick={() => onApprove(part.approval.id, false)}
+                            className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-semibold text-amber-900 hover:bg-amber-100"
+                        >
+                            Descartar
+                        </button>
+                    </div>
+                </div>
+            );
+        }
         if (part.state === "output-available") {
             return (
                 <div className="rounded-xl border border-brand/30 bg-brand-soft p-3 text-xs text-brand">
                     <div className="flex items-center gap-1.5 font-semibold">
-                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> Hallazgo guardado automáticamente en el dashboard
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> Hallazgo confirmado y guardado en el dashboard
                     </div>
-                    <div className="mt-1.5 space-y-1 text-brand/90">
-                        {input.proceso && <div><strong>Proceso:</strong> {input.proceso}</div>}
-                        {input.titulo && <div className="font-semibold">{input.titulo}</div>}
-                        {input.nivelRiesgo && <div><strong>Nivel de riesgo:</strong> {input.nivelRiesgo}</div>}
-                    </div>
+                    <div className="text-brand/90">{resumen}</div>
+                </div>
+            );
+        }
+        if (part.state === "output-denied") {
+            return (
+                <div className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground">
+                    <XCircle className="h-3.5 w-3.5 shrink-0" /> Hallazgo descartado{input.titulo ? `: ${input.titulo}` : ""}
                 </div>
             );
         }
         if (part.state === "input-streaming" || part.state === "input-available") {
             return (
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Registrando hallazgo…
+                    <Loader2 className="h-3 w-3 animate-spin" /> Preparando hallazgo…
                 </div>
             );
         }
