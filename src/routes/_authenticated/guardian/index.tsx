@@ -411,16 +411,19 @@ function debeOcultarTextoLibre(messages: UIMessage[], idx: number): boolean {
     return tieneDocumentos && tieneOpciones;
 }
 
-// Tercer (y cuarto) patrón de duplicación, más sutiles: el texto que antecede a la PRIMERA
-// preguntarOpciones puede ser legítimo (la explicación del modo Principiante), pero nada de lo que
-// venga después lo es — ni texto repitiendo las opciones, ni (a veces) una segunda llamada a
-// preguntarOpciones casi idéntica en el mismo mensaje. El turno debe terminar en esa primera
-// tarjeta, así que se recorta TODO lo que venga después de ella (no solo el texto), dejando intacto
-// lo que la antecede.
+// Tercer (y cuarto) patrón de duplicación, más sutiles: el texto que antecede a la pregunta elegida
+// puede ser legítimo (la explicación del modo Principiante), pero nada de lo que venga después lo
+// es — ni texto repitiendo las opciones, ni (a veces) dos o tres llamadas a preguntarOpciones en el
+// mismo mensaje (a veces la primera queda con la pregunta cortada a medias, un resto de un tool-call
+// abandonado). Por eso NO se asume que la primera es la buena: se prefiere la ÚLTIMA que llegó a
+// "output-available" (resuelta por completo) y se descarta cualquier otra preguntarOpciones —
+// anterior o posterior — junto con todo lo que venga después de la elegida.
 function recortarTextoTrasOpciones(parts: readonly any[]): any[] {
-    const idxPrimeraPregunta = parts.findIndex((p: any) => p.type === "tool-preguntarOpciones");
-    if (idxPrimeraPregunta === -1) return parts as any[];
-    return parts.filter((_, i) => i <= idxPrimeraPregunta);
+    const preguntas = parts.map((p: any, i) => ({ p, i })).filter(({ p }) => p.type === "tool-preguntarOpciones");
+    if (preguntas.length === 0) return parts as any[];
+    const completas = preguntas.filter(({ p }) => p.state === "output-available");
+    const elegida = (completas.length > 0 ? completas : preguntas).at(-1)!;
+    return parts.filter((p: any, i) => i <= elegida.i && (p.type !== "tool-preguntarOpciones" || i === elegida.i));
 }
 
 // El backend no emite una señal explícita de "en qué fase va la auditoría" — se infiere del lado del
