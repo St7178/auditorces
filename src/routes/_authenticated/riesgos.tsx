@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
 import { METODOLOGIA_RIESGOS, REGISTRO_RIESGOS_CES } from "@/lib/ces-data";
-import { BookOpen, FileSpreadsheet, ShieldQuestion, GraduationCap, Lightbulb, Download, RefreshCw } from "lucide-react";
+import { BookOpen, FileSpreadsheet, ShieldQuestion, GraduationCap, Lightbulb, Download, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/riesgos")({
@@ -109,7 +109,7 @@ function RiesgosPage() {
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent"
                             >
-                                <RefreshCw className="h-3.5 w-3.5" /> Actualizar matriz de riesgos
+                                <Pencil className="h-3.5 w-3.5" /> Registrar riesgo
                             </a>
                         </div>
                         <Card className="w-full border-brand/30 bg-gradient-to-br from-brand-soft to-secondary sm:w-72">
