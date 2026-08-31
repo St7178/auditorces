@@ -5,13 +5,20 @@ import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/page-header";
 import { METODOLOGIA_RIESGOS, REGISTRO_RIESGOS_CES } from "@/lib/ces-data";
-import { BookOpen, FileSpreadsheet, ShieldQuestion, GraduationCap, Lightbulb } from "lucide-react";
+import { BookOpen, FileSpreadsheet, ShieldQuestion, GraduationCap, Lightbulb, Download, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/riesgos")({
     component: RiesgosPage,
     head: () => ({ meta: [{ title: "Riesgos Operacionales — CES SIG" }] }),
 });
+
+// PDF servido como estático desde /public/riesgos — igual que las normas en /normas.
+const METODOLOGIA_PDF = "/riesgos/Metodologia-Gestion-Riesgos-Operacionales.pdf";
+// Carpeta real en SharePoint donde vive la Matriz de Riesgos Operacionales — se actualiza ahí
+// directamente, este portal no sube archivos.
+const MATRIZ_RIESGOS_SHAREPOINT =
+    "https://grupocompunet.sharepoint.com/sites/ProyectosCES/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FProyectosCES%2FShared%20Documents%2FCES%2FGeneral%20CES&viewid=7bbe0754%2D62c0%2D4269%2D8b57%2Db6b212d68786";
 
 function nivelTone(n: string) {
     if (n === "Crítico") return "bg-red-100 text-red-700";
@@ -87,20 +94,39 @@ function RiesgosPage() {
                 title="Riesgos Operacionales"
                 description="Solo se registra la ubicación de la evidencia. No se almacenan matrices ni documentos confidenciales."
                 actions={
-                    <Card className="w-full border-brand/30 bg-gradient-to-br from-brand-soft to-secondary sm:w-72">
-                        <CardContent className="p-3">
-                            <div className="flex items-center gap-1.5 text-xs font-semibold text-brand">
-                                <Lightbulb className="h-3.5 w-3.5" /> ¿Sabías qué?
-                            </div>
-                            <ul className="mt-1.5 space-y-1">
-                                {SABIAS_QUE.map((s) => (
-                                    <li key={s} className="flex items-start gap-1.5 text-[11px] leading-snug">
-                                        <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-brand" /> {s}
-                                    </li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                    </Card>
+                    <>
+                        <div className="flex shrink-0 flex-col gap-1.5">
+                            <a
+                                href={METODOLOGIA_PDF}
+                                download
+                                className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                            >
+                                <Download className="h-3.5 w-3.5" /> Descargar metodología
+                            </a>
+                            <a
+                                href={MATRIZ_RIESGOS_SHAREPOINT}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                            >
+                                <RefreshCw className="h-3.5 w-3.5" /> Actualizar matriz de riesgos
+                            </a>
+                        </div>
+                        <Card className="w-full border-brand/30 bg-gradient-to-br from-brand-soft to-secondary sm:w-72">
+                            <CardContent className="p-3">
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-brand">
+                                    <Lightbulb className="h-3.5 w-3.5" /> ¿Sabías qué?
+                                </div>
+                                <ul className="mt-1.5 space-y-1">
+                                    {SABIAS_QUE.map((s) => (
+                                        <li key={s} className="flex items-start gap-1.5 text-[11px] leading-snug">
+                                            <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-brand" /> {s}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </>
                 }
             />
 

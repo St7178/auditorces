@@ -82,8 +82,8 @@ function ChatWikiPage() {
                     <div className="px-4 pb-4 text-xs leading-relaxed text-amber-900">
                         <ul className="space-y-1.5">
                             <li>
-                                <strong>Sé específico:</strong> menciona el nombre del cliente, servicio, tecnología o documento que buscas.
-                                El chat busca por significado, no por palabras exactas — entre más concreta la pregunta, mejor encuentra el contenido.
+                                <strong>Sé específico:</strong> menciona el proceso (Estratégico, Misional o de Apoyo) al que pertenece o el nombre del
+                                documento. El chat busca por palabras dentro del nombre del documento — entre más concreta la palabra, mejor lo encuentra.
                             </li>
                             <li>
                                 <strong>Pide documentos explícitamente:</strong> "dame el procedimiento de...", "qué dice el manual de...", "adjúntame el formato de...".
