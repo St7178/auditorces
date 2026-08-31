@@ -379,6 +379,20 @@ const MODO_INFO: Record<(typeof MODOS)[number]["id"], { titulo: string; ideal: s
 // preguntarOpciones (ver SYSTEM_PROMPT en api/chat.ts) — reemplaza al selector fijo de procesos.
 const MENSAJE_PREPARAR_AUDITORIA = "Quiero prepararme para una auditoría. Ayúdame a elegir qué proceso auditar.";
 
+// El modelo a veces repite en texto plano la misma lista de procesos que ya viene en la tarjeta de
+// preguntarOpciones (a pesar de que el prompt se lo pide explícitamente) — como esto no se puede
+// garantizar solo con instrucciones, se detecta acá el turno del selector de proceso (el mensaje de
+// usuario inmediatamente anterior es exactamente MENSAJE_PREPARAR_AUDITORIA) para ocultar cualquier
+// texto que lo acompañe y dejar únicamente la tarjeta con los botones.
+function textoPrevioUsuario(messages: UIMessage[], idx: number): string {
+    for (let i = idx - 1; i >= 0; i--) {
+        if (messages[i].role === "user") {
+            return messages[i].parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+        }
+    }
+    return "";
+}
+
 // El backend no emite una señal explícita de "en qué fase va la auditoría" — se infiere del lado del
 // cliente con señales ya disponibles (si hay conversación, si ya se guardó algún hallazgo, si ya se
 // generó el informe final). Es aproximado a propósito: sirve como indicador visual de progreso, no
@@ -686,9 +700,15 @@ function GuardianPage() {
                                 const ultimoAsistente = lastMessage;
                                 const ultimoUsuario = [...messages].reverse().find((m) => m.role === "user");
                                 const textoUltimoUsuario = ultimoUsuario?.parts.map((p) => (p.type === "text" ? p.text : "")).join("") ?? "";
+                                // Turno del selector de proceso: se queda solo con la tarjeta de
+                                // preguntarOpciones (ver textoPrevioUsuario) — nada de texto repetido alrededor.
+                                const esSelectorProceso = textoUltimoUsuario.trim() === MENSAJE_PREPARAR_AUDITORIA;
+                                const partesAMostrar = esSelectorProceso
+                                    ? ultimoAsistente.parts.filter((p) => p.type === "tool-preguntarOpciones")
+                                    : ultimoAsistente.parts;
                                 return (
                                     <>
-                                        {textoUltimoUsuario && (
+                                        {textoUltimoUsuario && !esSelectorProceso && (
                                             <div className="mb-2 truncate text-xs font-medium text-muted-foreground">
                                                 Tu respuesta: <span className="text-foreground">{textoUltimoUsuario}</span>
                                             </div>
@@ -701,7 +721,7 @@ function GuardianPage() {
                                                 <span className="text-xs font-semibold text-muted-foreground">CES Auditor</span>
                                             </div>
                                             <div className="space-y-3 text-sm leading-relaxed">
-                                                {ultimoAsistente.parts.map((p, idx) => {
+                                                {partesAMostrar.map((p, idx) => {
                                                     if (p.type === "text") return p.text ? <ChatMarkdown key={idx} text={p.text} /> : null;
                                                     if (String(p.type).startsWith("tool-")) {
                                                         return (
@@ -755,6 +775,10 @@ function GuardianPage() {
                                             const isUser = m.role === "user";
                                             const esUltimoMensaje = mIdx === messages.length - 1;
                                             const tieneHallazgo = m.parts.some((p: any) => p.type === "tool-proponerHallazgo" && p.state === "output-available");
+                                            // Mismo criterio que en la tarjeta del paso actual: el turno del
+                                            // selector de proceso se queda solo con la tarjeta de botones.
+                                            const esSelectorProceso = !isUser && textoPrevioUsuario(messages, mIdx).trim() === MENSAJE_PREPARAR_AUDITORIA;
+                                            const partesAMostrar = esSelectorProceso ? m.parts.filter((p) => p.type === "tool-preguntarOpciones") : m.parts;
                                             return (
                                                 <div
                                                     key={m.id}
@@ -777,7 +801,7 @@ function GuardianPage() {
                                                         {isUser ? (
                                                             text
                                                         ) : (
-                                                            m.parts.map((p, idx) => {
+                                                            partesAMostrar.map((p, idx) => {
                                                                 if (p.type === "text") return p.text ? <ChatMarkdown key={idx} text={p.text} /> : null;
                                                                 if (String(p.type).startsWith("tool-")) {
                                                                     return (
