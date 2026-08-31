@@ -65,6 +65,45 @@ function OtraRespuesta({ onSubmit, disabled }: { onSubmit: (text: string) => voi
     );
 }
 
+// Campo de respuesta para preguntarAbierta — a diferencia de OtraRespuesta (colapsado bajo botones),
+// acá el campo de texto ES la única forma de responder, así que va siempre visible.
+function RespuestaAbierta({
+    onSubmit, disabled, placeholder,
+}: {
+    onSubmit: (text: string) => void;
+    disabled: boolean;
+    placeholder?: string;
+}) {
+    const [texto, setTexto] = useState("");
+
+    const enviar = () => {
+        const t = texto.trim();
+        if (!t) return;
+        onSubmit(t);
+        setTexto("");
+    };
+
+    return (
+        <div className="mt-2.5 flex items-center gap-1.5">
+            <input
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") enviar(); }}
+                disabled={disabled}
+                placeholder={placeholder || "Escribe tu respuesta…"}
+                className="min-w-0 flex-1 rounded-lg border bg-background px-2.5 py-1.5 text-xs outline-none focus:border-brand disabled:opacity-50"
+            />
+            <button
+                onClick={enviar}
+                disabled={disabled || !texto.trim()}
+                className="rounded-lg bg-brand px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+            >
+                Enviar
+            </button>
+        </div>
+    );
+}
+
 function ToolPart({
     part, onApprove, onOption, interactive,
 }: {
@@ -250,6 +289,11 @@ function ToolPart({
         );
         return (
             <div className="rounded-xl border border-brand/30 bg-card p-3.5 text-sm">
+                {/* Único lugar donde una explicación del modelo llega a mostrarse — ver REGLA MAESTRA
+                    del prompt y partesVisibles(): todo texto fuera de esta tarjeta se oculta. */}
+                {input.contexto && (
+                    <p className="mb-2 text-xs leading-relaxed text-muted-foreground">{input.contexto}</p>
+                )}
                 <div className="flex items-start gap-1.5 font-medium text-foreground">
                     <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-brand" /> {input.pregunta}
                 </div>
@@ -268,6 +312,28 @@ function ToolPart({
                 {input.permiteOtro !== false && (
                     <OtraRespuesta onSubmit={onOption} disabled={!interactive} />
                 )}
+            </div>
+        );
+    }
+
+    if (toolName === "preguntarAbierta") {
+        const input = part.input || {};
+        if (part.state !== "output-available" && part.state !== "input-available") {
+            return (
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Preparando pregunta…
+                </div>
+            );
+        }
+        return (
+            <div className="rounded-xl border border-brand/30 bg-card p-3.5 text-sm">
+                {input.contexto && (
+                    <p className="mb-2 text-xs leading-relaxed text-muted-foreground">{input.contexto}</p>
+                )}
+                <div className="flex items-start gap-1.5 font-medium text-foreground">
+                    <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-brand" /> {input.pregunta}
+                </div>
+                <RespuestaAbierta onSubmit={onOption} disabled={!interactive} placeholder={input.placeholder} />
             </div>
         );
     }
@@ -419,47 +485,35 @@ const MODO_INFO: Record<(typeof MODOS)[number]["id"], { titulo: string; ideal: s
 // mapa de procesos ya inyectado en el prompt (ver SYSTEM_PROMPT/PROCESOS_BLOCK en api/chat.ts).
 const MENSAJE_PREPARAR_AUDITORIA = "Quiero prepararme para una auditoría. Ayúdame a elegir qué proceso auditar.";
 
-// El modelo a veces repite en texto plano la misma lista de procesos que ya viene en la tarjeta de
-// preguntarOpciones (a pesar de que el prompt se lo pide explícitamente) — como esto no se puede
-// garantizar solo con instrucciones, se detecta acá el turno del selector de proceso (el mensaje de
-// usuario inmediatamente anterior es exactamente MENSAJE_PREPARAR_AUDITORIA) para ocultar cualquier
-// texto que lo acompañe y dejar únicamente la tarjeta con los botones.
-function textoPrevioUsuario(messages: UIMessage[], idx: number): string {
-    for (let i = idx - 1; i >= 0; i--) {
-        if (messages[i].role === "user") {
-            return messages[i].parts.map((p) => (p.type === "text" ? p.text : "")).join("");
-        }
+// REGLA DE VISIBILIDAD ÚNICA: si un mensaje del asistente llama a alguna herramienta, esa tarjeta ya
+// dice todo lo necesario — cualquier texto plano alrededor (a pesar de que el prompt lo prohíbe
+// explícitamente) es siempre ruido o información repetida, así que se oculta por completo, sin
+// excepciones. La única explicación que sí se muestra vive en el campo "contexto" DENTRO de la
+// propia tarjeta de preguntarOpciones/preguntarAbierta (ver ToolPart) — nunca como texto aparte. Un
+// mensaje sin ninguna herramienta (ej. la respuesta a una pregunta conceptual del usuario) se
+// muestra íntegro, porque ahí no hay ninguna tarjeta con la que pueda duplicarse.
+//
+// Además, si el modelo llega a mandar más de una preguntarOpciones/preguntarAbierta en el mismo
+// mensaje (un arranque en falso, o una pregunta que quedó cortada a medias), solo se conserva la
+// ÚLTIMA que llegó a resolverse por completo ("output-available") — nunca la primera por posición.
+function partesVisibles(parts: readonly any[]): any[] {
+    const tieneHerramienta = parts.some((p: any) => String(p.type).startsWith("tool-"));
+    if (!tieneHerramienta) return parts as any[];
+
+    const preguntas = parts
+        .map((p: any, i) => ({ p, i }))
+        .filter(({ p }) => p.type === "tool-preguntarOpciones" || p.type === "tool-preguntarAbierta");
+
+    let corte = parts.length;
+    let descartar = new Set<number>();
+    if (preguntas.length > 1) {
+        const completas = preguntas.filter(({ p }) => p.state === "output-available");
+        const elegida = (completas.length > 0 ? completas : preguntas).at(-1)!;
+        corte = elegida.i + 1;
+        descartar = new Set(preguntas.filter(({ i }) => i !== elegida.i).map(({ i }) => i));
     }
-    return "";
-}
 
-// Mismo problema, un paso más adelante: al arrancar una auditoría, el modelo a veces también repite
-// en texto los documentos que consultarDocumentacion ya muestra en su propia tarjeta, justo antes de
-// la primera pregunta con preguntarOpciones. Cuando un mismo mensaje trae AMBAS herramientas (la
-// tabla de documentos y la tarjeta de la pregunta), ese texto siempre es prescindible — las dos
-// tarjetas ya dicen todo lo que hace falta — así que se oculta y solo quedan las tarjetas.
-function debeOcultarTextoLibre(messages: UIMessage[], idx: number): boolean {
-    const m = messages[idx];
-    if (m.role !== "assistant") return false;
-    if (textoPrevioUsuario(messages, idx).trim() === MENSAJE_PREPARAR_AUDITORIA) return true;
-    const tieneDocumentos = m.parts.some((p: any) => p.type === "tool-consultarDocumentacion" && p.state === "output-available");
-    const tieneOpciones = m.parts.some((p: any) => p.type === "tool-preguntarOpciones");
-    return tieneDocumentos && tieneOpciones;
-}
-
-// Tercer (y cuarto) patrón de duplicación, más sutiles: el texto que antecede a la pregunta elegida
-// puede ser legítimo (la explicación del modo Principiante), pero nada de lo que venga después lo
-// es — ni texto repitiendo las opciones, ni (a veces) dos o tres llamadas a preguntarOpciones en el
-// mismo mensaje (a veces la primera queda con la pregunta cortada a medias, un resto de un tool-call
-// abandonado). Por eso NO se asume que la primera es la buena: se prefiere la ÚLTIMA que llegó a
-// "output-available" (resuelta por completo) y se descarta cualquier otra preguntarOpciones —
-// anterior o posterior — junto con todo lo que venga después de la elegida.
-function recortarTextoTrasOpciones(parts: readonly any[]): any[] {
-    const preguntas = parts.map((p: any, i) => ({ p, i })).filter(({ p }) => p.type === "tool-preguntarOpciones");
-    if (preguntas.length === 0) return parts as any[];
-    const completas = preguntas.filter(({ p }) => p.state === "output-available");
-    const elegida = (completas.length > 0 ? completas : preguntas).at(-1)!;
-    return parts.filter((p: any, i) => i <= elegida.i && (p.type !== "tool-preguntarOpciones" || i === elegida.i));
+    return parts.filter((p: any, i) => i < corte && p.type !== "text" && !descartar.has(i));
 }
 
 // El backend no emite una señal explícita de "en qué fase va la auditoría" — se infiere del lado del
@@ -769,15 +823,14 @@ function GuardianPage() {
                                 const ultimoAsistente = lastMessage;
                                 const ultimoUsuario = [...messages].reverse().find((m) => m.role === "user");
                                 const textoUltimoUsuario = ultimoUsuario?.parts.map((p) => (p.type === "text" ? p.text : "")).join("") ?? "";
-                                // Ver debeOcultarTextoLibre: el selector de proceso y el primer turno de
-                                // auditoría (documentos + primera pregunta) se quedan solo con las tarjetas.
-                                const ocultarTexto = debeOcultarTextoLibre(messages, messages.length - 1);
-                                const partesAMostrar = ocultarTexto
-                                    ? ultimoAsistente.parts.filter((p) => String(p.type).startsWith("tool-"))
-                                    : recortarTextoTrasOpciones(ultimoAsistente.parts);
+                                // El disparador de "preparar auditoría"/"auditar otro proceso" es una frase
+                                // interna, no algo que el usuario haya escrito — no tiene sentido mostrarla
+                                // como "Tu respuesta".
+                                const esDisparadorInterno = textoUltimoUsuario.trim() === MENSAJE_PREPARAR_AUDITORIA;
+                                const partesAMostrar = partesVisibles(ultimoAsistente.parts);
                                 return (
                                     <>
-                                        {textoUltimoUsuario && !ocultarTexto && (
+                                        {textoUltimoUsuario && !esDisparadorInterno && (
                                             <div className="mb-2 truncate text-xs font-medium text-muted-foreground">
                                                 Tu respuesta: <span className="text-foreground">{textoUltimoUsuario}</span>
                                             </div>
@@ -844,11 +897,8 @@ function GuardianPage() {
                                             const isUser = m.role === "user";
                                             const esUltimoMensaje = mIdx === messages.length - 1;
                                             const tieneHallazgo = m.parts.some((p: any) => p.type === "tool-proponerHallazgo" && p.state === "output-available");
-                                            // Mismo criterio que en la tarjeta del paso actual (ver debeOcultarTextoLibre).
-                                            const ocultarTexto = debeOcultarTextoLibre(messages, mIdx);
-                                            const partesAMostrar = ocultarTexto
-                                                ? m.parts.filter((p) => String(p.type).startsWith("tool-"))
-                                                : recortarTextoTrasOpciones(m.parts);
+                                            // Mismo criterio que en la tarjeta del paso actual (ver partesVisibles).
+                                            const partesAMostrar = partesVisibles(m.parts);
                                             return (
                                                 <div
                                                     key={m.id}
