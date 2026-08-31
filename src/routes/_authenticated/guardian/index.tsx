@@ -15,7 +15,6 @@ import { Route as AuthenticatedRoute } from "@/routes/_authenticated";
 const TOOL_LABELS: Record<string, string> = {
     consultarRiesgos: "Riesgos CES",
     consultarClientes: "Clientes CES",
-    consultarProcesos: "Procesos CES",
 };
 
 // Campo de respuesta libre bajo las opciones de preguntarOpciones — colapsado hasta que se necesita,
@@ -375,8 +374,8 @@ const MODO_INFO: Record<(typeof MODOS)[number]["id"], { titulo: string; ideal: s
     },
 };
 
-// Frase que dispara, del lado del backend, el flujo de elegir proceso vía consultarProcesos +
-// preguntarOpciones (ver SYSTEM_PROMPT en api/chat.ts) — reemplaza al selector fijo de procesos.
+// Frase que dispara, del lado del backend, el flujo de elegir proceso vía preguntarOpciones con el
+// mapa de procesos ya inyectado en el prompt (ver SYSTEM_PROMPT/PROCESOS_BLOCK en api/chat.ts).
 const MENSAJE_PREPARAR_AUDITORIA = "Quiero prepararme para una auditoría. Ayúdame a elegir qué proceso auditar.";
 
 // El modelo a veces repite en texto plano la misma lista de procesos que ya viene en la tarjeta de
