@@ -392,6 +392,20 @@ function textoPrevioUsuario(messages: UIMessage[], idx: number): string {
     return "";
 }
 
+// Mismo problema, un paso más adelante: al arrancar una auditoría, el modelo a veces también repite
+// en texto los documentos que consultarDocumentacion ya muestra en su propia tarjeta, justo antes de
+// la primera pregunta con preguntarOpciones. Cuando un mismo mensaje trae AMBAS herramientas (la
+// tabla de documentos y la tarjeta de la pregunta), ese texto siempre es prescindible — las dos
+// tarjetas ya dicen todo lo que hace falta — así que se oculta y solo quedan las tarjetas.
+function debeOcultarTextoLibre(messages: UIMessage[], idx: number): boolean {
+    const m = messages[idx];
+    if (m.role !== "assistant") return false;
+    if (textoPrevioUsuario(messages, idx).trim() === MENSAJE_PREPARAR_AUDITORIA) return true;
+    const tieneDocumentos = m.parts.some((p: any) => p.type === "tool-consultarDocumentacion" && p.state === "output-available");
+    const tieneOpciones = m.parts.some((p: any) => p.type === "tool-preguntarOpciones");
+    return tieneDocumentos && tieneOpciones;
+}
+
 // El backend no emite una señal explícita de "en qué fase va la auditoría" — se infiere del lado del
 // cliente con señales ya disponibles (si hay conversación, si ya se guardó algún hallazgo, si ya se
 // generó el informe final). Es aproximado a propósito: sirve como indicador visual de progreso, no
@@ -699,15 +713,15 @@ function GuardianPage() {
                                 const ultimoAsistente = lastMessage;
                                 const ultimoUsuario = [...messages].reverse().find((m) => m.role === "user");
                                 const textoUltimoUsuario = ultimoUsuario?.parts.map((p) => (p.type === "text" ? p.text : "")).join("") ?? "";
-                                // Turno del selector de proceso: se queda solo con la tarjeta de
-                                // preguntarOpciones (ver textoPrevioUsuario) — nada de texto repetido alrededor.
-                                const esSelectorProceso = textoUltimoUsuario.trim() === MENSAJE_PREPARAR_AUDITORIA;
-                                const partesAMostrar = esSelectorProceso
-                                    ? ultimoAsistente.parts.filter((p) => p.type === "tool-preguntarOpciones")
+                                // Ver debeOcultarTextoLibre: el selector de proceso y el primer turno de
+                                // auditoría (documentos + primera pregunta) se quedan solo con las tarjetas.
+                                const ocultarTexto = debeOcultarTextoLibre(messages, messages.length - 1);
+                                const partesAMostrar = ocultarTexto
+                                    ? ultimoAsistente.parts.filter((p) => String(p.type).startsWith("tool-"))
                                     : ultimoAsistente.parts;
                                 return (
                                     <>
-                                        {textoUltimoUsuario && !esSelectorProceso && (
+                                        {textoUltimoUsuario && !ocultarTexto && (
                                             <div className="mb-2 truncate text-xs font-medium text-muted-foreground">
                                                 Tu respuesta: <span className="text-foreground">{textoUltimoUsuario}</span>
                                             </div>
@@ -774,10 +788,9 @@ function GuardianPage() {
                                             const isUser = m.role === "user";
                                             const esUltimoMensaje = mIdx === messages.length - 1;
                                             const tieneHallazgo = m.parts.some((p: any) => p.type === "tool-proponerHallazgo" && p.state === "output-available");
-                                            // Mismo criterio que en la tarjeta del paso actual: el turno del
-                                            // selector de proceso se queda solo con la tarjeta de botones.
-                                            const esSelectorProceso = !isUser && textoPrevioUsuario(messages, mIdx).trim() === MENSAJE_PREPARAR_AUDITORIA;
-                                            const partesAMostrar = esSelectorProceso ? m.parts.filter((p) => p.type === "tool-preguntarOpciones") : m.parts;
+                                            // Mismo criterio que en la tarjeta del paso actual (ver debeOcultarTextoLibre).
+                                            const ocultarTexto = debeOcultarTextoLibre(messages, mIdx);
+                                            const partesAMostrar = ocultarTexto ? m.parts.filter((p) => String(p.type).startsWith("tool-")) : m.parts;
                                             return (
                                                 <div
                                                     key={m.id}
