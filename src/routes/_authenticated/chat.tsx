@@ -106,7 +106,7 @@ function ChatWikiPage() {
                                 <div className="text-sm font-semibold text-brand">Chat Wiki</div>
                                 <p className="mt-2 text-sm leading-relaxed">
                                     Hola <strong>{firstName}</strong> 👋<br />
-                                    Pregúntame sobre clientes, equipos, procesos, formatos o cualquier página de la wiki interna.
+                                    Pregúntame por procesos, equipos, formatos o cualquier página de la wiki interna.
                                 </p>
                             </div>
 

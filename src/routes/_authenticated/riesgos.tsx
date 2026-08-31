@@ -15,10 +15,10 @@ export const Route = createFileRoute("/_authenticated/riesgos")({
 
 // PDF servido como estático desde /public/riesgos — igual que las normas en /normas.
 const METODOLOGIA_PDF = "/riesgos/Metodologia-Gestion-Riesgos-Operacionales.pdf";
-// Carpeta real en SharePoint donde vive la Matriz de Riesgos Operacionales — se actualiza ahí
-// directamente, este portal no sube archivos.
+// Archivo real en SharePoint (Excel) donde vive la Matriz de Riesgos Operacionales — se actualiza
+// ahí directamente, este portal no sube archivos.
 const MATRIZ_RIESGOS_SHAREPOINT =
-    "https://grupocompunet.sharepoint.com/sites/ProyectosCES/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FProyectosCES%2FShared%20Documents%2FCES%2FGeneral%20CES&viewid=7bbe0754%2D62c0%2D4269%2D8b57%2Db6b212d68786";
+    "https://grupocompunet.sharepoint.com/:x:/s/ProyectosCES/IQA3zH-nYzbeSZewOPB1AJaeAeLW6wsl5AscLHtmHr8W6fw?e=6WcPJp";
 
 function nivelTone(n: string) {
     if (n === "Crítico") return "bg-red-100 text-red-700";
