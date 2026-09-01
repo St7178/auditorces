@@ -35,6 +35,22 @@ function normalizeTipo(titulo: string): TipoActualizacion {
     return "otro";
 }
 
+// "fetch failed" (el mensaje genérico de undici/Node para cualquier error de red) no dice nada por
+// sí solo — la causa real (DNS, conexión rechazada, timeout, certificado) vive en err.cause. Se
+// desenvuelve para que imagenes_error de verdad sirva para diagnosticar en vez de repetir lo mismo.
+function describirError(err: unknown): string {
+    const e = err as any;
+    const partes = [e?.message ?? String(e)];
+    let cause = e?.cause;
+    let vueltas = 0;
+    while (cause && vueltas < 3) {
+        partes.push(`causa: ${cause?.code ?? cause?.message ?? String(cause)}`);
+        cause = cause?.cause;
+        vueltas++;
+    }
+    return partes.join(" — ");
+}
+
 function extraerEnlaces(html: string): EnlaceBoletin[] {
     const enlaces = new Set<string>();
     WIKI_LINK_RE.lastIndex = 0;
@@ -72,11 +88,11 @@ async function procesarMensaje(mensaje: OutlookMessage): Promise<void> {
                     const pagina = enlaces.find((e) => e.url === img.pagina.url);
                     imagenes.push({ url, tipo: pagina?.tipo ?? "otro", pagina: img.pagina.url });
                 } catch (err) {
-                    imagenesError = `Error subiendo imagen a Blob: ${String((err as any)?.message ?? err)}`;
+                    imagenesError = `Error subiendo imagen a Blob: ${describirError(err)}`;
                 }
             }
         } catch (err) {
-            imagenesError = String((err as any)?.message ?? err);
+            imagenesError = describirError(err);
         }
     }
 
