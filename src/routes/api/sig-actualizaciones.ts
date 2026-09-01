@@ -2,11 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
     boletinNecesitaImagenes, guardarBoletin, getUltimoBoletin, type EnlaceBoletin, type ImagenBoletin, type TipoActualizacion,
 } from "@/lib/sig-actualizaciones-storage";
-import { obtenerImagenesDeBoletin } from "@/lib/wiki-images";
 import { subirImagenABlob } from "@/lib/blob-upload";
 
-// Forma cruda que trae el nodo "Get many messages" (Microsoft Outlook) de n8n — solo se leen los
-// campos que de verdad se usan, el resto del objeto real (mucho más grande) se ignora.
+// "wiki.grupocnet.com" es un nombre interno de la red de Compunet — NO resuelve desde la red pública
+// donde corren las funciones de Vercel (confirmado en producción: ENOTFOUND). n8n sí corre dentro de
+// esa red, así que es n8n quien entra a la wiki, hace login y descarga las imágenes (ver el Code node
+// documentado en el flujo) — acá solo se reciben esas imágenes ya en base64 para subirlas a Vercel
+// Blob. Este endpoint YA NO intenta alcanzar la wiki por su cuenta.
+type ImagenWikiEntrante = { pagina: string; nombre?: string; contentType?: string; base64: string };
+
+// Forma cruda que trae el nodo "Get many messages" (Microsoft Outlook) de n8n, más el campo
+// "imagenesWiki" que agrega el Code node nuevo del flujo (ver instrucciones de integración).
 type OutlookMessage = {
     id: string;
     subject?: string;
@@ -16,6 +22,7 @@ type OutlookMessage = {
     from?: { emailAddress?: { name?: string; address?: string } };
     sender?: { emailAddress?: { name?: string; address?: string } };
     body?: { content?: string; contentType?: string };
+    imagenesWiki?: ImagenWikiEntrante[];
 };
 
 // El boletín mensual "Actualización y Eliminación Información Documentada" enlaza siempre a páginas
@@ -35,9 +42,6 @@ function normalizeTipo(titulo: string): TipoActualizacion {
     return "otro";
 }
 
-// "fetch failed" (el mensaje genérico de undici/Node para cualquier error de red) no dice nada por
-// sí solo — la causa real (DNS, conexión rechazada, timeout, certificado) vive en err.cause. Se
-// desenvuelve para que imagenes_error de verdad sirva para diagnosticar en vez de repetir lo mismo.
 function describirError(err: unknown): string {
     const e = err as any;
     const partes = [e?.message ?? String(e)];
@@ -62,11 +66,9 @@ function extraerEnlaces(html: string): EnlaceBoletin[] {
     });
 }
 
-// Procesa un mensaje: si ya existe con imágenes guardadas, no hace nada (evita volver a loguearse en
-// la wiki y redescargar todo cada corrida). Si es nuevo, o existe pero se quedó sin imágenes (ej. un
-// error momentáneo), saca los enlaces del cuerpo, va a buscar las imágenes reales del boletín en la
-// wiki, las sube a Vercel Blob, y guarda todo junto — incluido el motivo si algo falla, para poder
-// diagnosticarlo desde afuera en vez de quedar en silencio.
+// Procesa un mensaje: si ya existe con imágenes guardadas, no hace nada. Si es nuevo, o existe pero
+// se quedó sin imágenes (ej. n8n aún no mandaba "imagenesWiki" cuando llegó por primera vez), saca
+// los enlaces del cuerpo y sube a Vercel Blob las imágenes que YA vinieron descargadas desde n8n.
 async function procesarMensaje(mensaje: OutlookMessage): Promise<void> {
     if (!mensaje?.id) return;
     if (!(await boletinNecesitaImagenes(mensaje.id))) return;
@@ -77,22 +79,22 @@ async function procesarMensaje(mensaje: OutlookMessage): Promise<void> {
     const html = mensaje.body?.content ?? "";
     const enlaces = extraerEnlaces(html);
 
+    const entrantes = Array.isArray(mensaje.imagenesWiki) ? mensaje.imagenesWiki : [];
     let imagenes: ImagenBoletin[] = [];
     let imagenesError: string | null = null;
-    if (enlaces.length > 0) {
+
+    if (entrantes.length === 0 && enlaces.length > 0) {
+        imagenesError = "n8n todavía no envió 'imagenesWiki' para este boletín — falta el paso de descarga en el flujo.";
+    }
+
+    for (const img of entrantes) {
         try {
-            const descargadas = await obtenerImagenesDeBoletin(enlaces.map((e) => ({ url: e.url, titulo: e.titulo })));
-            for (const img of descargadas) {
-                try {
-                    const url = await subirImagenABlob(img.nombre, img.buffer, img.contentType);
-                    const pagina = enlaces.find((e) => e.url === img.pagina.url);
-                    imagenes.push({ url, tipo: pagina?.tipo ?? "otro", pagina: img.pagina.url });
-                } catch (err) {
-                    imagenesError = `Error subiendo imagen a Blob: ${describirError(err)}`;
-                }
-            }
+            const buffer = Buffer.from(img.base64, "base64");
+            const url = await subirImagenABlob(img.nombre || "imagen.jpg", buffer, img.contentType || "image/jpeg");
+            const pagina = enlaces.find((e) => e.url === img.pagina);
+            imagenes.push({ url, tipo: pagina?.tipo ?? "otro", pagina: img.pagina });
         } catch (err) {
-            imagenesError = describirError(err);
+            imagenesError = `Error subiendo imagen a Blob: ${describirError(err)}`;
         }
     }
 
@@ -114,9 +116,10 @@ export const Route = createFileRoute("/api/sig-actualizaciones")({
                     return new Response(JSON.stringify(null), { status: 200, headers });
                 }
             },
-            // Webhook de n8n: Schedule Trigger (diario, 8am) -> Get many messages (Outlook) -> HTTP
-            // Request POST acá con el array de mensajes. Mismo secreto compartido que ya usa
-            // /api/sync/* — ver SYNC_SECRET en .env.example.
+            // Webhook de n8n: Schedule Trigger (diario, 8am) -> Get many messages (Outlook) -> Code
+            // node que entra a la wiki y descarga las imágenes (dentro de la red de Compunet, donde
+            // n8n sí puede resolver wiki.grupocnet.com) -> HTTP Request POST acá. Mismo secreto
+            // compartido que ya usa /api/sync/* — ver SYNC_SECRET en .env.example.
             POST: async ({ request }) => {
                 try {
                     const secret = process.env.SYNC_SECRET;
