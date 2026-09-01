@@ -115,35 +115,38 @@ function extraerImagenesDeHtml(html: string, origin: string): string[] {
 
 export type ImagenDescargada = { buffer: Buffer; contentType: string; nombre: string };
 
+export type PaginaBoletin = { url: string; titulo: string };
+
+// Cada imagen queda etiquetada con la página de la que salió (Actualizaciones vs Eliminaciones), no
+// solo mezcladas en una lista plana — así el carrusel puede mostrar el enlace correcto por página.
+export type ImagenDeBoletin = ImagenDescargada & { pagina: PaginaBoletin };
+
 // Login + fetch + descarga de todas las páginas de un mismo boletín (ej. "Actualizaciones_Julio_2026"
 // y "Eliminaciones_Julio_2026") en una sola sesión — no tiene sentido loguearse dos veces para dos
-// páginas de la misma wiki. Si faltan credenciales (WIKI_USERNAME/WIKI_PASSWORD) o algo falla, se
-// devuelve [] sin lanzar error: el boletín igual se guarda con su título y enlaces, solo queda sin
-// imágenes hasta que se pueda reintentar.
-export async function obtenerImagenesDeBoletin(pageUrls: string[]): Promise<ImagenDescargada[]> {
+// páginas de la misma wiki. A diferencia de una versión anterior, acá SÍ se deja propagar el error
+// (falta de credenciales, login fallido, página inexistente, etc.) — el llamador decide qué hacer
+// con él (guardarlo junto al boletín para poder diagnosticar por qué no llegaron las imágenes, en
+// vez de fallar en silencio y no dejar ningún rastro de la causa).
+export async function obtenerImagenesDeBoletin(paginas: PaginaBoletin[]): Promise<ImagenDeBoletin[]> {
     const username = process.env.WIKI_USERNAME;
     const password = process.env.WIKI_PASSWORD;
-    if (!username || !password || pageUrls.length === 0) return [];
+    if (!username || !password) throw new Error("Faltan WIKI_USERNAME / WIKI_PASSWORD en las variables de entorno");
+    if (paginas.length === 0) return [];
 
-    try {
-        const origin = new URL(pageUrls[0]).origin;
-        const session = new WikiSession(origin);
-        await session.login(username, password);
+    const origin = new URL(paginas[0].url).origin;
+    const session = new WikiSession(origin);
+    await session.login(username, password);
 
-        const imagenes: ImagenDescargada[] = [];
-        for (const pageUrl of pageUrls) {
-            const title = decodeURIComponent(pageUrl.split("/index.php/")[1] ?? "");
-            if (!title) continue;
-            const html = await session.fetchPageHtml(title);
-            const urls = extraerImagenesDeHtml(html, origin);
-            for (const url of urls) {
-                const descargada = await session.descargarImagen(url);
-                if (descargada) imagenes.push({ ...descargada, nombre: url.split("/").pop() || "imagen.jpg" });
-            }
+    const imagenes: ImagenDeBoletin[] = [];
+    for (const pagina of paginas) {
+        const title = decodeURIComponent(pagina.url.split("/index.php/")[1] ?? "");
+        if (!title) continue;
+        const html = await session.fetchPageHtml(title);
+        const urls = extraerImagenesDeHtml(html, origin);
+        for (const url of urls) {
+            const descargada = await session.descargarImagen(url);
+            if (descargada) imagenes.push({ ...descargada, nombre: url.split("/").pop() || "imagen.jpg", pagina });
         }
-        return imagenes;
-    } catch (err) {
-        console.error("No se pudieron obtener las imágenes de la wiki para el boletín:", err);
-        return [];
     }
+    return imagenes;
 }

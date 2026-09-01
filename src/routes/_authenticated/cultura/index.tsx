@@ -2,16 +2,23 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import { SigBoletinCard } from "@/components/ui/card-11";
-import { ScrollText, Target, BookOpenText, ChevronRight } from "lucide-react";
+import { CoverFlowCarousel, type CarouselItem } from "@/components/ui/3-d-coverflow-carousel";
+import { ScrollText, Target, BookOpenText, ChevronRight, Newspaper } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/cultura/")({
     component: CulturaPage,
     head: () => ({ meta: [{ title: "Cultura SIG — CES SIG" }] }),
 });
 
-type EnlaceBoletin = { titulo: string; url: string; tipo: "actualizacion" | "eliminacion" | "otro" };
-type SigBoletin = { id: string; asunto: string; fecha: string; enlaces: EnlaceBoletin[]; imagenes: string[] };
+type TipoActualizacion = "actualizacion" | "eliminacion" | "otro";
+type ImagenBoletin = { url: string; tipo: TipoActualizacion; pagina: string };
+type SigBoletin = { id: string; asunto: string; fecha: string; imagenes: ImagenBoletin[] };
+
+const TITULO_POR_TIPO: Record<TipoActualizacion, { tag: string; linea1: string; linea2: string }> = {
+    actualizacion: { tag: "#Actualización", linea1: "DOCUMENTOS", linea2: "ACTUALIZADOS" },
+    eliminacion: { tag: "#Eliminación", linea1: "DOCUMENTOS", linea2: "ELIMINADOS" },
+    otro: { tag: "#Aviso SIG", linea1: "AVISO", linea2: "INFORMACIÓN DOCUMENTADA" },
+};
 
 const SECCIONES = [
     {
@@ -56,9 +63,24 @@ function CulturaPage() {
         };
     }, []);
 
-    const sigBoletinSubtitulo = sigBoletin
-        ? new Date(sigBoletin.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" })
-        : undefined;
+    const mesAnio = sigBoletin
+        ? new Date(sigBoletin.fecha).toLocaleDateString("es-CO", { month: "long", year: "numeric" }).toUpperCase()
+        : "";
+
+    // Cada imagen es una página real del boletín (sacada de la wiki, ver wiki-images.ts) — se arma
+    // un slide por imagen, con el tag/título según si esa página venía de Actualizaciones o
+    // Eliminaciones, y el CTA apunta a la página real de la wiki de la que salió esa imagen puntual.
+    const items: CarouselItem[] = (sigBoletin?.imagenes ?? []).map((img) => {
+        const info = TITULO_POR_TIPO[img.tipo];
+        return {
+            tag: info.tag,
+            titleLine1: info.linea1,
+            titleLine2: mesAnio ? `${info.linea2} · ${mesAnio}` : info.linea2,
+            img: img.url,
+            ctaText: "Ver en la wiki",
+            ctaUrl: img.pagina,
+        };
+    });
 
     return (
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -71,16 +93,17 @@ function CulturaPage() {
             {/* Boletín real de Laura/SIG (Actualización y Eliminación de Información Documentada) —
                 ver /api/sig-actualizaciones, sig-actualizaciones-storage.ts y wiki-images.ts. Las
                 imágenes son las páginas reales del boletín (sacadas de la wiki, no inventadas); si
-                el webhook de n8n todavía no está conectado, la tarjeta queda vacía con su propio
-                estado vacío. */}
+                el webhook de n8n todavía no está conectado (o no hay imágenes por otra razón), se
+                muestra un estado vacío propio en vez del carrusel oscuro sin nada adentro. */}
             <div className="mt-8">
-                <SigBoletinCard
-                    title="Actualizaciones SIG"
-                    subtitle={sigBoletinSubtitulo}
-                    imagenes={sigBoletin?.imagenes ?? []}
-                    enlaces={sigBoletin?.enlaces ?? []}
-                    emptyText="Sin boletines de actualización/eliminación de información documentada por ahora."
-                />
+                {items.length > 0 ? (
+                    <CoverFlowCarousel items={items} sectionLabel={`ACTUALIZACIONES SIG${mesAnio ? ` · ${mesAnio}` : ""}`} />
+                ) : (
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-3xl border border-dashed p-10 text-center text-sm text-muted-foreground">
+                        <Newspaper className="h-6 w-6" />
+                        Sin boletines de actualización/eliminación de información documentada por ahora.
+                    </div>
+                )}
             </div>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-3">

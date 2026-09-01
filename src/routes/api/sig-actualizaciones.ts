@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-    existeBoletin, guardarBoletin, getUltimoBoletin, type EnlaceBoletin, type TipoActualizacion,
+    boletinNecesitaImagenes, guardarBoletin, getUltimoBoletin, type EnlaceBoletin, type ImagenBoletin, type TipoActualizacion,
 } from "@/lib/sig-actualizaciones-storage";
 import { obtenerImagenesDeBoletin } from "@/lib/wiki-images";
 import { subirImagenABlob } from "@/lib/blob-upload";
@@ -46,12 +46,14 @@ function extraerEnlaces(html: string): EnlaceBoletin[] {
     });
 }
 
-// Procesa un mensaje: si ya se guardó antes, no hace nada (evita volver a loguearse en la wiki y
-// redescargar imágenes cada corrida). Si es nuevo, saca los enlaces del cuerpo, va a buscar las
-// imágenes reales del boletín en la wiki, las sube a Vercel Blob, y guarda todo junto.
+// Procesa un mensaje: si ya existe con imágenes guardadas, no hace nada (evita volver a loguearse en
+// la wiki y redescargar todo cada corrida). Si es nuevo, o existe pero se quedó sin imágenes (ej. un
+// error momentáneo), saca los enlaces del cuerpo, va a buscar las imágenes reales del boletín en la
+// wiki, las sube a Vercel Blob, y guarda todo junto — incluido el motivo si algo falla, para poder
+// diagnosticarlo desde afuera en vez de quedar en silencio.
 async function procesarMensaje(mensaje: OutlookMessage): Promise<void> {
     if (!mensaje?.id) return;
-    if (await existeBoletin(mensaje.id)) return;
+    if (!(await boletinNecesitaImagenes(mensaje.id))) return;
 
     const fecha = mensaje.receivedDateTime ?? mensaje.sentDateTime ?? new Date().toISOString();
     const remitente = mensaje.from?.emailAddress?.name ?? mensaje.sender?.emailAddress?.name ?? null;
@@ -59,28 +61,35 @@ async function procesarMensaje(mensaje: OutlookMessage): Promise<void> {
     const html = mensaje.body?.content ?? "";
     const enlaces = extraerEnlaces(html);
 
-    const descargadas = enlaces.length > 0 ? await obtenerImagenesDeBoletin(enlaces.map((e) => e.url)) : [];
-    const imagenes: string[] = [];
-    for (const img of descargadas) {
+    let imagenes: ImagenBoletin[] = [];
+    let imagenesError: string | null = null;
+    if (enlaces.length > 0) {
         try {
-            imagenes.push(await subirImagenABlob(img.nombre, img.buffer, img.contentType));
+            const descargadas = await obtenerImagenesDeBoletin(enlaces.map((e) => ({ url: e.url, titulo: e.titulo })));
+            for (const img of descargadas) {
+                try {
+                    const url = await subirImagenABlob(img.nombre, img.buffer, img.contentType);
+                    const pagina = enlaces.find((e) => e.url === img.pagina.url);
+                    imagenes.push({ url, tipo: pagina?.tipo ?? "otro", pagina: img.pagina.url });
+                } catch (err) {
+                    imagenesError = `Error subiendo imagen a Blob: ${String((err as any)?.message ?? err)}`;
+                }
+            }
         } catch (err) {
-            console.error("No se pudo subir una imagen del boletín a Vercel Blob:", err);
+            imagenesError = String((err as any)?.message ?? err);
         }
     }
 
-    await guardarBoletin({ id: mensaje.id, asunto, fecha, remitente, enlaces, imagenes });
+    await guardarBoletin({ id: mensaje.id, asunto, fecha, remitente, enlaces, imagenes, imagenesError });
 }
 
 export const Route = createFileRoute("/api/sig-actualizaciones")({
     server: {
         handlers: {
-            // Lectura pública, igual que el resto de /api/sync/* — el Dashboard la consume desde una
-            // página ya protegida por sesión, no hace falta duplicar la verificación acá. Devuelve
-            // solo el boletín más reciente (o null si todavía no ha llegado ninguno).
+            // Lectura pública, igual que el resto de /api/sync/* — el Dashboard/Cultura la consume
+            // desde una página ya protegida por sesión, no hace falta duplicar la verificación acá.
+            // Devuelve solo el boletín más reciente (o null si todavía no ha llegado ninguno).
             GET: async () => {
-                // no-store: este dato cambia por webhook, no por deploy — sin esto un CDN/edge puede
-                // seguir sirviendo la respuesta de un boletín anterior por un rato tras guardarse uno nuevo.
                 const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
                 try {
                     const boletin = await getUltimoBoletin();

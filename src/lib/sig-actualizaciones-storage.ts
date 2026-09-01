@@ -4,13 +4,18 @@ export type TipoActualizacion = "actualizacion" | "eliminacion" | "otro";
 
 export type EnlaceBoletin = { titulo: string; url: string; tipo: TipoActualizacion };
 
+// Cada imagen queda ligada a la página de la que salió (para saber a qué enlace de la wiki apunta
+// cada una en el carrusel), no solo mezcladas en una lista plana de URLs.
+export type ImagenBoletin = { url: string; tipo: TipoActualizacion; pagina: string };
+
 export type SigBoletin = {
     id: string;
     asunto: string;
     fecha: string;
     remitente: string | null;
     enlaces: EnlaceBoletin[];
-    imagenes: string[];
+    imagenes: ImagenBoletin[];
+    imagenesError: string | null;
 };
 
 // DATABASE_URL solo existe en tiempo de request en runtimes edge, no a nivel de módulo — igual que
@@ -37,6 +42,10 @@ async function ensureSchema() {
                 creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
             )
         `
+            // imagenes_error guarda por qué no se pudieron traer las imágenes de la wiki (falta de
+            // credenciales, login fallido, etc.) — sin esto, un boletín sin imágenes no dejaba ningún
+            // rastro de la causa y quedaba imposible de diagnosticar desde afuera.
+            .then(() => db`ALTER TABLE sig_boletines ADD COLUMN IF NOT EXISTS imagenes_error TEXT`)
             .then(() => undefined)
             .catch((err) => {
                 ready = null;
@@ -49,31 +58,36 @@ async function ensureSchema() {
 // Un boletín = un correo de "Actualización y Eliminación Información Documentada". El Schedule
 // Trigger de n8n vuelve a traer el mismo correo cada corrida (filtra por asunto/remitente, no "solo
 // lo nuevo") — se comprueba esto ANTES de ir a la wiki a buscar imágenes, para no reintentar ese
-// trabajo (login + descarga) todos los días con boletines ya guardados.
-export async function existeBoletin(id: string): Promise<boolean> {
+// trabajo (login + descarga) todos los días con boletines que YA tienen sus imágenes guardadas. Si
+// el boletín existe pero quedó sin imágenes (ej. por un error momentáneo), sí se debe reintentar.
+export async function boletinNecesitaImagenes(id: string): Promise<boolean> {
     await ensureSchema();
     const db = sql();
-    const rows = await db`SELECT 1 FROM sig_boletines WHERE id = ${id}`;
-    return rows.length > 0;
+    const rows = await db`SELECT imagenes FROM sig_boletines WHERE id = ${id}`;
+    if (!rows.length) return true; // no existe todavía: es nuevo, hay que procesarlo
+    const imagenes = (rows[0] as any).imagenes;
+    return !Array.isArray(imagenes) || imagenes.length === 0;
 }
 
 export async function guardarBoletin(b: SigBoletin): Promise<void> {
     await ensureSchema();
     const db = sql();
     await db`
-        INSERT INTO sig_boletines (id, asunto, fecha, remitente, enlaces, imagenes)
-        VALUES (${b.id}, ${b.asunto}, ${b.fecha}, ${b.remitente}, ${JSON.stringify(b.enlaces)}::jsonb, ${JSON.stringify(b.imagenes)}::jsonb)
-        ON CONFLICT (id) DO NOTHING
+        INSERT INTO sig_boletines (id, asunto, fecha, remitente, enlaces, imagenes, imagenes_error)
+        VALUES (${b.id}, ${b.asunto}, ${b.fecha}, ${b.remitente}, ${JSON.stringify(b.enlaces)}::jsonb, ${JSON.stringify(b.imagenes)}::jsonb, ${b.imagenesError})
+        ON CONFLICT (id) DO UPDATE SET
+            imagenes = EXCLUDED.imagenes,
+            imagenes_error = EXCLUDED.imagenes_error
     `;
 }
 
-// Solo el boletín más reciente — el carrusel del Dashboard muestra "el reporte de este mes", no un
-// historial mezclado de todos los boletines guardados.
+// Solo el boletín más reciente — el carrusel del Dashboard/Cultura muestra "el reporte de este mes",
+// no un historial mezclado de todos los boletines guardados.
 export async function getUltimoBoletin(): Promise<SigBoletin | null> {
     await ensureSchema();
     const db = sql();
     const rows = await db`
-        SELECT id, asunto, fecha, remitente, enlaces, imagenes
+        SELECT id, asunto, fecha, remitente, enlaces, imagenes, imagenes_error AS "imagenesError"
         FROM sig_boletines
         ORDER BY fecha DESC
         LIMIT 1
@@ -87,5 +101,6 @@ export async function getUltimoBoletin(): Promise<SigBoletin | null> {
         remitente: r.remitente,
         enlaces: r.enlaces ?? [],
         imagenes: r.imagenes ?? [],
+        imagenesError: r.imagenesError ?? null,
     };
 }
