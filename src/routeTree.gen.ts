@@ -24,6 +24,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiChecklistClientesEstadoRouteImport } from './routes/api/checklist-clientes-estado'
 import { Route as ApiHallazgosRouteImport } from './routes/api/hallazgos'
 import { Route as ApiNotificacionesRouteImport } from './routes/api/notificaciones'
+import { Route as ApiSigActualizacionesRouteImport } from './routes/api/sig-actualizaciones'
 import { Route as ApiWikiChatRouteImport } from './routes/api/wiki-chat'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes/index'
 import { Route as AuthenticatedClientesDocumentacionRouteImport } from './routes/_authenticated/clientes/documentacion'
@@ -122,6 +123,11 @@ const ApiHallazgosRoute = ApiHallazgosRouteImport.update({
 const ApiNotificacionesRoute = ApiNotificacionesRouteImport.update({
   id: '/api/notificaciones',
   path: '/api/notificaciones',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSigActualizacionesRoute = ApiSigActualizacionesRouteImport.update({
+  id: '/api/sig-actualizaciones',
+  path: '/api/sig-actualizaciones',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiWikiChatRoute = ApiWikiChatRouteImport.update({
@@ -257,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/api/checklist-clientes-estado': typeof ApiChecklistClientesEstadoRoute
   '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/notificaciones': typeof ApiNotificacionesRoute
+  '/api/sig-actualizaciones': typeof ApiSigActualizacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/clientes/documentacion': typeof AuthenticatedClientesDocumentacionRoute
   '/cultura/conceptos': typeof AuthenticatedCulturaConceptosRoute
@@ -293,6 +300,7 @@ export interface FileRoutesByTo {
   '/api/checklist-clientes-estado': typeof ApiChecklistClientesEstadoRoute
   '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/notificaciones': typeof ApiNotificacionesRoute
+  '/api/sig-actualizaciones': typeof ApiSigActualizacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/': typeof AuthenticatedIndexRoute
   '/clientes/documentacion': typeof AuthenticatedClientesDocumentacionRoute
@@ -332,6 +340,7 @@ export interface FileRoutesById {
   '/api/checklist-clientes-estado': typeof ApiChecklistClientesEstadoRoute
   '/api/hallazgos': typeof ApiHallazgosRoute
   '/api/notificaciones': typeof ApiNotificacionesRoute
+  '/api/sig-actualizaciones': typeof ApiSigActualizacionesRoute
   '/api/wiki-chat': typeof ApiWikiChatRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/clientes/documentacion': typeof AuthenticatedClientesDocumentacionRoute
@@ -372,6 +381,7 @@ export interface FileRouteTypes {
     | '/api/checklist-clientes-estado'
     | '/api/hallazgos'
     | '/api/notificaciones'
+    | '/api/sig-actualizaciones'
     | '/api/wiki-chat'
     | '/clientes/documentacion'
     | '/cultura/conceptos'
@@ -408,6 +418,7 @@ export interface FileRouteTypes {
     | '/api/checklist-clientes-estado'
     | '/api/hallazgos'
     | '/api/notificaciones'
+    | '/api/sig-actualizaciones'
     | '/api/wiki-chat'
     | '/'
     | '/clientes/documentacion'
@@ -446,6 +457,7 @@ export interface FileRouteTypes {
     | '/api/checklist-clientes-estado'
     | '/api/hallazgos'
     | '/api/notificaciones'
+    | '/api/sig-actualizaciones'
     | '/api/wiki-chat'
     | '/_authenticated/'
     | '/_authenticated/clientes/documentacion'
@@ -477,6 +489,7 @@ export interface RootRouteChildren {
   ApiChecklistClientesEstadoRoute: typeof ApiChecklistClientesEstadoRoute
   ApiHallazgosRoute: typeof ApiHallazgosRoute
   ApiNotificacionesRoute: typeof ApiNotificacionesRoute
+  ApiSigActualizacionesRoute: typeof ApiSigActualizacionesRoute
   ApiWikiChatRoute: typeof ApiWikiChatRoute
   ApiAuthCallbackRoute: typeof ApiAuthCallbackRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
@@ -595,6 +608,13 @@ declare module '@tanstack/react-router' {
       path: '/api/notificaciones'
       fullPath: '/api/notificaciones'
       preLoaderRoute: typeof ApiNotificacionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/sig-actualizaciones': {
+      id: '/api/sig-actualizaciones'
+      path: '/api/sig-actualizaciones'
+      fullPath: '/api/sig-actualizaciones'
+      preLoaderRoute: typeof ApiSigActualizacionesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/wiki-chat': {
@@ -803,6 +823,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChecklistClientesEstadoRoute: ApiChecklistClientesEstadoRoute,
   ApiHallazgosRoute: ApiHallazgosRoute,
   ApiNotificacionesRoute: ApiNotificacionesRoute,
+  ApiSigActualizacionesRoute: ApiSigActualizacionesRoute,
   ApiWikiChatRoute: ApiWikiChatRoute,
   ApiAuthCallbackRoute: ApiAuthCallbackRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
