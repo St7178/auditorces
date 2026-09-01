@@ -1,18 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-    boletinNecesitaImagenes, guardarBoletin, getUltimoBoletin, type EnlaceBoletin, type ImagenBoletin, type TipoActualizacion,
-} from "@/lib/sig-actualizaciones-storage";
-import { subirImagenABlob } from "@/lib/blob-upload";
+import { existeBoletin, guardarBoletin, getUltimoBoletin, type EnlaceBoletin, type TipoActualizacion } from "@/lib/sig-actualizaciones-storage";
 
-// "wiki.grupocnet.com" es un nombre interno de la red de Compunet — NO resuelve desde la red pública
-// donde corren las funciones de Vercel (confirmado en producción: ENOTFOUND). n8n sí corre dentro de
-// esa red, así que es n8n quien entra a la wiki, hace login y descarga las imágenes (ver el Code node
-// documentado en el flujo) — acá solo se reciben esas imágenes ya en base64 para subirlas a Vercel
-// Blob. Este endpoint YA NO intenta alcanzar la wiki por su cuenta.
-type ImagenWikiEntrante = { pagina: string; nombre?: string; contentType?: string; base64: string };
-
-// Forma cruda que trae el nodo "Get many messages" (Microsoft Outlook) de n8n, más el campo
-// "imagenesWiki" que agrega el Code node nuevo del flujo (ver instrucciones de integración).
+// Forma cruda que trae el nodo "Get many messages" (Microsoft Outlook) de n8n — solo se leen los
+// campos que de verdad se usan, el resto del objeto real (mucho más grande) se ignora.
 type OutlookMessage = {
     id: string;
     subject?: string;
@@ -22,12 +12,15 @@ type OutlookMessage = {
     from?: { emailAddress?: { name?: string; address?: string } };
     sender?: { emailAddress?: { name?: string; address?: string } };
     body?: { content?: string; contentType?: string };
-    imagenesWiki?: ImagenWikiEntrante[];
 };
 
 // El boletín mensual "Actualización y Eliminación Información Documentada" enlaza siempre a páginas
 // reales de la wiki (ej. ".../index.php/Actualizaciones_Julio_2026") — se extraen esos enlaces tal
-// cual vienen en el HTML, nunca se inventa a dónde apuntan.
+// cual vienen en el HTML, nunca se inventa a dónde apuntan. Nota: se intentó traer también las
+// imágenes reales de esas páginas (ver historial), pero ni Vercel ni el propio n8n de Compunet
+// pueden resolver wiki.grupocnet.com (confirmado: ENOTFOUND desde ambos) — es un dominio interno
+// solo alcanzable desde una máquina/VPN con acceso real, así que por ahora esto se queda en
+// mostrar los enlaces reales, sin imágenes automáticas.
 const WIKI_LINK_RE = /href="(https?:\/\/wiki\.grupocnet\.com\/index\.php\/[^"]+)"/gi;
 
 function tituloDesdeUrl(url: string): string {
@@ -42,19 +35,6 @@ function normalizeTipo(titulo: string): TipoActualizacion {
     return "otro";
 }
 
-function describirError(err: unknown): string {
-    const e = err as any;
-    const partes = [e?.message ?? String(e)];
-    let cause = e?.cause;
-    let vueltas = 0;
-    while (cause && vueltas < 3) {
-        partes.push(`causa: ${cause?.code ?? cause?.message ?? String(cause)}`);
-        cause = cause?.cause;
-        vueltas++;
-    }
-    return partes.join(" — ");
-}
-
 function extraerEnlaces(html: string): EnlaceBoletin[] {
     const enlaces = new Set<string>();
     WIKI_LINK_RE.lastIndex = 0;
@@ -66,12 +46,9 @@ function extraerEnlaces(html: string): EnlaceBoletin[] {
     });
 }
 
-// Procesa un mensaje: si ya existe con imágenes guardadas, no hace nada. Si es nuevo, o existe pero
-// se quedó sin imágenes (ej. n8n aún no mandaba "imagenesWiki" cuando llegó por primera vez), saca
-// los enlaces del cuerpo y sube a Vercel Blob las imágenes que YA vinieron descargadas desde n8n.
 async function procesarMensaje(mensaje: OutlookMessage): Promise<void> {
     if (!mensaje?.id) return;
-    if (!(await boletinNecesitaImagenes(mensaje.id))) return;
+    if (await existeBoletin(mensaje.id)) return;
 
     const fecha = mensaje.receivedDateTime ?? mensaje.sentDateTime ?? new Date().toISOString();
     const remitente = mensaje.from?.emailAddress?.name ?? mensaje.sender?.emailAddress?.name ?? null;
@@ -79,34 +56,15 @@ async function procesarMensaje(mensaje: OutlookMessage): Promise<void> {
     const html = mensaje.body?.content ?? "";
     const enlaces = extraerEnlaces(html);
 
-    const entrantes = Array.isArray(mensaje.imagenesWiki) ? mensaje.imagenesWiki : [];
-    let imagenes: ImagenBoletin[] = [];
-    let imagenesError: string | null = null;
-
-    if (entrantes.length === 0 && enlaces.length > 0) {
-        imagenesError = "n8n todavía no envió 'imagenesWiki' para este boletín — falta el paso de descarga en el flujo.";
-    }
-
-    for (const img of entrantes) {
-        try {
-            const buffer = Buffer.from(img.base64, "base64");
-            const url = await subirImagenABlob(img.nombre || "imagen.jpg", buffer, img.contentType || "image/jpeg");
-            const pagina = enlaces.find((e) => e.url === img.pagina);
-            imagenes.push({ url, tipo: pagina?.tipo ?? "otro", pagina: img.pagina });
-        } catch (err) {
-            imagenesError = `Error subiendo imagen a Blob: ${describirError(err)}`;
-        }
-    }
-
-    await guardarBoletin({ id: mensaje.id, asunto, fecha, remitente, enlaces, imagenes, imagenesError });
+    await guardarBoletin({ id: mensaje.id, asunto, fecha, remitente, enlaces });
 }
 
 export const Route = createFileRoute("/api/sig-actualizaciones")({
     server: {
         handlers: {
-            // Lectura pública, igual que el resto de /api/sync/* — el Dashboard/Cultura la consume
-            // desde una página ya protegida por sesión, no hace falta duplicar la verificación acá.
-            // Devuelve solo el boletín más reciente (o null si todavía no ha llegado ninguno).
+            // Lectura pública, igual que el resto de /api/sync/* — Cultura SIG la consume desde una
+            // página ya protegida por sesión, no hace falta duplicar la verificación acá. Devuelve
+            // solo el boletín más reciente (o null si todavía no ha llegado ninguno).
             GET: async () => {
                 const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
                 try {
@@ -116,10 +74,9 @@ export const Route = createFileRoute("/api/sig-actualizaciones")({
                     return new Response(JSON.stringify(null), { status: 200, headers });
                 }
             },
-            // Webhook de n8n: Schedule Trigger (diario, 8am) -> Get many messages (Outlook) -> Code
-            // node que entra a la wiki y descarga las imágenes (dentro de la red de Compunet, donde
-            // n8n sí puede resolver wiki.grupocnet.com) -> HTTP Request POST acá. Mismo secreto
-            // compartido que ya usa /api/sync/* — ver SYNC_SECRET en .env.example.
+            // Webhook de n8n: Schedule Trigger (diario, 8am) -> Get many messages (Outlook) -> HTTP
+            // Request POST acá con el array de mensajes. Mismo secreto compartido que ya usa
+            // /api/sync/* — ver SYNC_SECRET en .env.example.
             POST: async ({ request }) => {
                 try {
                     const secret = process.env.SYNC_SECRET;

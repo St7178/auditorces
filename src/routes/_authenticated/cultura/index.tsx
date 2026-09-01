@@ -2,8 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import { CoverFlowCarousel, type CarouselItem } from "@/components/ui/3-d-coverflow-carousel";
-import { ScrollText, Target, BookOpenText, ChevronRight, Newspaper } from "lucide-react";
+import { ScrollText, Target, BookOpenText, ChevronRight, Newspaper, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/cultura/")({
     component: CulturaPage,
@@ -11,13 +10,15 @@ export const Route = createFileRoute("/_authenticated/cultura/")({
 });
 
 type TipoActualizacion = "actualizacion" | "eliminacion" | "otro";
-type ImagenBoletin = { url: string; tipo: TipoActualizacion; pagina: string };
-type SigBoletin = { id: string; asunto: string; fecha: string; imagenes: ImagenBoletin[] };
+type EnlaceBoletin = { titulo: string; url: string; tipo: TipoActualizacion };
+type SigBoletin = { id: string; asunto: string; fecha: string; enlaces: EnlaceBoletin[] };
 
-const TITULO_POR_TIPO: Record<TipoActualizacion, { tag: string; linea1: string; linea2: string }> = {
-    actualizacion: { tag: "#Actualización", linea1: "DOCUMENTOS", linea2: "ACTUALIZADOS" },
-    eliminacion: { tag: "#Eliminación", linea1: "DOCUMENTOS", linea2: "ELIMINADOS" },
-    otro: { tag: "#Aviso SIG", linea1: "AVISO", linea2: "INFORMACIÓN DOCUMENTADA" },
+// Mismo criterio visual que el resto de la app: verde para lo positivo/nuevo (actualización), rojo
+// para lo que se elimina, gris neutral para cualquier otro aviso.
+const TIPO_CHIP: Record<TipoActualizacion, string> = {
+    actualizacion: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
+    eliminacion: "bg-red-100 text-red-700 hover:bg-red-200",
+    otro: "bg-muted text-muted-foreground hover:bg-accent",
 };
 
 const SECCIONES = [
@@ -50,8 +51,10 @@ function CulturaPage() {
     useEffect(() => {
         let mounted = true;
         // Boletín mensual "Actualización y Eliminación Información Documentada" — lo recibe el
-        // webhook de n8n en /api/sig-actualizaciones, acá solo se lee el más reciente ya guardado
-        // (con sus imágenes ya re-alojadas en Vercel Blob).
+        // webhook de n8n en /api/sig-actualizaciones, acá solo se lee el más reciente ya guardado.
+        // Solo enlaces reales a la wiki (ver ese archivo): se intentó traer también las imágenes,
+        // pero ni Vercel ni el propio n8n de Compunet pueden resolver wiki.grupocnet.com — es un
+        // dominio interno solo alcanzable desde una máquina/VPN con acceso real.
         fetch("/api/sig-actualizaciones")
             .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
             .then((data: SigBoletin | null) => mounted && setSigBoletin(data))
@@ -63,24 +66,9 @@ function CulturaPage() {
         };
     }, []);
 
-    const mesAnio = sigBoletin
-        ? new Date(sigBoletin.fecha).toLocaleDateString("es-CO", { month: "long", year: "numeric" }).toUpperCase()
-        : "";
-
-    // Cada imagen es una página real del boletín (sacada de la wiki, ver wiki-images.ts) — se arma
-    // un slide por imagen, con el tag/título según si esa página venía de Actualizaciones o
-    // Eliminaciones, y el CTA apunta a la página real de la wiki de la que salió esa imagen puntual.
-    const items: CarouselItem[] = (sigBoletin?.imagenes ?? []).map((img) => {
-        const info = TITULO_POR_TIPO[img.tipo];
-        return {
-            tag: info.tag,
-            titleLine1: info.linea1,
-            titleLine2: mesAnio ? `${info.linea2} · ${mesAnio}` : info.linea2,
-            img: img.url,
-            ctaText: "Ver en la wiki",
-            ctaUrl: img.pagina,
-        };
-    });
+    const fechaBoletin = sigBoletin
+        ? new Date(sigBoletin.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" })
+        : null;
 
     return (
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -91,15 +79,46 @@ function CulturaPage() {
             />
 
             {/* Boletín real de Laura/SIG (Actualización y Eliminación de Información Documentada) —
-                ver /api/sig-actualizaciones, sig-actualizaciones-storage.ts y wiki-images.ts. Las
-                imágenes son las páginas reales del boletín (sacadas de la wiki, no inventadas); si
-                el webhook de n8n todavía no está conectado (o no hay imágenes por otra razón), se
-                muestra un estado vacío propio en vez del carrusel oscuro sin nada adentro. */}
+                ver /api/sig-actualizaciones y sig-actualizaciones-storage.ts. Solo enlaces reales a
+                la wiki, sin imágenes automáticas (ver nota arriba). */}
             <div className="mt-8">
-                {items.length > 0 ? (
-                    <CoverFlowCarousel items={items} sectionLabel={`ACTUALIZACIONES SIG${mesAnio ? ` · ${mesAnio}` : ""}`} />
+                {sigBoletin ? (
+                    <Card className="border-brand/30 bg-gradient-to-br from-brand-soft to-secondary">
+                        <CardContent className="p-5">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand text-white">
+                                    <Newspaper className="h-5 w-5" />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="font-semibold text-brand">Actualizaciones SIG</div>
+                                    <p className="mt-0.5 text-sm text-muted-foreground">
+                                        {sigBoletin.asunto}
+                                        {fechaBoletin && <> · {fechaBoletin}</>}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {sigBoletin.enlaces.length > 0 && (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {sigBoletin.enlaces.map((e) => (
+                                        <a
+                                            key={e.url}
+                                            href={e.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${TIPO_CHIP[e.tipo]}`}
+                                        >
+                                            <Link2 className="h-3.5 w-3.5" /> {e.titulo}
+                                        </a>
+                                    ))}
+                                </div>
+                            )}
+
+                            <p className="mt-3 text-[11px] text-muted-foreground">Requiere iniciar sesión en CnetWiki con tu usuario de dominio Cnet.</p>
+                        </CardContent>
+                    </Card>
                 ) : (
-                    <div className="flex flex-col items-center justify-center gap-2 rounded-3xl border border-dashed p-10 text-center text-sm text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
                         <Newspaper className="h-6 w-6" />
                         Sin boletines de actualización/eliminación de información documentada por ahora.
                     </div>
