@@ -1,23 +1,20 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-// Adaptado de "3-d-coverflow-carousel" — se conserva la mecánica tal cual (perspectiva 3D real con
-// rotateY, autoplay, navegación por teclado/swipe, todo con estilos inline como en el original) y
-// el tema oscuro cinematográfico del template. Lo que cambia es el contenido: en vez de platos de
-// menú con fotos de stock, cada slide es una página real del boletín SIG de "Actualización y
-// Eliminación Información Documentada" (imágenes subidas manualmente a Vercel Blob, ver /cultura —
-// intentar traerlas automáticamente desde la wiki no fue viable: ni Vercel ni el propio n8n de
-// Compunet pueden resolver wiki.grupocnet.com). Por eso no hay datos de ejemplo por defecto
-// (defaultDishes): "items" es obligatorio y viene siempre de datos reales. Los íconos SVG inline
-// del template se reemplazan por lucide-react, ya usado en el resto de la app.
+// Adaptado de "3-d-coverflow-carousel" — se conserva la mecánica 3D (perspectiva real con rotateY,
+// autoplay, navegación por teclado/swipe) pero el diseño se rehace por completo a pedido explícito
+// del usuario: el template original era oscuro, grande, y mostraba el texto superpuesto sobre la
+// foto (con object-fit: cover, que recortaba las páginas del boletín porque no tienen la misma
+// proporción que las tarjetas). Ahora: tema claro (blanco/gris suave, acento del color de marca de
+// la app en vez del dorado del template), tarjetas más chicas, e imagen + texto separados en vez de
+// superpuestos — la imagen va completa dentro de su panel (object-fit: contain, nunca se recorta) y
+// el texto va debajo, sobre fondo claro, siempre legible.
 export interface CarouselItem {
     tag?: string;
     titleLine1: string;
     titleLine2?: string;
     desc?: string;
     img: string;
-    ctaText?: string;
-    ctaUrl?: string;
 }
 
 export interface CoverFlowCarouselProps {
@@ -26,7 +23,6 @@ export interface CoverFlowCarouselProps {
     autoplay?: boolean;
     autoplayDelay?: number;
     className?: string;
-    onCtaClick?: (item: CarouselItem) => void;
 }
 
 export function CoverFlowCarousel({
@@ -35,7 +31,6 @@ export function CoverFlowCarousel({
     autoplay = true,
     autoplayDelay = 5000,
     className = "",
-    onCtaClick,
 }: CoverFlowCarouselProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
@@ -85,64 +80,38 @@ export function CoverFlowCarousel({
 
     return (
         <section
-            className={`relative w-full min-h-[760px] flex items-center justify-center overflow-hidden py-12 select-none rounded-3xl ${className}`}
-            style={{
-                backgroundColor: "#0c0a09",
-                color: "#ffffff",
-                fontFamily: "system-ui, -apple-system, sans-serif",
-            }}
+            className={`relative w-full min-h-[440px] flex items-center justify-center overflow-hidden rounded-3xl border py-8 select-none ${className}`}
+            style={{ backgroundColor: "var(--muted)" }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
-            {/* Background Ambience */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                <img
-                    src={items[currentIndex]?.img}
-                    alt="ambience background"
-                    style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        filter: "brightness(0.22) blur(32px)",
-                        transform: "scale(1.15)",
-                        transition: "opacity 1000ms ease, filter 1000ms ease",
-                    }}
-                />
-                <div
-                    className="absolute inset-0"
-                    style={{
-                        background: "radial-gradient(circle at center, rgba(12,10,9,0.3) 0%, rgba(12,10,9,0.92) 100%)",
-                    }}
-                />
-            </div>
-
-            <div className="relative w-full max-w-6xl mx-auto px-4 z-10 flex flex-col items-center">
+            <div className="relative w-full max-w-4xl mx-auto px-4 z-10 flex flex-col items-center">
                 {/* Eyebrow */}
                 {sectionLabel && (
-                    <div className="flex items-center gap-3 mb-8">
-                        <span style={{ width: "36px", height: "1px", background: "linear-gradient(90deg, transparent, #c5a880)" }} />
+                    <div className="flex items-center gap-3 mb-6">
+                        <span style={{ width: "28px", height: "1px", background: "linear-gradient(90deg, transparent, var(--brand))" }} />
                         <h3
                             style={{
-                                fontSize: "0.75rem",
+                                fontSize: "0.7rem",
                                 fontWeight: 700,
-                                letterSpacing: "0.3em",
+                                letterSpacing: "0.25em",
                                 textTransform: "uppercase",
-                                color: "#c5a880",
+                                color: "var(--brand)",
                                 margin: 0,
                             }}
                         >
                             {sectionLabel}
                         </h3>
-                        <span style={{ width: "36px", height: "1px", background: "linear-gradient(90deg, #c5a880, transparent)" }} />
+                        <span style={{ width: "28px", height: "1px", background: "linear-gradient(90deg, var(--brand), transparent)" }} />
                     </div>
                 )}
 
                 {/* 3D Coverflow Stage */}
                 <div
-                    className="relative w-full h-[520px] flex justify-center items-center mb-8"
-                    style={{ perspective: "1400px" }}
+                    className="relative w-full h-[300px] flex justify-center items-center mb-6"
+                    style={{ perspective: "1200px" }}
                 >
                     {items.map((item, idx) => {
                         const offset = (idx - currentIndex + total) % total;
@@ -150,7 +119,6 @@ export function CoverFlowCarousel({
                         let transform = "translateX(0px) scale(0.4) rotateY(0deg)";
                         let opacity = 0;
                         let zIndex = 0;
-                        let filter = "brightness(0.4) blur(2px)";
                         let isCenter = false;
 
                         if (offset === 0) {
@@ -158,27 +126,22 @@ export function CoverFlowCarousel({
                             transform = "translateX(0px) scale(1) rotateY(0deg)";
                             opacity = 1;
                             zIndex = 30;
-                            filter = "brightness(1)";
                         } else if (offset === 1) {
-                            transform = "translateX(285px) scale(0.84) rotateY(-24deg)";
-                            opacity = 0.65;
+                            transform = "translateX(170px) scale(0.82) rotateY(-22deg)";
+                            opacity = 0.7;
                             zIndex = 20;
-                            filter = "brightness(0.75)";
                         } else if (offset === 2) {
-                            transform = "translateX(510px) scale(0.68) rotateY(-38deg)";
-                            opacity = 0.38;
+                            transform = "translateX(300px) scale(0.66) rotateY(-34deg)";
+                            opacity = 0.4;
                             zIndex = 10;
-                            filter = "brightness(0.55) blur(1px)";
                         } else if (offset === total - 1) {
-                            transform = "translateX(-285px) scale(0.84) rotateY(24deg)";
-                            opacity = 0.65;
+                            transform = "translateX(-170px) scale(0.82) rotateY(22deg)";
+                            opacity = 0.7;
                             zIndex = 20;
-                            filter = "brightness(0.75)";
                         } else if (offset === total - 2) {
-                            transform = "translateX(-510px) scale(0.68) rotateY(38deg)";
-                            opacity = 0.38;
+                            transform = "translateX(-300px) scale(0.66) rotateY(34deg)";
+                            opacity = 0.4;
                             zIndex = 10;
-                            filter = "brightness(0.55) blur(1px)";
                         }
 
                         return (
@@ -187,186 +150,113 @@ export function CoverFlowCarousel({
                                 onClick={() => !isCenter && goToSlide(idx)}
                                 style={{
                                     position: "absolute",
-                                    width: "330px",
-                                    height: "500px",
-                                    borderRadius: "18px",
+                                    width: "200px",
+                                    height: "280px",
+                                    borderRadius: "14px",
                                     overflow: "hidden",
-                                    backgroundColor: "#171311",
-                                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                                    backgroundColor: "var(--card)",
+                                    border: "1px solid var(--border)",
+                                    display: "flex",
+                                    flexDirection: "column",
                                     transform,
                                     opacity,
                                     zIndex,
-                                    filter,
                                     transformOrigin: "center center",
-                                    transition: "all 800ms cubic-bezier(0.25, 1, 0.5, 1)",
+                                    transition: "all 700ms cubic-bezier(0.25, 1, 0.5, 1)",
                                     boxShadow: isCenter
-                                        ? "0 25px 60px rgba(0,0,0,0.9), 0 0 35px rgba(197,168,128,0.25)"
-                                        : "0 15px 35px rgba(0,0,0,0.5)",
+                                        ? "0 20px 40px -12px rgba(0,0,0,0.18), 0 0 0 1px var(--border)"
+                                        : "0 8px 20px -8px rgba(0,0,0,0.12)",
                                     cursor: isCenter ? "default" : "pointer",
                                 }}
                             >
-                                {/* Photo */}
-                                <img
-                                    src={item.img}
-                                    alt={item.titleLine1}
-                                    style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                        width: "100%",
-                                        height: "100%",
-                                        objectFit: "cover",
-                                    }}
-                                />
-
-                                {/* Dark Vignette Overlay */}
+                                {/* Imagen completa, sin recortar — panel claro detrás por si la
+                                    imagen no llena el espacio (nunca object-fit: cover). */}
                                 <div
                                     style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                        background:
-                                            "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.68) 60%, rgba(0,0,0,0.96) 100%)",
-                                        pointerEvents: "none",
-                                        zIndex: 10,
-                                    }}
-                                />
-
-                                {/* Content Overlay */}
-                                <div
-                                    style={{
-                                        position: "relative",
-                                        width: "100%",
-                                        height: "100%",
-                                        padding: "20px 18px 22px",
+                                        flex: "1 1 auto",
+                                        minHeight: 0,
+                                        backgroundColor: "var(--muted)",
                                         display: "flex",
-                                        flexDirection: "column",
-                                        justifyContent: "space-between",
-                                        textAlign: "center",
-                                        zIndex: 20,
-                                        opacity: isCenter ? 1 : 0,
-                                        transform: isCenter ? "translateY(0px)" : "translateY(16px)",
-                                        transition: "opacity 500ms ease, transform 500ms ease",
-                                        pointerEvents: isCenter ? "auto" : "none",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        padding: "8px",
                                     }}
                                 >
-                                    {/* Tag */}
-                                    <div style={{ textAlign: "right", width: "100%", paddingRight: "4px" }}>
-                                        <span
+                                    <img
+                                        src={item.img}
+                                        alt={item.titleLine1}
+                                        style={{
+                                            maxWidth: "100%",
+                                            maxHeight: "100%",
+                                            width: "auto",
+                                            height: "auto",
+                                            objectFit: "contain",
+                                            borderRadius: "4px",
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Texto SIEMPRE debajo de la imagen, nunca superpuesto — fondo
+                                    claro, así que el texto queda oscuro y siempre legible. */}
+                                <div
+                                    style={{
+                                        flex: "0 0 auto",
+                                        padding: "10px 12px 12px",
+                                        textAlign: "center",
+                                        opacity: isCenter ? 1 : 0.55,
+                                        transition: "opacity 400ms ease",
+                                    }}
+                                >
+                                    {item.tag && (
+                                        <div
                                             style={{
-                                                display: "inline-block",
-                                                fontSize: "0.78rem",
+                                                fontSize: "0.62rem",
                                                 fontWeight: 600,
-                                                letterSpacing: "0.06em",
-                                                color: "rgba(255,255,255,0.9)",
-                                                textShadow: "0 2px 6px rgba(0,0,0,0.8)",
+                                                letterSpacing: "0.05em",
+                                                color: "var(--brand)",
+                                                marginBottom: "2px",
                                             }}
                                         >
                                             {item.tag}
-                                        </span>
-                                    </div>
-
-                                    {/* Body Content */}
+                                        </div>
+                                    )}
                                     <div
                                         style={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            alignItems: "center",
-                                            gap: "3px",
-                                            marginTop: "auto",
-                                            paddingBottom: "4px",
+                                            fontSize: "0.85rem",
+                                            fontWeight: 800,
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.02em",
+                                            color: "var(--foreground)",
+                                            lineHeight: 1.15,
                                         }}
                                     >
-                                        <h2
-                                            style={{
-                                                fontSize: "1.65rem",
-                                                fontWeight: 900,
-                                                textTransform: "uppercase",
-                                                letterSpacing: "0.04em",
-                                                color: "#ffffff",
-                                                margin: 0,
-                                                lineHeight: 1.1,
-                                                textShadow: "0 3px 12px rgba(0,0,0,0.95)",
-                                            }}
-                                        >
-                                            {item.titleLine1}
-                                        </h2>
-
-                                        {item.titleLine2 && (
-                                            <span
-                                                style={{
-                                                    fontSize: "1.1rem",
-                                                    fontWeight: 700,
-                                                    textTransform: "uppercase",
-                                                    letterSpacing: "0.06em",
-                                                    color: "#f3f0ea",
-                                                    lineHeight: 1.2,
-                                                    textShadow: "0 3px 10px rgba(0,0,0,0.9)",
-                                                }}
-                                            >
-                                                {item.titleLine2}
-                                            </span>
-                                        )}
-
+                                        {item.titleLine1}
+                                    </div>
+                                    {item.titleLine2 && (
                                         <div
                                             style={{
-                                                width: "34px",
-                                                height: "2px",
-                                                backgroundColor: "#c5a880",
-                                                borderRadius: "2px",
-                                                margin: "5px auto 4px",
-                                                boxShadow: "0 0 8px rgba(197,168,128,0.7)",
+                                                fontSize: "0.68rem",
+                                                fontWeight: 600,
+                                                color: "var(--muted-foreground)",
+                                                lineHeight: 1.3,
+                                                marginTop: "1px",
                                             }}
-                                        />
-
-                                        {item.desc && (
-                                            <p
-                                                style={{
-                                                    fontSize: "0.82rem",
-                                                    fontStyle: "italic",
-                                                    color: "rgba(255,255,255,0.9)",
-                                                    maxWidth: "280px",
-                                                    margin: "0 0 10px",
-                                                    lineHeight: 1.3,
-                                                    textShadow: "0 2px 8px rgba(0,0,0,0.9)",
-                                                }}
-                                            >
-                                                {item.desc}
-                                            </p>
-                                        )}
-
-                                        {item.ctaText && (
-                                            <a
-                                                href={item.ctaUrl || "#"}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                onClick={(e) => {
-                                                    if (onCtaClick) {
-                                                        e.preventDefault();
-                                                        onCtaClick(item);
-                                                    }
-                                                }}
-                                                style={{
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    gap: "6px",
-                                                    padding: "7px 18px",
-                                                    borderRadius: "9999px",
-                                                    background: "linear-gradient(135deg, #c5a880 0%, #a48256 100%)",
-                                                    color: "#110d0c",
-                                                    fontSize: "0.72rem",
-                                                    fontWeight: 800,
-                                                    letterSpacing: "0.14em",
-                                                    textTransform: "uppercase",
-                                                    textDecoration: "none",
-                                                    boxShadow: "0 4px 14px rgba(0,0,0,0.4), 0 0 15px rgba(197,168,128,0.3)",
-                                                    cursor: "pointer",
-                                                    transition: "transform 200ms ease, box-shadow 200ms ease",
-                                                }}
-                                            >
-                                                <span>{item.ctaText}</span>
-                                                <ArrowRight size={13} strokeWidth={2.5} />
-                                            </a>
-                                        )}
-                                    </div>
+                                        >
+                                            {item.titleLine2}
+                                        </div>
+                                    )}
+                                    {item.desc && (
+                                        <p
+                                            style={{
+                                                fontSize: "0.68rem",
+                                                color: "var(--muted-foreground)",
+                                                marginTop: "3px",
+                                                lineHeight: 1.3,
+                                            }}
+                                        >
+                                            {item.desc}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -381,26 +271,24 @@ export function CoverFlowCarousel({
                             aria-label="Página anterior"
                             style={{
                                 position: "absolute",
-                                left: "24px",
-                                top: "50%",
+                                left: "4px",
+                                top: "42%",
                                 transform: "translateY(-50%)",
-                                width: "46px",
-                                height: "46px",
+                                width: "36px",
+                                height: "36px",
                                 borderRadius: "50%",
-                                backgroundColor: "rgba(0,0,0,0.55)",
-                                border: "1px solid rgba(255,255,255,0.2)",
-                                color: "#ffffff",
+                                backgroundColor: "var(--card)",
+                                border: "1px solid var(--border)",
+                                color: "var(--foreground)",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                backdropFilter: "blur(8px)",
                                 cursor: "pointer",
-                                boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                                 zIndex: 40,
-                                transition: "all 200ms ease",
                             }}
                         >
-                            <ChevronLeft size={20} strokeWidth={2.5} />
+                            <ChevronLeft size={17} strokeWidth={2.5} />
                         </button>
 
                         <button
@@ -408,46 +296,43 @@ export function CoverFlowCarousel({
                             aria-label="Página siguiente"
                             style={{
                                 position: "absolute",
-                                right: "24px",
-                                top: "50%",
+                                right: "4px",
+                                top: "42%",
                                 transform: "translateY(-50%)",
-                                width: "46px",
-                                height: "46px",
+                                width: "36px",
+                                height: "36px",
                                 borderRadius: "50%",
-                                backgroundColor: "rgba(0,0,0,0.55)",
-                                border: "1px solid rgba(255,255,255,0.2)",
-                                color: "#ffffff",
+                                backgroundColor: "var(--card)",
+                                border: "1px solid var(--border)",
+                                color: "var(--foreground)",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                backdropFilter: "blur(8px)",
                                 cursor: "pointer",
-                                boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                                 zIndex: 40,
-                                transition: "all 200ms ease",
                             }}
                         >
-                            <ChevronRight size={20} strokeWidth={2.5} />
+                            <ChevronRight size={17} strokeWidth={2.5} />
                         </button>
                     </>
                 )}
 
                 {/* Pagination Dots */}
                 {total > 1 && (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", zIndex: 30 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", zIndex: 30 }}>
                         {items.map((_, idx) => (
                             <button
                                 key={idx}
                                 onClick={() => goToSlide(idx)}
                                 aria-label={`Ir a la página ${idx + 1}`}
                                 style={{
-                                    height: "8px",
-                                    width: idx === currentIndex ? "28px" : "8px",
+                                    height: "6px",
+                                    width: idx === currentIndex ? "22px" : "6px",
                                     borderRadius: "9999px",
-                                    backgroundColor: idx === currentIndex ? "#c5a880" : "rgba(255,255,255,0.25)",
+                                    backgroundColor: idx === currentIndex ? "var(--brand)" : "var(--border)",
                                     border: "none",
                                     cursor: "pointer",
-                                    boxShadow: idx === currentIndex ? "0 0 10px rgba(197,168,128,0.7)" : "none",
                                     transition: "all 300ms ease",
                                 }}
                             />

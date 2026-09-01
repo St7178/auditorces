@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedAvisosRouteImport } from './routes/_authenticated/avisos'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedConfiguracionRouteImport } from './routes/_authenticated/configuracion'
 import { Route as AuthenticatedCronogramaRouteImport } from './routes/_authenticated/cronograma'
@@ -59,6 +60,11 @@ const LoginRoute = LoginRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAvisosRoute = AuthenticatedAvisosRouteImport.update({
+  id: '/avisos',
+  path: '/avisos',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
@@ -251,6 +257,7 @@ const ApiSyncRiesgosRoute = ApiSyncRiesgosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
+  '/avisos': typeof AuthenticatedAvisosRoute
   '/chat': typeof AuthenticatedChatRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
   '/cronograma': typeof AuthenticatedCronogramaRoute
@@ -288,6 +295,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/avisos': typeof AuthenticatedAvisosRoute
   '/chat': typeof AuthenticatedChatRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
   '/cronograma': typeof AuthenticatedCronogramaRoute
@@ -328,6 +336,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/avisos': typeof AuthenticatedAvisosRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/configuracion': typeof AuthenticatedConfiguracionRoute
   '/_authenticated/cronograma': typeof AuthenticatedCronogramaRoute
@@ -369,6 +378,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/avisos'
     | '/chat'
     | '/configuracion'
     | '/cronograma'
@@ -406,6 +416,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/avisos'
     | '/chat'
     | '/configuracion'
     | '/cronograma'
@@ -445,6 +456,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/avisos'
     | '/_authenticated/chat'
     | '/_authenticated/configuracion'
     | '/_authenticated/cronograma'
@@ -524,6 +536,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/avisos': {
+      id: '/_authenticated/avisos'
+      path: '/avisos'
+      fullPath: '/avisos'
+      preLoaderRoute: typeof AuthenticatedAvisosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/chat': {
@@ -768,6 +787,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAvisosRoute: typeof AuthenticatedAvisosRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedConfiguracionRoute: typeof AuthenticatedConfiguracionRoute
   AuthenticatedCronogramaRoute: typeof AuthenticatedCronogramaRoute
@@ -790,6 +810,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAvisosRoute: AuthenticatedAvisosRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedConfiguracionRoute: AuthenticatedConfiguracionRoute,
   AuthenticatedCronogramaRoute: AuthenticatedCronogramaRoute,

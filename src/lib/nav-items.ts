@@ -12,6 +12,7 @@ import {
     MessagesSquare,
     Settings,
     Landmark,
+    Megaphone,
     type LucideIcon,
 } from "lucide-react";
 
@@ -32,6 +33,11 @@ export const NAV: { section: string; items: NavItem[] }[] = [
                 title: "CES AUDITOR", url: "/guardian", icon: Sparkles, highlight: true,
                 children: [{ title: "Hallazgos de Auditoría", url: "/guardian/hallazgos" }],
             },
+        ]
+    },
+    {
+        section: "📢 Avisos", items: [
+            { title: "Avisos SIG", url: "/avisos", icon: Megaphone },
         ]
     },
     {
