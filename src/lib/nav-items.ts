@@ -40,7 +40,6 @@ export const NAV: { section: string; items: NavItem[] }[] = [
             {
                 title: "Procesos CES", url: "/procesos", icon: Workflow,
                 children: [
-                    { title: "Vulnerabilidades CES", url: "/procesos/vulnerabilidades" },
                     { title: "Revisión Documental", url: "/procesos/revision" },
                 ],
             },

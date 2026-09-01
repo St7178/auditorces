@@ -19,8 +19,8 @@ export const Route = createFileRoute("/_authenticated/chat")({
 });
 
 const SUGERENCIAS = [
-    "Dame el acta de reunión",
-    "Donde está el manual de calidad",
+    "Matriz Financiera Servicios CES",
+    "Estrategia de Backup para PRTG",
     "Dame el formato de solicitud de vacaciones",
 ];
 
