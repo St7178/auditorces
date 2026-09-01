@@ -80,7 +80,7 @@ export function CoverFlowCarousel({
 
     return (
         <section
-            className={`relative w-full min-h-[440px] flex items-center justify-center overflow-hidden rounded-3xl border py-8 select-none ${className}`}
+            className={`relative w-full min-h-[560px] flex items-center justify-center overflow-hidden rounded-3xl border py-10 select-none ${className}`}
             style={{ backgroundColor: "var(--muted)" }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -110,7 +110,7 @@ export function CoverFlowCarousel({
 
                 {/* 3D Coverflow Stage */}
                 <div
-                    className="relative w-full h-[300px] flex justify-center items-center mb-6"
+                    className="relative w-full h-[420px] flex justify-center items-center mb-6"
                     style={{ perspective: "1200px" }}
                 >
                     {items.map((item, idx) => {
@@ -127,19 +127,19 @@ export function CoverFlowCarousel({
                             opacity = 1;
                             zIndex = 30;
                         } else if (offset === 1) {
-                            transform = "translateX(170px) scale(0.82) rotateY(-22deg)";
+                            transform = "translateX(230px) scale(0.82) rotateY(-22deg)";
                             opacity = 0.7;
                             zIndex = 20;
                         } else if (offset === 2) {
-                            transform = "translateX(300px) scale(0.66) rotateY(-34deg)";
+                            transform = "translateX(400px) scale(0.66) rotateY(-34deg)";
                             opacity = 0.4;
                             zIndex = 10;
                         } else if (offset === total - 1) {
-                            transform = "translateX(-170px) scale(0.82) rotateY(22deg)";
+                            transform = "translateX(-230px) scale(0.82) rotateY(22deg)";
                             opacity = 0.7;
                             zIndex = 20;
                         } else if (offset === total - 2) {
-                            transform = "translateX(-300px) scale(0.66) rotateY(34deg)";
+                            transform = "translateX(-400px) scale(0.66) rotateY(34deg)";
                             opacity = 0.4;
                             zIndex = 10;
                         }
@@ -150,9 +150,9 @@ export function CoverFlowCarousel({
                                 onClick={() => !isCenter && goToSlide(idx)}
                                 style={{
                                     position: "absolute",
-                                    width: "200px",
-                                    height: "280px",
-                                    borderRadius: "14px",
+                                    width: "270px",
+                                    height: "390px",
+                                    borderRadius: "16px",
                                     overflow: "hidden",
                                     backgroundColor: "var(--card)",
                                     border: "1px solid var(--border)",
@@ -210,11 +210,11 @@ export function CoverFlowCarousel({
                                     {item.tag && (
                                         <div
                                             style={{
-                                                fontSize: "0.62rem",
+                                                fontSize: "0.7rem",
                                                 fontWeight: 600,
                                                 letterSpacing: "0.05em",
                                                 color: "var(--brand)",
-                                                marginBottom: "2px",
+                                                marginBottom: "3px",
                                             }}
                                         >
                                             {item.tag}
@@ -222,7 +222,7 @@ export function CoverFlowCarousel({
                                     )}
                                     <div
                                         style={{
-                                            fontSize: "0.85rem",
+                                            fontSize: "1rem",
                                             fontWeight: 800,
                                             textTransform: "uppercase",
                                             letterSpacing: "0.02em",
@@ -235,11 +235,11 @@ export function CoverFlowCarousel({
                                     {item.titleLine2 && (
                                         <div
                                             style={{
-                                                fontSize: "0.68rem",
+                                                fontSize: "0.78rem",
                                                 fontWeight: 600,
                                                 color: "var(--muted-foreground)",
                                                 lineHeight: 1.3,
-                                                marginTop: "1px",
+                                                marginTop: "2px",
                                             }}
                                         >
                                             {item.titleLine2}
@@ -248,9 +248,9 @@ export function CoverFlowCarousel({
                                     {item.desc && (
                                         <p
                                             style={{
-                                                fontSize: "0.68rem",
+                                                fontSize: "0.78rem",
                                                 color: "var(--muted-foreground)",
-                                                marginTop: "3px",
+                                                marginTop: "4px",
                                                 lineHeight: 1.3,
                                             }}
                                         >
