@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
+import { CoverFlowCarousel, type CarouselItem } from "@/components/ui/3-d-coverflow-carousel";
 import { ScrollText, Target, BookOpenText, ChevronRight, Newspaper, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/cultura/")({
@@ -20,6 +21,20 @@ const TIPO_CHIP: Record<TipoActualizacion, string> = {
     eliminacion: "bg-red-100 text-red-700 hover:bg-red-200",
     otro: "bg-muted text-muted-foreground hover:bg-accent",
 };
+
+// Páginas reales del boletín del mes, subidas a mano a Vercel Blob (mismo hosting que las demás
+// imágenes del dashboard) — la wiki interna no es alcanzable ni desde Vercel ni desde el propio n8n
+// de Compunet (ver historial), así que por ahora esto se actualiza manualmente cada mes en vez de
+// traerse solo. Cuando llegue el boletín siguiente, basta con reemplazar esta lista.
+const IMAGENES_BOLETIN = [
+    "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/imagen.png",
+    "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/imagen%20%281%29.png",
+    "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/imagen%20%282%29.png",
+    "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/imagen%20%283%29.png",
+    "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/imagen%20%284%29.png",
+    "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/imagen%20%285%29.png",
+    "https://gycqduihf0vkjbnu.public.blob.vercel-storage.com/imagen%20%286%29.png",
+];
 
 const SECCIONES = [
     {
@@ -69,6 +84,19 @@ function CulturaPage() {
     const fechaBoletin = sigBoletin
         ? new Date(sigBoletin.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" })
         : null;
+    const mesAnio = sigBoletin
+        ? new Date(sigBoletin.fecha).toLocaleDateString("es-CO", { month: "long", year: "numeric" }).toUpperCase()
+        : "";
+
+    // Sin metadato por imagen (son páginas escaneadas del boletín, no vienen etiquetadas una por
+    // una) — se numeran en el orden en que se subieron en vez de adivinar a cuál enlace (Actualización
+    // o Eliminación) corresponde cada una.
+    const items: CarouselItem[] = IMAGENES_BOLETIN.map((img, i) => ({
+        tag: "#Boletín SIG",
+        titleLine1: `PÁGINA ${i + 1}`,
+        titleLine2: mesAnio || "INFORMACIÓN DOCUMENTADA",
+        img,
+    }));
 
     return (
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -78,10 +106,14 @@ function CulturaPage() {
                 description="La identidad del Sistema Integrado de Gestión de Compunet: qué defendemos, hacia dónde vamos y el vocabulario que lo sostiene."
             />
 
-            {/* Boletín real de Laura/SIG (Actualización y Eliminación de Información Documentada) —
-                ver /api/sig-actualizaciones y sig-actualizaciones-storage.ts. Solo enlaces reales a
-                la wiki, sin imágenes automáticas (ver nota arriba). */}
+            {/* Páginas reales del boletín (subidas a mano, ver IMAGENES_BOLETIN arriba) en el
+                carrusel 3D. Debajo, los enlaces reales a la wiki (ver /api/sig-actualizaciones y
+                sig-actualizaciones-storage.ts) siguen viniendo del webhook de n8n, sin cambios. */}
             <div className="mt-8">
+                <CoverFlowCarousel items={items} sectionLabel={`ACTUALIZACIONES SIG${mesAnio ? ` · ${mesAnio}` : ""}`} />
+            </div>
+
+            <div className="mt-6">
                 {sigBoletin ? (
                     <Card className="border-brand/30 bg-gradient-to-br from-brand-soft to-secondary">
                         <CardContent className="p-5">
