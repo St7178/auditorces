@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { guardarActualizaciones, getActualizaciones, type NuevaActualizacion, type TipoActualizacion } from "@/lib/sig-actualizaciones-storage";
+import {
+    existeBoletin, guardarBoletin, getUltimoBoletin, type EnlaceBoletin, type TipoActualizacion,
+} from "@/lib/sig-actualizaciones-storage";
+import { obtenerImagenesDeBoletin } from "@/lib/wiki-images";
+import { subirImagenABlob } from "@/lib/blob-upload";
 
 // Forma cruda que trae el nodo "Get many messages" (Microsoft Outlook) de n8n — solo se leen los
 // campos que de verdad se usan, el resto del objeto real (mucho más grande) se ignora.
@@ -31,60 +35,55 @@ function normalizeTipo(titulo: string): TipoActualizacion {
     return "otro";
 }
 
-function extraerActualizaciones(mensaje: OutlookMessage): NuevaActualizacion[] {
-    if (!mensaje?.id) return [];
-    const fecha = mensaje.receivedDateTime ?? mensaje.sentDateTime ?? new Date().toISOString();
-    const remitente = mensaje.from?.emailAddress?.name ?? mensaje.sender?.emailAddress?.name ?? null;
-    const asunto = mensaje.subject ?? "Actualización SIG";
-    const html = mensaje.body?.content ?? "";
-
+function extraerEnlaces(html: string): EnlaceBoletin[] {
     const enlaces = new Set<string>();
     WIKI_LINK_RE.lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = WIKI_LINK_RE.exec(html))) enlaces.add(match[1]);
-
-    // Sin enlaces reconocidos en el cuerpo (ej. un formato de correo distinto) — se guarda igual
-    // apuntando al correo original en vez de perder el aviso por completo.
-    if (enlaces.size === 0) {
-        if (!mensaje.webLink) return [];
-        return [{
-            id: `${mensaje.id}::correo`,
-            mensajeId: mensaje.id,
-            tipo: "otro",
-            titulo: asunto,
-            url: mensaje.webLink,
-            fecha,
-            remitente,
-            asunto,
-        }];
-    }
-
     return [...enlaces].map((url) => {
         const titulo = tituloDesdeUrl(url);
-        return {
-            id: `${mensaje.id}::${url}`,
-            mensajeId: mensaje.id,
-            tipo: normalizeTipo(titulo),
-            titulo,
-            url,
-            fecha,
-            remitente,
-            asunto,
-        };
+        return { titulo, url, tipo: normalizeTipo(titulo) };
     });
+}
+
+// Procesa un mensaje: si ya se guardó antes, no hace nada (evita volver a loguearse en la wiki y
+// redescargar imágenes cada corrida). Si es nuevo, saca los enlaces del cuerpo, va a buscar las
+// imágenes reales del boletín en la wiki, las sube a Vercel Blob, y guarda todo junto.
+async function procesarMensaje(mensaje: OutlookMessage): Promise<void> {
+    if (!mensaje?.id) return;
+    if (await existeBoletin(mensaje.id)) return;
+
+    const fecha = mensaje.receivedDateTime ?? mensaje.sentDateTime ?? new Date().toISOString();
+    const remitente = mensaje.from?.emailAddress?.name ?? mensaje.sender?.emailAddress?.name ?? null;
+    const asunto = mensaje.subject ?? "Actualización SIG";
+    const html = mensaje.body?.content ?? "";
+    const enlaces = extraerEnlaces(html);
+
+    const descargadas = enlaces.length > 0 ? await obtenerImagenesDeBoletin(enlaces.map((e) => e.url)) : [];
+    const imagenes: string[] = [];
+    for (const img of descargadas) {
+        try {
+            imagenes.push(await subirImagenABlob(img.nombre, img.buffer, img.contentType));
+        } catch (err) {
+            console.error("No se pudo subir una imagen del boletín a Vercel Blob:", err);
+        }
+    }
+
+    await guardarBoletin({ id: mensaje.id, asunto, fecha, remitente, enlaces, imagenes });
 }
 
 export const Route = createFileRoute("/api/sig-actualizaciones")({
     server: {
         handlers: {
             // Lectura pública, igual que el resto de /api/sync/* — el Dashboard la consume desde una
-            // página ya protegida por sesión, no hace falta duplicar la verificación acá.
+            // página ya protegida por sesión, no hace falta duplicar la verificación acá. Devuelve
+            // solo el boletín más reciente (o null si todavía no ha llegado ninguno).
             GET: async () => {
                 try {
-                    const items = await getActualizaciones(8);
-                    return new Response(JSON.stringify(items), { status: 200, headers: { "Content-Type": "application/json" } });
+                    const boletin = await getUltimoBoletin();
+                    return new Response(JSON.stringify(boletin), { status: 200, headers: { "Content-Type": "application/json" } });
                 } catch {
-                    return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
+                    return new Response(JSON.stringify(null), { status: 200, headers: { "Content-Type": "application/json" } });
                 }
             },
             // Webhook de n8n: Schedule Trigger (diario, 8am) -> Get many messages (Outlook) -> HTTP
@@ -100,12 +99,10 @@ export const Route = createFileRoute("/api/sig-actualizaciones")({
 
                     const body = await request.json();
                     const mensajes: OutlookMessage[] = Array.isArray(body) ? body : Array.isArray(body?.items) ? body.items : [];
-                    const items = mensajes.flatMap(extraerActualizaciones);
-                    const guardadas = await guardarActualizaciones(items);
-                    return new Response(
-                        JSON.stringify({ recibidos: mensajes.length, extraidos: items.length, guardadas }),
-                        { status: 200, headers: { "Content-Type": "application/json" } },
-                    );
+                    for (const mensaje of mensajes) {
+                        await procesarMensaje(mensaje);
+                    }
+                    return new Response(JSON.stringify({ recibidos: mensajes.length }), { status: 200, headers: { "Content-Type": "application/json" } });
                 } catch (err: any) {
                     return new Response(JSON.stringify({ error: String(err?.message ?? err) }), { status: 400, headers: { "Content-Type": "application/json" } });
                 }

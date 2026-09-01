@@ -1,97 +1,95 @@
 import * as React from "react";
-import { motion, type Variants } from "motion/react";
-import { FileCheck2, FileMinus2, FileText, ArrowUpRight } from "lucide-react";
+import { motion } from "motion/react";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
 
-// Adaptado de "card-11" (LatestNewsCard): mismo layout (encabezado + lista animada con stagger),
-// pero sin fotos de stock — cada ítem es una actualización real del SIG (extraída del correo
-// mensual de "Actualización y Eliminación Información Documentada" vía el webhook de n8n en
-// /api/sig-actualizaciones), así que en vez de una imagen se usa un ícono según el tipo. También se
-// quita el ancho fijo (max-w-md del original) para que la tarjeta llene la columna donde se ubique.
-export interface NewsItem {
-    id: string | number;
-    title: string;
-    date: string;
-    source: string;
-    href: string;
+// Adaptado de "card-11" (originalmente LatestNewsCard, lista con fotos de stock) — se reemplazó por
+// completo el diseño de lista por un carrusel, a pedido explícito del usuario: acá lo importante son
+// las páginas reales del boletín mensual de "Actualización y Eliminación Información Documentada"
+// (imágenes ya re-alojadas en Vercel Blob por /api/sig-actualizaciones, ver ese archivo y
+// wiki-images.ts), no una lista de titulares. Los enlaces reales a la wiki quedan como chips debajo.
+export interface EnlaceBoletin {
+    titulo: string;
+    url: string;
     tipo?: "actualizacion" | "eliminacion" | "otro";
 }
 
-export interface LatestNewsCardProps {
+export interface SigBoletinCardProps {
     title: string;
-    viewAllText?: string;
-    viewAllHref?: string;
-    newsItems: NewsItem[];
-    /** Texto del estado vacío — nunca se inventan ítems de ejemplo, solo se explica que no hay datos aún. */
+    subtitle?: string;
+    imagenes: string[];
+    enlaces: EnlaceBoletin[];
     emptyText?: string;
     className?: string;
 }
 
-const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+const TIPO_CHIP: Record<NonNullable<EnlaceBoletin["tipo"]>, string> = {
+    actualizacion: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
+    eliminacion: "bg-red-100 text-red-700 hover:bg-red-200",
+    otro: "bg-muted text-muted-foreground hover:bg-accent",
 };
 
-const itemVariants: Variants = {
-    hidden: { y: 16, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 12 } },
-};
-
-const TIPO_INFO: Record<NonNullable<NewsItem["tipo"]>, { icon: React.ReactNode; badge: string }> = {
-    actualizacion: { icon: <FileCheck2 className="h-5 w-5" />, badge: "bg-emerald-100 text-emerald-700" },
-    eliminacion: { icon: <FileMinus2 className="h-5 w-5" />, badge: "bg-red-100 text-red-700" },
-    otro: { icon: <FileText className="h-5 w-5" />, badge: "bg-muted text-muted-foreground" },
-};
-
-export function LatestNewsCard({ title, viewAllText, viewAllHref, newsItems, emptyText, className }: LatestNewsCardProps) {
+export function SigBoletinCard({ title, subtitle, imagenes, enlaces, emptyText, className }: SigBoletinCardProps) {
     return (
-        <div className={cn("flex h-full w-full flex-col rounded-xl border bg-card p-6 text-card-foreground shadow-sm", className)}>
-            <div className="mb-4 flex items-center justify-between gap-2">
+        <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className={cn("flex h-full w-full flex-col rounded-xl border bg-card p-6 text-card-foreground shadow-sm", className)}
+        >
+            <div className="mb-4 flex items-start justify-between gap-2">
                 <h2 className="text-lg font-semibold">{title}</h2>
-                {viewAllHref && (
-                    <a
-                        href={viewAllHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand hover:underline"
-                        aria-label={`Ver todo — ${title}`}
-                    >
-                        {viewAllText ?? "Ver todo"} <ArrowUpRight className="h-3 w-3" />
-                    </a>
-                )}
+                {subtitle && <span className="shrink-0 text-xs text-muted-foreground">{subtitle}</span>}
             </div>
 
-            {newsItems.length === 0 ? (
+            {imagenes.length === 0 ? (
                 <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed p-6 text-center text-xs text-muted-foreground">
-                    {emptyText ?? "Todavía no hay actualizaciones registradas."}
+                    {emptyText ?? "Todavía no hay boletines registrados."}
                 </div>
             ) : (
-                <motion.ul className="space-y-1" variants={containerVariants} initial="hidden" animate="visible" aria-label={`${title} list`}>
-                    {newsItems.map((item) => {
-                        const info = TIPO_INFO[item.tipo ?? "otro"];
-                        return (
-                            <motion.li key={item.id} variants={itemVariants}>
-                                <a
-                                    href={item.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="group flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent"
-                                >
-                                    <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", info.badge)}>
-                                        {info.icon}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <h3 className="truncate text-sm font-medium leading-tight text-card-foreground">{item.title}</h3>
-                                        <p className="mt-0.5 truncate text-xs text-muted-foreground">{item.date} &bull; {item.source}</p>
-                                    </div>
+                <Carousel opts={{ loop: imagenes.length > 1 }} className="w-full">
+                    <CarouselContent className="-ml-0">
+                        {imagenes.map((src, i) => (
+                            <CarouselItem key={src} className="pl-0">
+                                <a href={src} target="_blank" rel="noopener noreferrer" className="block">
+                                    <img
+                                        src={src}
+                                        alt={`Página ${i + 1} del boletín`}
+                                        className="h-72 w-full rounded-lg border bg-muted object-contain"
+                                    />
                                 </a>
-                            </motion.li>
-                        );
-                    })}
-                </motion.ul>
+                                <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
+                                    Página {i + 1} de {imagenes.length}
+                                </p>
+                            </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                    {imagenes.length > 1 && (
+                        <>
+                            <CarouselPrevious className="left-1 h-7 w-7" />
+                            <CarouselNext className="right-1 h-7 w-7" />
+                        </>
+                    )}
+                </Carousel>
             )}
-        </div>
+
+            {enlaces.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                    {enlaces.map((e) => (
+                        <a
+                            key={e.url}
+                            href={e.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors", TIPO_CHIP[e.tipo ?? "otro"])}
+                        >
+                            {e.titulo}
+                        </a>
+                    ))}
+                </div>
+            )}
+        </motion.div>
     );
 }
 
-export default LatestNewsCard;
+export default SigBoletinCard;

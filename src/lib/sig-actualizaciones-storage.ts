@@ -2,20 +2,16 @@ import { neon } from "@neondatabase/serverless";
 
 export type TipoActualizacion = "actualizacion" | "eliminacion" | "otro";
 
-export type SigActualizacion = {
+export type EnlaceBoletin = { titulo: string; url: string; tipo: TipoActualizacion };
+
+export type SigBoletin = {
     id: string;
-    mensajeId: string;
-    tipo: TipoActualizacion;
-    titulo: string;
-    url: string;
+    asunto: string;
     fecha: string;
     remitente: string | null;
-    asunto: string;
+    enlaces: EnlaceBoletin[];
+    imagenes: string[];
 };
-
-const SELECT_COLUMNS = `
-    id, mensaje_id AS "mensajeId", tipo, titulo, url, fecha, remitente, asunto
-`;
 
 // DATABASE_URL solo existe en tiempo de request en runtimes edge, no a nivel de módulo — igual que
 // en sync-storage.ts/hallazgos-storage.ts, se resuelve fresco en cada llamada.
@@ -31,15 +27,13 @@ async function ensureSchema() {
     if (!ready) {
         const db = sql();
         ready = db`
-            CREATE TABLE IF NOT EXISTS sig_actualizaciones (
+            CREATE TABLE IF NOT EXISTS sig_boletines (
                 id TEXT PRIMARY KEY,
-                mensaje_id TEXT NOT NULL,
-                tipo TEXT NOT NULL DEFAULT 'otro',
-                titulo TEXT NOT NULL,
-                url TEXT NOT NULL,
+                asunto TEXT NOT NULL,
                 fecha TIMESTAMPTZ NOT NULL,
                 remitente TEXT,
-                asunto TEXT NOT NULL,
+                enlaces JSONB NOT NULL DEFAULT '[]',
+                imagenes JSONB NOT NULL DEFAULT '[]',
                 creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
             )
         `
@@ -52,45 +46,46 @@ async function ensureSchema() {
     return ready;
 }
 
-export type NuevaActualizacion = {
-    id: string;
-    mensajeId: string;
-    tipo: TipoActualizacion;
-    titulo: string;
-    url: string;
-    fecha: string;
-    remitente: string | null;
-    asunto: string;
-};
-
-// Idempotente a propósito: el Schedule Trigger de n8n vuelve a traer los mismos correos cada corrida
-// (el filtro de Outlook es por asunto/remitente, no "solo los nuevos") — reingestar el mismo id
-// (mensaje + enlace) no debe duplicar la fila, así que es un INSERT ... ON CONFLICT DO NOTHING.
-export async function guardarActualizaciones(items: NuevaActualizacion[]): Promise<number> {
-    if (items.length === 0) return 0;
+// Un boletín = un correo de "Actualización y Eliminación Información Documentada". El Schedule
+// Trigger de n8n vuelve a traer el mismo correo cada corrida (filtra por asunto/remitente, no "solo
+// lo nuevo") — se comprueba esto ANTES de ir a la wiki a buscar imágenes, para no reintentar ese
+// trabajo (login + descarga) todos los días con boletines ya guardados.
+export async function existeBoletin(id: string): Promise<boolean> {
     await ensureSchema();
     const db = sql();
-    let guardadas = 0;
-    for (const it of items) {
-        const rows = await db`
-            INSERT INTO sig_actualizaciones (id, mensaje_id, tipo, titulo, url, fecha, remitente, asunto)
-            VALUES (${it.id}, ${it.mensajeId}, ${it.tipo}, ${it.titulo}, ${it.url}, ${it.fecha}, ${it.remitente}, ${it.asunto})
-            ON CONFLICT (id) DO NOTHING
-            RETURNING id
-        `;
-        guardadas += rows.length;
-    }
-    return guardadas;
+    const rows = await db`SELECT 1 FROM sig_boletines WHERE id = ${id}`;
+    return rows.length > 0;
 }
 
-export async function getActualizaciones(limite = 8): Promise<SigActualizacion[]> {
+export async function guardarBoletin(b: SigBoletin): Promise<void> {
+    await ensureSchema();
+    const db = sql();
+    await db`
+        INSERT INTO sig_boletines (id, asunto, fecha, remitente, enlaces, imagenes)
+        VALUES (${b.id}, ${b.asunto}, ${b.fecha}, ${b.remitente}, ${JSON.stringify(b.enlaces)}::jsonb, ${JSON.stringify(b.imagenes)}::jsonb)
+        ON CONFLICT (id) DO NOTHING
+    `;
+}
+
+// Solo el boletín más reciente — el carrusel del Dashboard muestra "el reporte de este mes", no un
+// historial mezclado de todos los boletines guardados.
+export async function getUltimoBoletin(): Promise<SigBoletin | null> {
     await ensureSchema();
     const db = sql();
     const rows = await db`
-        SELECT ${db.unsafe(SELECT_COLUMNS)}
-        FROM sig_actualizaciones
+        SELECT id, asunto, fecha, remitente, enlaces, imagenes
+        FROM sig_boletines
         ORDER BY fecha DESC
-        LIMIT ${limite}
+        LIMIT 1
     `;
-    return rows as unknown as SigActualizacion[];
+    if (!rows.length) return null;
+    const r = rows[0] as any;
+    return {
+        id: r.id,
+        asunto: r.asunto,
+        fecha: r.fecha,
+        remitente: r.remitente,
+        enlaces: r.enlaces ?? [],
+        imagenes: r.imagenes ?? [],
+    };
 }

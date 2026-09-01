@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
 import { ServiceCard } from "@/components/ui/service-card";
 import { HighlightCard, type HighlightCardColor } from "@/components/ui/card-5";
-import { LatestNewsCard, type NewsItem } from "@/components/ui/card-11";
+import { SigBoletinCard } from "@/components/ui/card-11";
 import { Badge } from "@/components/ui/badge";
 import {
     AnimatedCard, CardBody, CardTitle, CardDescription, CardVisual, MaturityGauge, CardAmbientBackground, colorDeMadurez,
@@ -88,13 +88,8 @@ function ComplianceRow({ label, value, desc, delay }: { label: string; value: nu
 
 type RiesgoReal = { id: string; descripcion?: string; porcentajeMitigacion?: number; nivelResidual?: { severidad?: string } };
 type HallazgoDashboard = { id: string; titulo: string; proceso: string; responsable: string | null; pasoIdentifico: boolean; pasoAgenda: boolean; pasoSoluciono: boolean };
-type SigActualizacion = { id: string; tipo: "actualizacion" | "eliminacion" | "otro"; titulo: string; url: string; fecha: string; asunto: string };
-
-const TIPO_ACTUALIZACION_LABEL: Record<SigActualizacion["tipo"], string> = {
-    actualizacion: "Actualización",
-    eliminacion: "Eliminación",
-    otro: "Aviso SIG",
-};
+type EnlaceBoletinDashboard = { titulo: string; url: string; tipo: "actualizacion" | "eliminacion" | "otro" };
+type SigBoletinDashboard = { id: string; asunto: string; fecha: string; enlaces: EnlaceBoletinDashboard[]; imagenes: string[] };
 
 // % de seguimiento de un hallazgo puntual: cuántos de los 3 pasos (identificó/agendó/solucionó) ya
 // están marcados — mismo checklist que se marca en /guardian/hallazgos.
@@ -169,7 +164,7 @@ function Dashboard() {
     const [checklistEstado, setChecklistEstado] = useState<Record<string, boolean> | null>(null);
     const [documentos, setDocumentos] = useState<{ id: string; actualizacion?: string | null }[] | null>(null);
     const [hallazgos, setHallazgos] = useState<HallazgoDashboard[] | null>(null);
-    const [sigActualizaciones, setSigActualizaciones] = useState<SigActualizacion[] | null>(null);
+    const [sigBoletin, setSigBoletin] = useState<SigBoletinDashboard | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -230,10 +225,11 @@ function Dashboard() {
                 /* sin fuente real disponible: el % de hallazgos queda en "—" */
             });
         // Boletín mensual "Actualización y Eliminación Información Documentada" — lo recibe el
-        // webhook de n8n en /api/sig-actualizaciones (ver ese archivo), acá solo se lee lo ya guardado.
+        // webhook de n8n en /api/sig-actualizaciones (ver ese archivo), acá solo se lee el más
+        // reciente ya guardado (con sus imágenes ya re-alojadas en Vercel Blob).
         fetch("/api/sig-actualizaciones")
             .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
-            .then((data: SigActualizacion[]) => mounted && setSigActualizaciones(data))
+            .then((data: SigBoletinDashboard | null) => mounted && setSigBoletin(data))
             .catch(() => {
                 /* sin fuente real disponible: la tarjeta de Actualizaciones SIG queda vacía */
             });
@@ -298,16 +294,11 @@ function Dashboard() {
             desc: hallazgos && hallazgos.length > 0 ? `Seguimiento completado en ${hallazgos.length} hallazgo${hallazgos.length === 1 ? "" : "s"} registrado${hallazgos.length === 1 ? "" : "s"}` : "Seguimiento de hallazgos registrados por CES AUDITOR",
         },
     ];
-    // Actualizaciones SIG → NewsItem del componente adaptado: fecha formateada corta y "source" es
-    // el tipo real (Actualización/Eliminación), nunca el nombre variable de quien reenvió el correo.
-    const newsItems: NewsItem[] = (sigActualizaciones ?? []).map((a) => ({
-        id: a.id,
-        title: a.titulo,
-        date: new Date(a.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }),
-        source: TIPO_ACTUALIZACION_LABEL[a.tipo],
-        href: a.url,
-        tipo: a.tipo,
-    }));
+    // Subtítulo del boletín en el Dashboard — fecha completa del correo, para que se lea como "el
+    // reporte de tal fecha" en vez de solo repetir el título de la sección.
+    const sigBoletinSubtitulo = sigBoletin
+        ? new Date(sigBoletin.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" })
+        : undefined;
 
     const metricasConDato = metricasCumplimiento.filter((m) => m.value !== null);
     // "Retroalimentación" de las tres — promedio simple de las que sí tienen dato real todavía.
@@ -451,13 +442,17 @@ function Dashboard() {
                 </div>
 
                 {/* Boletín real de Laura/SIG (Actualización y Eliminación de Información Documentada),
-                    recibido vía el webhook de n8n en /api/sig-actualizaciones — ver ese archivo y
-                    sig-actualizaciones-storage.ts. Sin datos inventados: si el webhook de n8n todavía
-                    no está conectado, la tarjeta simplemente queda vacía con su propio estado vacío. */}
-                <LatestNewsCard
+                    recibido vía el webhook de n8n en /api/sig-actualizaciones — ver ese archivo,
+                    sig-actualizaciones-storage.ts y wiki-images.ts. Las imágenes son las páginas
+                    reales del boletín (sacadas de la wiki, no inventadas) — si el webhook de n8n
+                    todavía no está conectado, la tarjeta simplemente queda vacía con su propio
+                    estado vacío. */}
+                <SigBoletinCard
                     title="Actualizaciones SIG"
-                    newsItems={newsItems}
-                    emptyText="Sin actualizaciones de información documentada por ahora."
+                    subtitle={sigBoletinSubtitulo}
+                    imagenes={sigBoletin?.imagenes ?? []}
+                    enlaces={sigBoletin?.enlaces ?? []}
+                    emptyText="Sin boletines de actualización/eliminación de información documentada por ahora."
                 />
             </section>
 
