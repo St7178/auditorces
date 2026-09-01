@@ -5,7 +5,6 @@ import { Progress } from "@/components/ui/progress";
 import { CoverflowCarousel, type CoverflowSlide } from "@/components/ui/coverflow-carousel";
 import { ServiceCard } from "@/components/ui/service-card";
 import { HighlightCard, type HighlightCardColor } from "@/components/ui/card-5";
-import { SigBoletinCard } from "@/components/ui/card-11";
 import { Badge } from "@/components/ui/badge";
 import {
     AnimatedCard, CardBody, CardTitle, CardDescription, CardVisual, MaturityGauge, CardAmbientBackground, colorDeMadurez,
@@ -88,8 +87,6 @@ function ComplianceRow({ label, value, desc, delay }: { label: string; value: nu
 
 type RiesgoReal = { id: string; descripcion?: string; porcentajeMitigacion?: number; nivelResidual?: { severidad?: string } };
 type HallazgoDashboard = { id: string; titulo: string; proceso: string; responsable: string | null; pasoIdentifico: boolean; pasoAgenda: boolean; pasoSoluciono: boolean };
-type EnlaceBoletinDashboard = { titulo: string; url: string; tipo: "actualizacion" | "eliminacion" | "otro" };
-type SigBoletinDashboard = { id: string; asunto: string; fecha: string; enlaces: EnlaceBoletinDashboard[]; imagenes: string[] };
 
 // % de seguimiento de un hallazgo puntual: cuántos de los 3 pasos (identificó/agendó/solucionó) ya
 // están marcados — mismo checklist que se marca en /guardian/hallazgos.
@@ -164,7 +161,6 @@ function Dashboard() {
     const [checklistEstado, setChecklistEstado] = useState<Record<string, boolean> | null>(null);
     const [documentos, setDocumentos] = useState<{ id: string; actualizacion?: string | null }[] | null>(null);
     const [hallazgos, setHallazgos] = useState<HallazgoDashboard[] | null>(null);
-    const [sigBoletin, setSigBoletin] = useState<SigBoletinDashboard | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -223,15 +219,6 @@ function Dashboard() {
             .then((data: HallazgoDashboard[]) => mounted && setHallazgos(data))
             .catch(() => {
                 /* sin fuente real disponible: el % de hallazgos queda en "—" */
-            });
-        // Boletín mensual "Actualización y Eliminación Información Documentada" — lo recibe el
-        // webhook de n8n en /api/sig-actualizaciones (ver ese archivo), acá solo se lee el más
-        // reciente ya guardado (con sus imágenes ya re-alojadas en Vercel Blob).
-        fetch("/api/sig-actualizaciones")
-            .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
-            .then((data: SigBoletinDashboard | null) => mounted && setSigBoletin(data))
-            .catch(() => {
-                /* sin fuente real disponible: la tarjeta de Actualizaciones SIG queda vacía */
             });
         return () => {
             mounted = false;
@@ -294,12 +281,6 @@ function Dashboard() {
             desc: hallazgos && hallazgos.length > 0 ? `Seguimiento completado en ${hallazgos.length} hallazgo${hallazgos.length === 1 ? "" : "s"} registrado${hallazgos.length === 1 ? "" : "s"}` : "Seguimiento de hallazgos registrados por CES AUDITOR",
         },
     ];
-    // Subtítulo del boletín en el Dashboard — fecha completa del correo, para que se lea como "el
-    // reporte de tal fecha" en vez de solo repetir el título de la sección.
-    const sigBoletinSubtitulo = sigBoletin
-        ? new Date(sigBoletin.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" })
-        : undefined;
-
     const metricasConDato = metricasCumplimiento.filter((m) => m.value !== null);
     // "Retroalimentación" de las tres — promedio simple de las que sí tienen dato real todavía.
     const nivelMadurez = metricasConDato.length > 0
@@ -393,67 +374,51 @@ function Dashboard() {
                 </AnimatedCard>
             </section>
 
-            {/* Seguimiento de Hallazgos (izquierda) + Actualizaciones SIG (derecha) — mismo patrón de
-                grilla 2:1 que "Cumplimiento SIG" arriba, para que el dashboard mantenga una sola
-                columna angosta a la derecha en vez de una nueva por cada sección nueva. */}
-            <section className="mt-8 grid gap-4 lg:grid-cols-3">
-                <div className="lg:col-span-2">
-                    <div className="flex items-center justify-between gap-2">
-                        <div>
-                            <h2 className="text-lg font-semibold">Seguimiento de Hallazgos</h2>
-                            <p className="text-xs text-muted-foreground">
-                                {hallazgos === null ? "Cargando…" : `${hallazgos.length} hallazgo${hallazgos.length === 1 ? "" : "s"} registrado${hallazgos.length === 1 ? "" : "s"} por CES AUDITOR`}
-                            </p>
-                        </div>
-                        <Link to="/guardian/hallazgos" className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand hover:underline">
-                            Ver todos <ArrowUpRight className="h-3 w-3" />
-                        </Link>
+            {/* Seguimiento de Hallazgos — total y % de seguimiento (identificó/agendó/solucionó) de
+                cada hallazgo registrado por CES AUDITOR; el promedio de estos % ya alimenta
+                "Hallazgos de auditoría" en Cumplimiento SIG / Nivel de madurez arriba. */}
+            <section className="mt-8">
+                <div className="flex items-center justify-between gap-2">
+                    <div>
+                        <h2 className="text-lg font-semibold">Seguimiento de Hallazgos</h2>
+                        <p className="text-xs text-muted-foreground">
+                            {hallazgos === null ? "Cargando…" : `${hallazgos.length} hallazgo${hallazgos.length === 1 ? "" : "s"} registrado${hallazgos.length === 1 ? "" : "s"} por CES AUDITOR`}
+                        </p>
                     </div>
-
-                    {hallazgos !== null && hallazgos.length === 0 && (
-                        <div className="mt-4 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-                            Todavía no hay hallazgos registrados.
-                        </div>
-                    )}
-
-                    {hallazgos !== null && hallazgos.length > 0 && (
-                        <div className="mt-4 space-y-2">
-                            {hallazgos.map((h) => {
-                                const pct = pctSeguimientoHallazgo(h);
-                                const estado = estadoCumplimiento(pct);
-                                return (
-                                    <div key={h.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="truncate text-sm font-medium">{h.titulo}</div>
-                                            <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
-                                                <span className="truncate">{h.proceso}</span>
-                                                <span className={`flex items-center gap-1 ${h.responsable ? "font-semibold text-orange-600" : ""}`}>
-                                                    <User className="h-3 w-3" /> {h.responsable ?? "—"}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <Progress value={pct} indicatorClassName={estado.barClass} className="h-2 w-24 shrink-0 sm:w-32" />
-                                        <span className="w-9 shrink-0 text-right text-xs font-semibold">{pct}%</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
+                    <Link to="/guardian/hallazgos" className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand hover:underline">
+                        Ver todos <ArrowUpRight className="h-3 w-3" />
+                    </Link>
                 </div>
 
-                {/* Boletín real de Laura/SIG (Actualización y Eliminación de Información Documentada),
-                    recibido vía el webhook de n8n en /api/sig-actualizaciones — ver ese archivo,
-                    sig-actualizaciones-storage.ts y wiki-images.ts. Las imágenes son las páginas
-                    reales del boletín (sacadas de la wiki, no inventadas) — si el webhook de n8n
-                    todavía no está conectado, la tarjeta simplemente queda vacía con su propio
-                    estado vacío. */}
-                <SigBoletinCard
-                    title="Actualizaciones SIG"
-                    subtitle={sigBoletinSubtitulo}
-                    imagenes={sigBoletin?.imagenes ?? []}
-                    enlaces={sigBoletin?.enlaces ?? []}
-                    emptyText="Sin boletines de actualización/eliminación de información documentada por ahora."
-                />
+                {hallazgos !== null && hallazgos.length === 0 && (
+                    <div className="mt-4 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+                        Todavía no hay hallazgos registrados.
+                    </div>
+                )}
+
+                {hallazgos !== null && hallazgos.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                        {hallazgos.map((h) => {
+                            const pct = pctSeguimientoHallazgo(h);
+                            const estado = estadoCumplimiento(pct);
+                            return (
+                                <div key={h.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
+                                    <div className="min-w-0 flex-1">
+                                        <div className="truncate text-sm font-medium">{h.titulo}</div>
+                                        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                                            <span className="truncate">{h.proceso}</span>
+                                            <span className={`flex items-center gap-1 ${h.responsable ? "font-semibold text-orange-600" : ""}`}>
+                                                <User className="h-3 w-3" /> {h.responsable ?? "—"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <Progress value={pct} indicatorClassName={estado.barClass} className="h-2 w-24 shrink-0 sm:w-32" />
+                                    <span className="w-9 shrink-0 text-right text-xs font-semibold">{pct}%</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </section>
 
             {/* Recomendaciones */}
