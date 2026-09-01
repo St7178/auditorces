@@ -79,11 +79,14 @@ export const Route = createFileRoute("/api/sig-actualizaciones")({
             // página ya protegida por sesión, no hace falta duplicar la verificación acá. Devuelve
             // solo el boletín más reciente (o null si todavía no ha llegado ninguno).
             GET: async () => {
+                // no-store: este dato cambia por webhook, no por deploy — sin esto un CDN/edge puede
+                // seguir sirviendo la respuesta de un boletín anterior por un rato tras guardarse uno nuevo.
+                const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
                 try {
                     const boletin = await getUltimoBoletin();
-                    return new Response(JSON.stringify(boletin), { status: 200, headers: { "Content-Type": "application/json" } });
+                    return new Response(JSON.stringify(boletin), { status: 200, headers });
                 } catch {
-                    return new Response(JSON.stringify(null), { status: 200, headers: { "Content-Type": "application/json" } });
+                    return new Response(JSON.stringify(null), { status: 200, headers });
                 }
             },
             // Webhook de n8n: Schedule Trigger (diario, 8am) -> Get many messages (Outlook) -> HTTP
